@@ -1,0 +1,72 @@
+# Fallback host: GitHub Pages needs no new account, which matters when signup flows demand an SMS
+# code you can't receive. The app is a static export with no server, so Pages is sufficient.
+#
+# Before the first run, set these repository variables (Settings → Secrets and variables →
+# Actions → Variables):
+#   ESCROW_ADDRESS   the deployed AttendanceEscrow
+#   EVENT_ID         which event the site points at (default 1)
+#   NETWORK          testnet or mainnet (default testnet)
+#
+# Then enable Settings → Pages → Source: GitHub Actions.
+#
+# ⚠️ The passkey rpId is bound to the host. On a project repo the site is served from
+# <user>.github.io/<repo>/, and the rpId is <user>.github.io. Moving hosts later makes every
+# passkey account unreproducible — pick one and stay on it.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      - name: Build static site
+        working-directory: web
+        env:
+          # No NEXT_PUBLIC_DEV_* here on purpose: next.config.ts fails the build if any are set,
+          # because they would be inlined into public JavaScript.
+          NEXT_PUBLIC_CHAIN: ${{ vars.NETWORK || 'testnet' }}
+          NEXT_PUBLIC_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc.monad.xyz' || 'https://testnet-rpc.monad.xyz' }}
+          NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || 'https://testnet-rpc.monad.xyz' }}
+          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS }}
+          NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '1' }}
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

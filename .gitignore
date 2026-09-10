@@ -1,0 +1,26 @@
+# Local chain config. Written by scripts/dev-chain.sh and holds anvil's private keys — they are
+# public defaults, but a repo is not the place to teach anyone that pattern.
+web/.env.local
+web/.env.local.bak
+indexer/.env
+
+# Build output
+web/.next/
+web/out/
+web/node_modules/
+indexer/node_modules/
+indexer/generated/
+contracts/out/
+contracts/cache/
+
+# Foundry keeps a "sensitive values" file per broadcast run in cache/. broadcast/ itself is kept:
+# it is the provenance record for the deployed address, which the submission cites.
+!contracts/broadcast/
+
+node_modules/
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# Editor/agent local state
+.claude/

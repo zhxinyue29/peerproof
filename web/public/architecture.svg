@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 620" width="880" height="620" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,1 L9,5 L0,9" fill="none" stroke="#525252" stroke-width="1.6"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="620" fill="#fafafa"/>
+
+  <text x="40" y="42" font-size="21" fill="#171717">PeerProof — attendance settled by peers</text>
+  <text x="40" y="64" font-size="13" fill="#737373">Every arrow into the contract is one transaction. Nothing between the boxes is trusted.</text>
+
+  <!-- attendee device -->
+  <rect x="40" y="92" width="330" height="188" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
+  <text x="60" y="118" font-size="13" fill="#737373">Attendee device</text>
+  <text x="60" y="145" font-size="14" fill="#171717">passkey — one biometric prompt, ever</text>
+  <text x="70" y="169" font-size="13" fill="#737373">↓ WebAuthn PRF output (32 bytes)</text>
+  <text x="60" y="193" font-size="14" fill="#171717">BIP-39/32 → secp256k1 attest key</text>
+  <text x="70" y="217" font-size="13" fill="#737373">↓ signs locally, no further prompt</text>
+  <text x="60" y="241" font-size="14" fill="#171717">rotating code QR — expires in 15s</text>
+  <text x="60" y="265" font-size="12" fill="#a3a3a3">fallback: browser wallet signs once, same derivation</text>
+
+  <!-- venue display -->
+  <rect x="510" y="92" width="330" height="188" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
+  <text x="530" y="118" font-size="13" fill="#737373">Venue display — at the door</text>
+  <text x="530" y="145" font-size="14" fill="#171717">ephemeral beacon key</text>
+  <text x="540" y="169" font-size="13" fill="#737373">↓ holds no funds, never needs gas</text>
+  <text x="530" y="193" font-size="14" fill="#171717">beacon QR — rotates every 120s</text>
+  <text x="530" y="223" font-size="12" fill="#a3a3a3">This is what makes an attestation mean</text>
+  <text x="530" y="240" font-size="12" fill="#a3a3a3">&#8220;was in this room&#8221; rather than</text>
+  <text x="530" y="257" font-size="12" fill="#a3a3a3">&#8220;knew a secret&#8221;.</text>
+
+  <!-- scan join -->
+  <line x1="205" y1="280" x2="205" y2="318" stroke="#525252" stroke-width="1.6"/>
+  <line x1="675" y1="280" x2="675" y2="318" stroke="#525252" stroke-width="1.6"/>
+  <line x1="205" y1="318" x2="675" y2="318" stroke="#525252" stroke-width="1.6"/>
+  <line x1="440" y1="318" x2="440" y2="352" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="440" y="306" font-size="12" fill="#737373" text-anchor="middle">scan a peer&#8217;s code, and the venue beacon</text>
+
+  <!-- transaction -->
+  <rect x="250" y="356" width="380" height="62" rx="12" fill="#111827" stroke="#111827"/>
+  <text x="440" y="381" font-size="14" fill="#ffffff" text-anchor="middle">attest(eventId, subject, epoch, code, beacon)</text>
+  <text x="440" y="403" font-size="12" fill="#9ca3af" text-anchor="middle">~200k gas · one scan credits both parties · confirms in ~0.3s</text>
+
+  <line x1="440" y1="418" x2="440" y2="452" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- contract -->
+  <rect x="40" y="456" width="800" height="128" rx="12" fill="#ffffff" stroke="#171717" stroke-width="1.6"/>
+  <text x="60" y="482" font-size="13" fill="#737373">AttendanceEscrow — Monad mainnet, chain 143</text>
+  <text x="60" y="509" font-size="14" fill="#171717">deposits held · each pair may vouch once · vouches counted per address</text>
+  <text x="60" y="533" font-size="14" fill="#171717">present = k vouches received AND at least one vouch given</text>
+  <text x="60" y="557" font-size="14" fill="#171717">settle() is permissionless · no function pays the organizer</text>
+  <text x="60" y="576" font-size="12" fill="#a3a3a3">Off chain: the event title. That is all — nothing that decides where money goes.</text>
+
+  <!-- why monad, right column note -->
+  <text x="840" y="612" font-size="11" fill="#a3a3a3" text-anchor="end">50 people × 3–5 scans ≈ 150–250 concurrent writes in two minutes, each on independent storage</text>
+</svg>

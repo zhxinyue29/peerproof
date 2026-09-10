@@ -1,0 +1,13 @@
+{
+  "name": "peerproof-indexer",
+  "private": true,
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "stop": "envio stop"
+  },
+  "dependencies": {
+    "envio": "3.10.0"
+  }
+}

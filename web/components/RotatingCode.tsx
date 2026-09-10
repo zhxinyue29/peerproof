@@ -1,0 +1,84 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
+
+const RING = 2 * Math.PI * 10;
+
+/// The attendee's own code: the QR stays on a white plate because scanners need the contrast, and
+/// a ring drains beside it so people understand the code is alive and there is no point
+/// screenshotting it.
+export default function RotatingCode({
+  payload,
+  secondsLeft,
+  totalSeconds,
+  size = "lg",
+}: {
+  payload: string | null;
+  secondsLeft: number;
+  totalSeconds: number;
+  size?: "lg" | "xl";
+}) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!payload) {
+      setDataUrl(null);
+      return;
+    }
+    let live = true;
+    QRCode.toDataURL(payload, {
+      errorCorrectionLevel: "L",
+      margin: 1,
+      width: 640,
+      color: { dark: "#0a0713", light: "#ffffff" },
+    })
+      .then((url) => live && setDataUrl(url))
+      .catch(() => live && setDataUrl(null));
+    return () => {
+      live = false;
+    };
+  }, [payload]);
+
+  const frac = Math.max(0, Math.min(1, secondsLeft / totalSeconds));
+
+  return (
+    <div className="space-y-2.5">
+      <div className="rounded-2xl bg-white p-2.5">
+        {dataUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={dataUrl}
+            alt="Your attendance code"
+            className={`w-full ${size === "xl" ? "max-h-[70vh]" : ""}`}
+            style={{ imageRendering: "pixelated" }}
+          />
+        ) : (
+          <div className="flex aspect-square items-center justify-center text-sm text-faint">
+            generating…
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-[13px] text-dim">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={RING}
+            strokeDashoffset={RING * (1 - frac)}
+            transform="rotate(-90 12 12)"
+            className="text-accent"
+          />
+        </svg>
+        <span className="tabular-nums">refreshes in {secondsLeft}s</span>
+      </div>
+    </div>
+  );
+}

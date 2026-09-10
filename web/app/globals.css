@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Declared on :root, not inside `@theme inline`. Tailwind 4's `inline` keyword inlines values
+   into utilities and does NOT emit custom properties, so `var(--font-sans)` resolved to nothing
+   and every page fell back to the browser's default serif. */
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Palette pulled from Monad's own surfaces: #6e54ff is their accent, and their darks carry a
+   violet cast (#19053c, #25043a) rather than being neutral grey. Looking native to the ecosystem
+   is worth something at their hackathon, and a violet-tinted black has depth that flat #0e1116
+   did not.
+   Dark throughout is not a style choice: the floor screen is used standing up in a dim room with
+   a camera open, it gets filmed, and a white screen at arm's length washes out the QR code. */
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-ink: #0a0713;
+  --color-panel: #14101f;
+  --color-raised: #1c1730;
+  --color-line: #241e38;
+  --color-line-2: #332a4d;
+
+  --color-fg: #f2effa;
+  --color-dim: #9a93b5;
+  /* #6b6486 measured only 3.60:1 against the ink — below the 4.5:1 that WCAG asks for text under
+     18.66px, which is every eyebrow label and hint in the app. #7d76a0 keeps the violet cast and
+     measures 4.72:1. */
+  --color-faint: #7d76a0;
+
+  --color-accent: #6e54ff;
+  --color-accent-2: #8e7bff;
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+}
+
+html {
+  font-family: var(--font-sans);
+  background: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-ink);
+  color: var(--color-fg);
+  position: relative;
+}
+
+/* One ambient wash behind everything, fixed so it never scrolls into a seam. This is the only
+   gradient in the app — it lives on the page, never on a component, so nothing flickers during a
+   re-render and no element carries a light source it shouldn't. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60rem 40rem at 50% -12rem, rgba(110, 84, 255, 0.16), transparent 70%),
+    radial-gradient(40rem 30rem at 110% 10%, rgba(110, 84, 255, 0.07), transparent 70%);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Numbers that change in place — countdowns, vouch counts, on-chain latency — must not reflow as
+   digits change. The latency figures are the demo's evidence; jitter reads as a glitch. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The floor screen is used one-handed with a camera open. Long-press text selection is never
+   what anyone wants there. */
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input,
+textarea {
+  color-scheme: dark;
+}
+
+::placeholder {
+  color: var(--color-faint);
+}
+
+::selection {
+  background: rgba(110, 84, 255, 0.35);
+}

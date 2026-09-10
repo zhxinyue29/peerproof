@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+#
+# Indexes the attestation graph that /verify renders. The frontend keeps a direct-RPC reader as a
+# fallback (web/lib/logs.ts) because Envio's free tier deletes inactive deployments after 30 days
+# and the judging window closes 35 days after our submission date — a verification page that goes
+# blank mid-judging would be worse than a slower one.
+#
+# Local runs need Docker and ENVIO_API_TOKEN (see .env). Deployments on Envio Cloud expose a
+# public GraphQL endpoint and need no token in the client.
+name: peerproof
+disable_default_cross_chain: true
+
+contracts:
+  - name: AttendanceEscrow
+    handler: src/handlers/AttendanceEscrow.ts
+    events:
+      - event: "EventCreated(uint256 indexed eventId, address indexed organizer, uint96 deposit, uint32 capacity, uint32 minQuorum, uint8 k, uint64 registerDeadline, uint64 attestOpen, uint64 attestClose)"
+      - event: "Registered(uint256 indexed eventId, address indexed attendee, address attestKey)"
+      - event: "Attested(uint256 indexed eventId, address indexed attester, address indexed subject, uint64 epoch)"
+      - event: "Confirmed(uint256 indexed eventId, address indexed attendee, bool viaOrganizer)"
+      - event: "EventCancelled(uint256 indexed eventId, uint32 registered, uint32 minQuorum)"
+      - event: "Settled(uint256 indexed eventId, uint32 confirmed, uint32 noShows, uint256 sharePerAttendee)"
+      - event: "Claimed(uint256 indexed eventId, address indexed attendee, uint256 amount)"
+
+chains:
+  # Monad testnet. Set the address and start_block after deploying; leaving start_block at 0 makes
+  # the indexer scan 60M+ empty blocks.
+  - id: 10143
+    start_block: 61225037
+    contracts:
+      - name: AttendanceEscrow
+        address:
+          - "0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1"

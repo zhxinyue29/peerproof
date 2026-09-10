@@ -1,0 +1,48 @@
+# Shaped for the two things /verify actually asks for: the attestation graph for one event, and
+# who is present. Nothing here re-derives a verdict — presence is whatever `Confirmed` said, so
+# the index can never disagree with the chain.
+
+type Event {
+  id: ID!
+  organizer: String!
+  deposit: BigInt!
+  capacity: Int!
+  minQuorum: Int!
+  k: Int!
+  registerDeadline: BigInt!
+  attestOpen: BigInt!
+  attestClose: BigInt!
+  registeredCount: Int!
+  confirmedCount: Int!
+  status: Int!
+  sharePerAttendee: BigInt
+  settledTxHash: String
+  participants: [Participant!]! @derivedFrom(field: "event")
+  vouches: [Vouch!]! @derivedFrom(field: "event")
+}
+
+type Participant {
+  id: ID!
+  event: Event!
+  address: String!
+  attestKey: String!
+  vouchesReceived: Int!
+  vouchesGiven: Int!
+  confirmed: Boolean!
+  confirmedViaOrganizer: Boolean!
+  claimed: Boolean!
+  claimedAmount: BigInt
+  registeredAt: BigInt!
+  registeredTxHash: String!
+}
+
+type Vouch {
+  id: ID!
+  event: Event!
+  attester: String!
+  subject: String!
+  epoch: BigInt!
+  blockNumber: Int!
+  blockTimestamp: Int!
+  txHash: String!
+}

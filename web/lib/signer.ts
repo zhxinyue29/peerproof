@@ -1,0 +1,79 @@
+import { encodeFunctionData, type Abi, type Address, type Hex, type LocalAccount } from "viem";
+import { attendanceEscrowAbi } from "@/lib/abi";
+import { ESCROW_ADDRESS, publicClient, walletClientFor } from "@/lib/chain";
+import { walletSendTransaction } from "@/lib/wallet";
+
+/// Unifies the two ways in which someone can take part.
+///
+/// The contract separates the registered address from the key that signs rotating codes, and that
+/// separation is what makes the fallback possible at all:
+///
+///   passkey path — the derived key *is* the participant. It holds the deposit and submits its own
+///                  transactions, so nothing prompts after setup.
+///   wallet path  — the wallet is the participant and the derived key is only the code signer. The
+///                  wallet must confirm each transaction, which is worse, which is why it is the
+///                  fallback and not the default.
+export type Signer = {
+  kind: "passkey" | "wallet";
+  /// The registered participant: pays the deposit, submits attestations, receives the payout.
+  address: Address;
+  /// Signs the rotating attendance codes. Never prompts.
+  attest: LocalAccount;
+  /// True when every write pops a confirmation dialog.
+  prompts: boolean;
+  write: (args: { functionName: string; args: readonly unknown[]; value?: bigint; gas?: bigint }) => Promise<Hex>;
+};
+
+export function passkeySigner(account: LocalAccount): Signer {
+  return {
+    kind: "passkey",
+    address: account.address,
+    attest: account,
+    prompts: false,
+    write: async ({ functionName, args, value, gas }) => {
+      const { request } = await publicClient.simulateContract({
+        address: ESCROW_ADDRESS,
+        abi: attendanceEscrowAbi,
+        functionName,
+        args,
+        account,
+        value,
+        gas,
+      } as never);
+      return walletClientFor(account).writeContract(request as never);
+    },
+  };
+}
+
+export function walletSigner(owner: Address, attest: LocalAccount): Signer {
+  return {
+    kind: "wallet",
+    address: owner,
+    attest,
+    prompts: true,
+    write: async ({ functionName, args, value, gas }) => {
+      // Simulate against the wallet address so a revert is caught before the user is asked to
+      // confirm anything. Monad bills gas on the limit, so a doomed write is not free either.
+      await publicClient.simulateContract({
+        address: ESCROW_ADDRESS,
+        abi: attendanceEscrowAbi,
+        functionName,
+        args,
+        account: owner,
+        value,
+        gas,
+      } as never);
+      return walletSendTransaction({
+        from: owner,
+        to: ESCROW_ADDRESS,
+        data: encodeFunctionData({
+          abi: attendanceEscrowAbi as Abi,
+          functionName,
+          args: args as unknown[],
+        }),
+        value,
+        gas,
+      });
+    },
+  };
+}

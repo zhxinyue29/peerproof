@@ -1,0 +1,625 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {Test} from "forge-std/Test.sol";
+import {AttendanceEscrow} from "../src/AttendanceEscrow.sol";
+
+contract AttendanceEscrowTest is Test {
+    AttendanceEscrow esc;
+
+    address organizer = address(0xA11CE);
+
+    uint256 constant BEACON_PK = 0xBEAC0;
+    address beaconKey;
+
+    uint96 constant DEPOSIT = 30 ether; // 30 MON ~= $0.78 at MON $0.026
+    uint32 constant CAPACITY = 50;
+    uint32 constant MIN_QUORUM = 10;
+    uint8 constant K = 3;
+
+    uint64 t0;
+    uint64 registerDeadline;
+    uint64 attestOpen;
+    uint64 attestClose;
+
+    uint256 eid;
+
+    /// @dev attendee i uses private key i+1 for the wallet and i+1001 for the attest key
+    function _wallet(uint256 i) internal pure returns (address addr) {
+        addr = vm.addr(i + 1);
+    }
+
+    function _attestPk(uint256 i) internal pure returns (uint256) {
+        return i + 1001;
+    }
+
+    function _attestKey(uint256 i) internal pure returns (address) {
+        return vm.addr(_attestPk(i));
+    }
+
+    function setUp() public {
+        vm.warp(1_000_000);
+        t0 = uint64(block.timestamp);
+        registerDeadline = t0 + 1 days;
+        attestOpen = registerDeadline;
+        attestClose = attestOpen + 10 minutes;
+        beaconKey = vm.addr(BEACON_PK);
+
+        esc = new AttendanceEscrow();
+
+        vm.prank(organizer);
+        eid = esc.createEvent(beaconKey, DEPOSIT, CAPACITY, MIN_QUORUM, K, registerDeadline, attestOpen, attestClose);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                              Helpers                              */
+    /* ------------------------------------------------------------------ */
+
+    function _register(uint256 i) internal {
+        address addr = _wallet(i);
+        vm.deal(addr, 100 ether);
+        vm.prank(addr);
+        esc.register{value: DEPOSIT}(eid, _attestKey(i));
+    }
+
+    function _registerMany(uint256 n) internal {
+        for (uint256 i; i < n; ++i) {
+            _register(i);
+        }
+    }
+
+    function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
+    function _beacon() internal view returns (uint64 bEpoch, bytes memory bSig) {
+        bEpoch = esc.currentBeaconEpoch();
+        bSig = _sign(BEACON_PK, esc.beaconDigest(eid, bEpoch));
+    }
+
+    /// @dev prepare a peer code plus a venue beacon without submitting, so a test can wrap only
+    ///      the `attest` call in `vm.expectRevert`
+    function _prep(uint256 subjectIdx)
+        internal
+        view
+        returns (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig)
+    {
+        subject = _wallet(subjectIdx);
+        epoch = esc.currentEpoch();
+        code = _sign(_attestPk(subjectIdx), esc.codeDigest(eid, subject, epoch));
+        (bEpoch, bSig) = _beacon();
+    }
+
+    /// @dev `attesterIdx` submits the code that `subjectIdx` is currently displaying
+    function _attest(uint256 attesterIdx, uint256 subjectIdx) internal {
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(subjectIdx);
+        vm.prank(_wallet(attesterIdx));
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    /// @dev Every unordered pair among the first `n` attendees attests once, alternating who
+    ///      does the scanning. Direction matters: presence requires having scanned somebody, so
+    ///      always making the higher index the subject would leave the last person unconfirmed —
+    ///      which is exactly what happens in the app if a user only ever shows their own code.
+    function _mutualAttest(uint256 n) internal {
+        for (uint256 i; i < n; ++i) {
+            for (uint256 j = i + 1; j < n; ++j) {
+                if ((i + j) % 2 == 0) {
+                    _attest(i, j);
+                } else {
+                    _attest(j, i);
+                }
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                            Happy path                              */
+    /* ------------------------------------------------------------------ */
+
+    function test_peerAttestation_settlesWithoutOrganizer() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        // 4 attendees show up and all attest each other: 6 scans, 3 credits each
+        _mutualAttest(4);
+        assertEq(esc.confirmedCount(eid), 4, "four confirmed by peers");
+
+        vm.warp(attestClose + 1);
+        esc.settle(eid);
+
+        // 6 no-shows forfeit 180 MON, split four ways on top of each 30 MON deposit
+        uint256 expected = DEPOSIT + (uint256(DEPOSIT) * 6) / 4;
+        assertEq(expected, 75 ether);
+
+        for (uint256 i; i < 4; ++i) {
+            address a = _wallet(i);
+            uint256 before = a.balance;
+            vm.prank(a);
+            esc.claim(eid);
+            assertEq(a.balance - before, expected, "confirmed attendee payout");
+        }
+
+        assertEq(address(esc).balance, 0, "pool distributed exactly, nothing stranded");
+    }
+
+    function test_organizerCannotReceiveFunds() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4);
+        vm.warp(attestClose + 1);
+        esc.settle(eid);
+
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.NotRegistered.selector);
+        esc.claim(eid);
+    }
+
+    function test_noShowCannotClaim() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4);
+        vm.warp(attestClose + 1);
+        esc.settle(eid);
+
+        vm.prank(_wallet(9));
+        vm.expectRevert(AttendanceEscrow.NothingToClaim.selector);
+        esc.claim(eid);
+    }
+
+    function test_doubleClaimBlocked() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4);
+        vm.warp(attestClose + 1);
+        esc.settle(eid);
+
+        address a = _wallet(0);
+        vm.prank(a);
+        esc.claim(eid);
+        vm.prank(a);
+        vm.expectRevert(AttendanceEscrow.AlreadyClaimed.selector);
+        esc.claim(eid);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                    Presence requires being there                  */
+    /* ------------------------------------------------------------------ */
+
+    /// @dev the core anti-relay property: an attendee who is vouched for k times but never
+    ///      submits an attestation themselves never held a venue beacon, so they are not present
+    function test_receivingKWithoutAttestingIsNotPresence() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        // three people on site all vouch for absentee #9
+        _attest(0, 9);
+        _attest(1, 9);
+        _attest(2, 9);
+
+        assertEq(esc.attestCount(eid, _wallet(9)), 3, "vouched for k times");
+        assertEq(esc.gaveCount(eid, _wallet(9)), 0, "but never vouched for anyone");
+        assertFalse(esc.isConfirmed(eid, _wallet(9)), "so not present");
+        assertEq(esc.confirmedCount(eid), 0);
+
+        // the moment they scan someone themselves, they qualify
+        _attest(9, 3);
+        assertTrue(esc.isConfirmed(eid, _wallet(9)), "now present");
+    }
+
+    function test_badBeaconRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch,) = _prep(1);
+        bytes memory forged = _sign(uint256(0xBAD), esc.beaconDigest(eid, bEpoch));
+
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.BadBeacon.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, forged);
+    }
+
+    function test_staleBeaconRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (,,, uint64 bEpoch, bytes memory bSig) = _prep(1);
+
+        // three beacon epochs later the venue code is worthless
+        vm.warp(block.timestamp + 3 * esc.BEACON_EPOCH());
+
+        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.StaleBeacon.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_previousBeaconEpochStillAccepted() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (,,, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        vm.warp(block.timestamp + esc.BEACON_EPOCH());
+
+        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        vm.prank(_wallet(0));
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        assertEq(esc.attestCount(eid, subject), 1);
+    }
+
+    function test_beaconKeyLockedOnceWindowOpens() public {
+        vm.warp(attestOpen);
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.WindowClosed.selector);
+        esc.setBeaconKey(eid, address(0xFEED));
+    }
+
+    function test_beaconKeyReplaceableBeforeWindow() public {
+        address newKey = vm.addr(0xF00D5);
+        vm.prank(organizer);
+        esc.setBeaconKey(eid, newKey);
+
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        // the old beacon key no longer works
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory oldSig) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.BadBeacon.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, oldSig);
+
+        // the new one does
+        bytes memory newSig = _sign(0xF00D5, esc.beaconDigest(eid, bEpoch));
+        vm.prank(_wallet(0));
+        esc.attest(eid, subject, epoch, code, bEpoch, newSig);
+        assertEq(esc.attestCount(eid, subject), 1);
+    }
+
+    function test_onlyOrganizerSetsBeaconKey() public {
+        vm.prank(address(0xDEAD));
+        vm.expectRevert(AttendanceEscrow.NotOrganizer.selector);
+        esc.setBeaconKey(eid, address(0xFEED));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                          Anti-farming                             */
+    /* ------------------------------------------------------------------ */
+
+    function test_pairCanOnlyAttestOnce() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _attest(0, 1);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.PairAlreadyUsed.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_reversedPairAlsoBlocked() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _attest(0, 1);
+
+        // now 1 tries to attest 0 — the same unordered pair
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(0);
+        vm.prank(_wallet(1));
+        vm.expectRevert(AttendanceEscrow.PairAlreadyUsed.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_selfAttestationBlocked() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(0);
+        vm.prank(subject);
+        vm.expectRevert(AttendanceEscrow.SelfAttestation.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_staleCodeRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+
+        // more than two code epochs later the screenshot is worthless
+        vm.warp(block.timestamp + 3 * esc.EPOCH());
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.StaleCode.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_previousCodeEpochStillAccepted() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        vm.warp(block.timestamp + esc.EPOCH());
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+
+        vm.prank(_wallet(0));
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        assertEq(esc.attestCount(eid, subject), 1);
+    }
+
+    function test_forgedCodeRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        address subject = _wallet(1);
+        uint64 epoch = esc.currentEpoch();
+        bytes memory forged = _sign(uint256(9999), esc.codeDigest(eid, subject, epoch));
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.BadCode.selector);
+        esc.attest(eid, subject, epoch, forged, bEpoch, bSig);
+    }
+
+    function test_unregisteredCannotAttest() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(AttendanceEscrow.NotRegistered.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_attestBeforeWindowRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen - 10);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.WindowOpen.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    function test_attestAfterWindowRejected() public {
+        _registerMany(10);
+        vm.warp(attestClose + 1);
+
+        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.WindowClosed.selector);
+        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                       Organizer fallback                          */
+    /* ------------------------------------------------------------------ */
+
+    function test_fallbackLockedWhenPeersReachedQuorum() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4); // peerConfirmed = 4 > k = 3
+        vm.warp(attestClose + 1);
+
+        address[] memory list = new address[](1);
+        list[0] = _wallet(9);
+
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.FallbackLocked.selector);
+        esc.organizerCheckIn(eid, list);
+    }
+
+    function test_fallbackUnlocksForTinyRoom() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        // only two people show up; one scan is all they can manage
+        _attest(0, 1);
+        assertEq(esc.confirmedCount(eid), 0, "two people cannot reach k=3 alone");
+
+        vm.warp(attestClose + 1);
+
+        address[] memory list = new address[](2);
+        list[0] = _wallet(0);
+        list[1] = _wallet(1);
+
+        vm.prank(organizer);
+        esc.organizerCheckIn(eid, list);
+        assertEq(esc.confirmedCount(eid), 2);
+
+        vm.warp(attestClose + esc.FALLBACK_WINDOW() + 1);
+        esc.settle(eid);
+
+        // 8 no-shows forfeit 240 MON, split two ways
+        uint256 expected = DEPOSIT + (uint256(DEPOSIT) * 8) / 2;
+        assertEq(expected, 150 ether);
+
+        address a = _wallet(0);
+        uint256 before = a.balance;
+        vm.prank(a);
+        esc.claim(eid);
+        assertEq(a.balance - before, expected, "lone attendees are compensated, not merely refunded");
+    }
+
+    /// @dev The degenerate case: exactly one person turns up. They cannot attest anyone, so peers
+    ///      can establish nothing — but they must not be the one who loses. The fallback confirms
+    ///      them and they take the entire forfeited pool.
+    function test_soleAttendeeTakesWholePool() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        // nobody to scan, so no peer attestation is possible at all
+        assertEq(esc.confirmedCount(eid), 0);
+
+        vm.warp(attestClose + 1);
+
+        address[] memory list = new address[](1);
+        list[0] = _wallet(0);
+        vm.prank(organizer);
+        esc.organizerCheckIn(eid, list);
+
+        vm.warp(attestClose + esc.FALLBACK_WINDOW() + 1);
+        esc.settle(eid);
+
+        // 9 no-shows forfeit 270 MON, all of it to the one person who came
+        uint256 expected = DEPOSIT + uint256(DEPOSIT) * 9;
+        assertEq(expected, 300 ether);
+
+        address a = _wallet(0);
+        uint256 before = a.balance;
+        vm.prank(a);
+        esc.claim(eid);
+        assertEq(a.balance - before, expected, "sole attendee takes ten times their stake");
+        assertEq(address(esc).balance, 0, "pool fully distributed");
+    }
+
+    /// @dev The residual trust in the degraded branch: if the organizer never checks anyone in,
+    ///      the sole attendee gets their stake back but not the pool. Documented, not hidden.
+    function test_soleAttendeeOnlyRefundedIfOrganizerNeverActs() public {
+        _registerMany(10);
+        vm.warp(attestClose + esc.FALLBACK_WINDOW() + 1);
+
+        esc.settle(eid); // confirmed == 0, so nobody is penalised
+        assertEq(uint8(esc.statusOf(eid)), uint8(AttendanceEscrow.Status.Cancelled));
+
+        address a = _wallet(0);
+        uint256 before = a.balance;
+        vm.prank(a);
+        esc.claim(eid);
+        assertEq(a.balance - before, DEPOSIT, "stake returned, pool not awarded");
+    }
+
+    function test_onlyOrganizerCanFallback() public {
+        _registerMany(10);
+        vm.warp(attestClose + 1);
+        address[] memory list = new address[](1);
+        list[0] = _wallet(0);
+
+        vm.prank(address(0xDEAD));
+        vm.expectRevert(AttendanceEscrow.NotOrganizer.selector);
+        esc.organizerCheckIn(eid, list);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                        Quorum and refunds                         */
+    /* ------------------------------------------------------------------ */
+
+    function test_belowMinQuorumRefundsEveryone() public {
+        _registerMany(3); // fewer than MIN_QUORUM = 10
+        vm.warp(registerDeadline + 1);
+
+        esc.cancelForQuorum(eid);
+
+        for (uint256 i; i < 3; ++i) {
+            address a = _wallet(i);
+            uint256 before = a.balance;
+            vm.prank(a);
+            esc.claim(eid);
+            assertEq(a.balance - before, DEPOSIT, "full refund");
+        }
+        assertEq(address(esc).balance, 0);
+    }
+
+    function test_cannotCancelOnceQuorumMet() public {
+        _registerMany(10);
+        vm.warp(registerDeadline + 1);
+        vm.expectRevert(AttendanceEscrow.QuorumMet.selector);
+        esc.cancelForQuorum(eid);
+    }
+
+    /// @dev regression: a griefer must not be able to settle the instant the window shuts and
+    ///      strand the handful of people who actually showed up
+    function test_settleBlockedUntilFallbackWindowElapses() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _attest(0, 1);
+        vm.warp(attestClose + 1);
+
+        vm.prank(address(0xF00D));
+        vm.expectRevert(AttendanceEscrow.FallbackPending.selector);
+        esc.settle(eid);
+
+        address[] memory list = new address[](2);
+        list[0] = _wallet(0);
+        list[1] = _wallet(1);
+        vm.prank(organizer);
+        esc.organizerCheckIn(eid, list);
+        assertEq(esc.confirmedCount(eid), 2);
+    }
+
+    function test_healthyRoomSettlesImmediately() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4); // fallback is locked, so no need to wait
+        vm.warp(attestClose + 1);
+
+        esc.settle(eid);
+        assertEq(uint8(esc.statusOf(eid)), uint8(AttendanceEscrow.Status.Settled));
+    }
+
+    function test_nobodyConfirmedRefundsEveryone() public {
+        _registerMany(10);
+        vm.warp(attestClose + esc.FALLBACK_WINDOW() + 1);
+
+        esc.settle(eid); // confirmed == 0
+
+        for (uint256 i; i < 10; ++i) {
+            address a = _wallet(i);
+            uint256 before = a.balance;
+            vm.prank(a);
+            esc.claim(eid);
+            assertEq(a.balance - before, DEPOSIT, "no verdict, so no penalty");
+        }
+        assertEq(address(esc).balance, 0);
+    }
+
+    function test_settleRequiresWindowClosed() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        vm.expectRevert(AttendanceEscrow.WindowOpen.selector);
+        esc.settle(eid);
+    }
+
+    function test_anyoneCanSettle() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _mutualAttest(4);
+        vm.warp(attestClose + 1);
+
+        // a scheduled job, not a privileged human, closes this out
+        vm.prank(address(0xF00D));
+        esc.settle(eid);
+        assertEq(uint8(esc.statusOf(eid)), uint8(AttendanceEscrow.Status.Settled));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                            Parameters                             */
+    /* ------------------------------------------------------------------ */
+
+    function test_minQuorumMustExceedK() public {
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.BadParams.selector);
+        esc.createEvent(beaconKey, DEPOSIT, CAPACITY, K, K, registerDeadline, attestOpen, attestClose);
+    }
+
+    function test_beaconKeyRequiredAtCreation() public {
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.BadParams.selector);
+        esc.createEvent(address(0), DEPOSIT, CAPACITY, MIN_QUORUM, K, registerDeadline, attestOpen, attestClose);
+    }
+
+    function test_wrongDepositRejected() public {
+        address a = _wallet(0);
+        vm.deal(a, 100 ether);
+        vm.prank(a);
+        vm.expectRevert(AttendanceEscrow.BadParams.selector);
+        esc.register{value: DEPOSIT - 1}(eid, _attestKey(0));
+    }
+
+    function test_cannotRegisterTwice() public {
+        _register(0);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.AlreadyRegistered.selector);
+        esc.register{value: DEPOSIT}(eid, _attestKey(0));
+    }
+}

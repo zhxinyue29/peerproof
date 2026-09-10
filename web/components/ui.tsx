@@ -1,0 +1,408 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+/// Shared chrome for all five screens, so the visual language changes in one place.
+///
+/// Two constraints drive the choices here. The floor screen is used standing up, one-handed, in a
+/// dim room with a camera open — so touch targets are 44px, the safe-area inset is respected, and
+/// nothing important sits at the very bottom of the viewport. And the whole app gets filmed, so
+/// type sizes are chosen to read on camera rather than to fit more in.
+
+/* ------------------------------------------------------------------ */
+/*                              Layout                                */
+/* ------------------------------------------------------------------ */
+
+/// Two shapes, deliberately.
+///
+/// `handheld` is for the screens somebody actually holds — the floor and the venue display. Those
+/// stay a phone-width column even on a desktop, because widening them would only stretch a QR
+/// code and a countdown across a monitor.
+///
+/// The default is a real page: it grows to a readable measure and lets its children go
+/// multi-column. A 430px strip centred in a 1920px window is the tell of a mobile-only build, and
+/// judges will open this on a laptop.
+export function Shell({
+  children,
+  handheld,
+  center,
+}: {
+  children: React.ReactNode;
+  handheld?: boolean;
+  center?: boolean;
+}) {
+  return (
+    <main
+      className={`mx-auto flex min-h-dvh flex-col px-5 sm:px-8 ${
+        handheld ? "max-w-[440px] gap-5" : "max-w-[440px] gap-5 md:max-w-5xl md:gap-7"
+      } ${center ? "items-center justify-center" : ""}`}
+      style={{
+        paddingTop: "max(1.75rem, env(safe-area-inset-top))",
+        paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+      }}
+    >
+      {children}
+    </main>
+  );
+}
+
+/// Desktop-only two-column split. Collapses to a single column on phones, which is why every page
+/// can use one layout instead of two.
+export function Split({
+  main,
+  side,
+}: {
+  main: React.ReactNode;
+  side: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] md:items-start md:gap-7">
+      <div className="flex flex-col gap-5">{main}</div>
+      <div className="flex flex-col gap-5 md:sticky md:top-8">{side}</div>
+    </div>
+  );
+}
+
+/// A slim, consistent bar so the five screens read as one product rather than five pages.
+export function AppHeader({
+  title,
+  back,
+  right,
+}: {
+  title: string;
+  back?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <header className="-mx-5 flex items-center gap-3 border-b border-line px-5 pb-3.5 sm:-mx-8 sm:px-8">
+      {back ? (
+        <Link
+          href={back}
+          aria-label="Back"
+          className="-ml-2 flex h-11 w-11 items-center justify-center rounded-xl text-dim active:bg-panel"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
+      ) : (
+        <span className="flex h-11 items-center text-[13px] font-medium tracking-[0.14em] text-faint">
+          PEERPROOF
+        </span>
+      )}
+      {back && <span className="flex-1 truncate text-[15px] font-medium">{title}</span>}
+      {!back && <span className="flex-1" />}
+      {right}
+    </header>
+  );
+}
+
+export function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-faint">{children}</p>
+  );
+}
+
+export function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-2xl border border-line bg-panel/80 p-5 backdrop-blur-sm md:p-6 ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+export function Footer({ children }: { children: React.ReactNode }) {
+  return (
+    <footer className="mt-auto space-y-3 border-t border-line pt-5 text-[13px] leading-relaxed text-dim">
+      {children}
+    </footer>
+  );
+}
+
+export function FooterLinks({ items }: { items: Array<{ href: string; label: string }> }) {
+  return (
+    <div className="flex gap-4 text-xs text-faint">
+      {items.map((i) => (
+        <Link key={i.href} href={i.href} className="underline decoration-line-2">
+          {i.label}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                             Feedback                               */
+/* ------------------------------------------------------------------ */
+
+export function Notice({
+  tone = "info",
+  children,
+}: {
+  tone?: "info" | "warn" | "bad" | "ok";
+  children: React.ReactNode;
+}) {
+  const tones = {
+    info: "border-line-2 bg-raised text-dim",
+    warn: "border-warn/30 bg-warn/10 text-warn",
+    bad: "border-bad/30 bg-bad/10 text-bad",
+    ok: "border-ok/30 bg-ok/10 text-ok",
+  } as const;
+  return (
+    <p role={tone === "bad" ? "alert" : undefined} className={`rounded-xl border px-4 py-3 text-[13px] leading-relaxed ${tones[tone]}`}>
+      {children}
+    </p>
+  );
+}
+
+/// Transient confirmation. A transaction landing needs to feel like something happened, not just
+/// leave a new row somewhere below the fold.
+export function Flash({ message, onDone }: { message: string | null; onDone: () => void }) {
+  useEffect(() => {
+    if (!message) return;
+    const id = setTimeout(onDone, 2600);
+    return () => clearTimeout(id);
+  }, [message, onDone]);
+
+  if (!message) return null;
+  return (
+    <div
+      role="status"
+      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-5"
+      style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+    >
+      <div className="rounded-full border border-ok/40 bg-ok/15 px-4 py-2.5 text-[13px] font-medium text-ok backdrop-blur">
+        {message}
+      </div>
+    </div>
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <span className={`inline-block animate-pulse rounded bg-line-2 ${className}`} />;
+}
+
+/* ------------------------------------------------------------------ */
+/*                             Controls                               */
+/* ------------------------------------------------------------------ */
+
+export function Button({
+  children,
+  onClick,
+  disabled,
+  variant = "primary",
+  className = "",
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: "primary" | "ghost" | "warn";
+  className?: string;
+}) {
+  const styles = {
+    primary: "bg-accent text-white shadow-[0_0_0_1px_rgba(142,123,255,0.35)] active:bg-accent/80",
+    ghost: "border border-line-2 text-dim active:bg-panel",
+    warn: "bg-warn text-ink active:bg-warn/80",
+  }[variant];
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`min-h-[46px] rounded-xl px-4 text-[15px] font-medium transition-[background-color,transform] duration-100 active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${styles} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function LinkButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[46px] items-center justify-center rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function Field({
+  label,
+  value,
+  onChange,
+  hint,
+  mono,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+  mono?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[11px] font-medium uppercase tracking-wider text-faint">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        spellCheck={false}
+        autoComplete="off"
+        inputMode={mono ? "text" : "numeric"}
+        className={`mt-1.5 min-h-[46px] w-full rounded-xl border border-line-2 bg-ink px-3.5 text-fg outline-none focus:border-accent ${mono ? "font-mono text-xs" : ""}`}
+      />
+      {hint && <span className="mt-1 block text-[10px] text-faint">{hint}</span>}
+    </label>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                              Data                                  */
+/* ------------------------------------------------------------------ */
+
+/// The one number a screen is about. Large enough to read at arm's length and on camera.
+export function BigNumber({
+  value,
+  label,
+  sub,
+  loading,
+}: {
+  value?: React.ReactNode;
+  label?: string;
+  sub?: string;
+  loading?: boolean;
+}) {
+  return (
+    <div>
+      {label && <Eyebrow>{label}</Eyebrow>}
+      <p className="mt-2 text-[46px] font-medium leading-none tracking-[-0.03em] tabular-nums md:text-[54px]">
+        {loading ? <Skeleton className="h-11 w-40 align-middle" /> : value}
+      </p>
+      {sub && <p className="mt-3 text-[13px] leading-relaxed text-dim">{sub}</p>}
+    </div>
+  );
+}
+
+/// Page title. Monad's own surfaces set these very large and very tight; at 27px ours read as a
+/// form label rather than a headline.
+export function Display({ children, sub }: { children: React.ReactNode; sub?: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h1 className="text-[34px] font-medium leading-[1.06] tracking-[-0.035em] md:text-[56px]">
+        {children}
+      </h1>
+      {sub && (
+        <p className="text-[14px] leading-relaxed text-dim md:max-w-[52ch] md:text-[17px]">{sub}</p>
+      )}
+    </div>
+  );
+}
+
+export function Stat({
+  value,
+  label,
+  loading,
+}: {
+  value?: string;
+  label: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-panel/70 py-4 text-center backdrop-blur-sm">
+      <div className="text-[22px] font-medium leading-none tabular-nums">
+        {loading ? <Skeleton className="h-6 w-12 align-middle" /> : value}
+      </div>
+      <div className="mt-1.5 text-[11px] uppercase tracking-wider text-faint">{label}</div>
+    </div>
+  );
+}
+
+export function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 text-[13px] leading-relaxed">
+      <dt className="w-24 shrink-0 text-faint">{label}</dt>
+      <dd className="flex-1">{children}</dd>
+    </div>
+  );
+}
+
+export function KeyValue({
+  label,
+  value,
+  strong,
+}: {
+  label: string;
+  value: React.ReactNode;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 text-[13px]">
+      <span className="text-faint">{label}</span>
+      <span className={strong ? "text-xl font-medium tabular-nums text-fg" : "tabular-nums text-dim"}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/// A dot row that reads at a glance from a metre away — the floor screen's core state.
+export function Dots({ filled, total }: { filled: number; total: number }) {
+  return (
+    <span className="flex gap-1.5" aria-label={`${filled} of ${total}`}>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={`h-2.5 w-2.5 rounded-full transition-colors ${i < filled ? "bg-accent" : "bg-line-2"}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function Progress({ value, max }: { value: number; max: number }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className="h-1.5 overflow-hidden rounded-full bg-line">
+      <div
+        className="h-full rounded-full bg-accent transition-[width] duration-500"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+/// Copy-to-clipboard for addresses and keys, with the confirmation people expect.
+export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg" | "ok" }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        void navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        });
+      }}
+      className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[10px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
+    >
+      {value}
+      <span className="mt-1.5 block font-sans text-[10px] text-faint">
+        {copied ? "copied" : "tap to copy"}
+      </span>
+    </button>
+  );
+}
