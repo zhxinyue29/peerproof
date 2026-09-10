@@ -26,17 +26,28 @@ import { useEffect, useState } from "react";
 export function Shell({
   children,
   handheld,
+  stage,
   center,
 }: {
   children: React.ReactNode;
+  /** Phone width at every breakpoint. For screens only ever held in a hand. */
   handheld?: boolean;
+  /** Phone width, then grows — for the venue display, which runs on whatever screen is at the
+   *  door: a spare phone, a laptop, or a projector. A QR nobody can scan from across the room is
+   *  the same as no beacon at all. */
+  stage?: boolean;
   center?: boolean;
 }) {
+  const width = handheld
+    ? "max-w-[440px] gap-5"
+    : stage
+      ? "max-w-[440px] gap-5 md:max-w-2xl md:gap-7 lg:max-w-3xl"
+      : "max-w-[440px] gap-5 md:max-w-5xl md:gap-7";
   return (
     <main
-      className={`mx-auto flex min-h-dvh flex-col px-5 sm:px-8 ${
-        handheld ? "max-w-[440px] gap-5" : "max-w-[440px] gap-5 md:max-w-5xl md:gap-7"
-      } ${center ? "items-center justify-center" : ""}`}
+      className={`mx-auto flex min-h-dvh flex-col px-5 sm:px-8 ${width} ${
+        center ? "items-center justify-center" : ""
+      }`}
       style={{
         paddingTop: "max(1.75rem, env(safe-area-inset-top))",
         paddingBottom: "max(2rem, env(safe-area-inset-bottom))",

@@ -121,11 +121,15 @@ export default function VenuePage() {
     );
   }
 
+  // `stage`, not `handheld`: this screen gets propped up at the door and scanned from a few metres
+  // away, so it has to use whatever display it lands on.
   return (
-    <Shell handheld center>
+    <Shell stage center>
       <div className="text-center">
-        <h1 className="text-[30px] font-medium tracking-tight">Scan me to check in</h1>
-        <p className="mt-1.5 text-[15px] text-dim">
+        <h1 className="text-[30px] font-medium tracking-tight md:text-[42px]">
+          Scan me to check in
+        </h1>
+        <p className="mt-1.5 text-[15px] text-dim md:mt-2.5 md:text-[19px]">
           Then scan the people around you. Both are required.
         </p>
       </div>
@@ -134,6 +138,7 @@ export default function VenuePage() {
         payload={payload}
         secondsLeft={secondsLeft}
         totalSeconds={Number(BEACON_EPOCH)}
+        size="xl"
       />
 
       <div className="text-center text-xs text-faint">

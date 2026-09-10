@@ -44,13 +44,21 @@ export default function RotatingCode({
 
   return (
     <div className="space-y-2.5">
-      <div className="rounded-2xl bg-white p-2.5">
+      {/* The plate carries the size cap, not the image. Capping the image's height while its width
+          is 100% squashes a square QR out of ratio, and a distorted code does not scan. The code is
+          square, so capping width by viewport height bounds both sides and keeps the plate tight
+          around it instead of stranding it on a white slab. */}
+      <div
+        className={`rounded-2xl bg-white p-2.5 ${
+          size === "xl" ? "mx-auto w-full max-w-[70vh]" : ""
+        }`}
+      >
         {dataUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={dataUrl}
             alt="Your attendance code"
-            className={`w-full ${size === "xl" ? "max-h-[70vh]" : ""}`}
+            className="w-full"
             style={{ imageRendering: "pixelated" }}
           />
         ) : (
