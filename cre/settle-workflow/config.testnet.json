@@ -1,0 +1,11 @@
+{
+  "schedule": "0 */5 * * * *",
+  "evms": [
+    {
+      "chainName": "monad-testnet",
+      "settleReceiverAddress": "0x0000000000000000000000000000000000000000",
+      "eventId": "1",
+      "gasLimit": "150000"
+    }
+  ]
+}

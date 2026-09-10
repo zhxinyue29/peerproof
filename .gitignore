@@ -24,3 +24,9 @@ next-env.d.ts
 
 # Editor/agent local state
 .claude/
+
+# CRE. .env holds CRE_ETH_PRIVATE_KEY, which the simulator requires even for read-only workflows.
+cre/.env
+cre/**/node_modules/
+cre/**/bun.lock
+cre/**/.cre/

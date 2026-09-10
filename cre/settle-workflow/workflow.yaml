@@ -1,0 +1,9 @@
+# Top-level keys are target names, selected with `--target`. There is only one here because the
+# workflow only ever runs against Monad testnet.
+testnet-settings:
+  user-workflow:
+    workflow-name: "peerproof-settle"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.testnet.json"
+    secrets-path: ""

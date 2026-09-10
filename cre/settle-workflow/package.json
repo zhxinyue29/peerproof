@@ -1,0 +1,9 @@
+{
+  "name": "peerproof-settle-workflow",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.20.1",
+    "viem": "^2.56.3"
+  }
+}

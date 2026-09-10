@@ -1,0 +1,23 @@
+# Project-wide CRE settings. Per-workflow settings live in <workflow>/workflow.yaml.
+#
+# `rpcs` is required for both simulation and deployed workflows that touch EVM capabilities. The URL
+# can be anything, but `chain-name` must be a name CRE recognises: getNetwork() returns null for
+# unknown names and main.ts throws. `monad-testnet` has been recognised since CLI v1.30.0.
+#
+# Chain enablement is per-tenant, so the authoritative list for *your* account is
+#   cre workflow supported-chains --output json
+# Run it before trusting anything below.
+
+testnet-settings:
+  rpcs:
+    - chain-name: monad-testnet
+      url: ${MONAD_TESTNET_RPC_URL}
+
+production-settings:
+  account:
+    # Filled in from `cre whoami` when a deploy is actually attempted. Deploy access is approval
+    # gated; simulation is not, and simulation is what this project relies on.
+    workflow-owner-address: ""
+  rpcs:
+    - chain-name: monad-testnet
+      url: ${MONAD_TESTNET_RPC_URL}
