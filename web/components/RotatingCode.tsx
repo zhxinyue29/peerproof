@@ -19,13 +19,14 @@ export default function RotatingCode({
   totalSeconds: number;
   size?: "lg" | "xl";
 }) {
-  const [dataUrl, setDataUrl] = useState<string | null>(null);
+  /// The rendered code is stored together with the payload it was rendered from, and the render
+  /// below only trusts it while the two still agree. Keeping a bare URL in state meant that for
+  /// the few milliseconds between a rotation and the next encode finishing, the screen showed the
+  /// *previous* epoch's code — scan it in that window and the attestation reverts.
+  const [rendered, setRendered] = useState<{ payload: string; url: string } | null>(null);
 
   useEffect(() => {
-    if (!payload) {
-      setDataUrl(null);
-      return;
-    }
+    if (!payload) return;
     let live = true;
     QRCode.toDataURL(payload, {
       errorCorrectionLevel: "L",
@@ -33,12 +34,14 @@ export default function RotatingCode({
       width: 640,
       color: { dark: "#0a0713", light: "#ffffff" },
     })
-      .then((url) => live && setDataUrl(url))
-      .catch(() => live && setDataUrl(null));
+      .then((url) => live && setRendered({ payload, url }))
+      .catch(() => {});
     return () => {
       live = false;
     };
   }, [payload]);
+
+  const dataUrl = rendered?.payload === payload ? rendered.url : null;
 
   const frac = Math.max(0, Math.min(1, secondsLeft / totalSeconds));
 

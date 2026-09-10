@@ -16,6 +16,10 @@ type Event {
   confirmedCount: Int!
   status: Int!
   sharePerAttendee: BigInt
+  # Taken from the Settled event rather than computed as registered - confirmed. The subtraction
+  # would agree today, but it would be this index deciding who was absent, and that is the one
+  # thing it must never do.
+  noShows: Int
   settledTxHash: String
   participants: [Participant!]! @derivedFrom(field: "event")
   vouches: [Vouch!]! @derivedFrom(field: "event")

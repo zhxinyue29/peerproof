@@ -168,6 +168,16 @@ export default function VerifyPage() {
           {EVENT_ID.toString()}
           {history && ` · blocks ${history.fromBlock}–${history.toBlock}`}
         </p>
+        {/* Named, not hidden. A page arguing "do not take our word for it" has to say which reader
+            produced the numbers on it — and if the index is gone, that it fell back rather than
+            quietly showing less. */}
+        {history && (
+          <p>
+            {history.source === "envio"
+              ? "Attestation graph indexed by Envio HyperIndex."
+              : "Attestation graph read from contract logs directly — the index was unreachable."}
+          </p>
+        )}
         <p>
           There is no function on this contract that pays the organizer. Check the source: every
           branch of <span className="font-mono">claim</span> pays{" "}

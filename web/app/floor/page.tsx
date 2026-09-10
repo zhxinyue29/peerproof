@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { recoverAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
@@ -23,7 +22,6 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
-import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
   EPOCH,
   ESCROW_ADDRESS,

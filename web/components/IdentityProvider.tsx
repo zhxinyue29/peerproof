@@ -41,6 +41,10 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // The query string and the injected provider do not exist during the static export, so these
+    // cannot be lazy useState initialisers — reading them during render would throw at build time.
+    // Mount is the earliest point they are knowable, which is what this rule does not cover.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDevMode(new URLSearchParams(window.location.search).get("dev") === "1" || isLocalChain);
     setWalletAvailable(hasInjectedWallet());
     checkPrfSupport().then(setPrf);

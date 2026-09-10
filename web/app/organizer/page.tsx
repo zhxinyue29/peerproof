@@ -15,7 +15,6 @@ import {
   hasDeployment,
   isLocalChain,
   publicClient,
-  walletClientFor,
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";

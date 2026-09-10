@@ -25,6 +25,7 @@ indexer.onEvent(
       confirmedCount: 0,
       status: 0,
       sharePerAttendee: undefined,
+      noShows: undefined,
       settledTxHash: undefined,
     });
   },
@@ -108,6 +109,7 @@ indexer.onEvent({ contract: "AttendanceEscrow", event: "Settled" }, async ({ eve
       ...ev,
       status: 2,
       sharePerAttendee: event.params.sharePerAttendee,
+      noShows: Number(event.params.noShows),
       settledTxHash: event.transaction.hash,
     });
   }
