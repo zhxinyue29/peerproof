@@ -98,11 +98,20 @@ settle.
 150,000 leaves headroom for Monad's cold-account repricing (2,600 → 10,100), which local Foundry runs
 do not model. Re-measure against a real transaction before using this on mainnet.
 
-## What is not verified here
+## What is and is not verified here
 
-Written against the documented API and checked field-by-field against Chainlink's own published
-snippets, but **not executed** — running it needs a logged-in CRE account, which is not something this
-repo can hold. Specifically unconfirmed:
+**Verified:** the workflow typechecks against the real `@chainlink/cre-sdk@1.20.1` types, not against
+the docs. Reproduce it in this directory:
+
+```bash
+npm install && npx tsc --noEmit     # exits 0
+```
+
+That catches the failure mode this file would otherwise be most likely to have — an API shape copied
+from a blog post that the shipped SDK no longer exposes. It does not prove the workflow runs.
+
+**Not verified:** it has not been **executed**. Running it needs a logged-in CRE account, which is not
+something this repo can hold. Specifically unconfirmed:
 
 - whether `monad-testnet` is enabled for this particular tenant (`cre workflow supported-chains`)
 - whether Monad testnet is on the deploy path or simulation only — the release notes say Monad

@@ -57,6 +57,10 @@ export default function VenuePage() {
     const saved = localStorage.getItem(STORAGE_KEY);
     // Dev fixtures put a throwaway key in the environment; production never does.
     const fromEnv = isLocalChain ? process.env.NEXT_PUBLIC_DEV_BEACON_PK : undefined;
+    // `load` sets state, and localStorage does not exist during the static export, so this cannot
+    // move into a lazy initialiser. Restoring the key on mount is the whole point: reloading the
+    // venue display mid-event must not make the organizer paste the beacon key again.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved) load(saved);
     else if (fromEnv) load(fromEnv);
   }, [load]);
