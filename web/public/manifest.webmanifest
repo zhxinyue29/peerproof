@@ -1,0 +1,15 @@
+{
+  "name": "PeerProof",
+  "short_name": "PeerProof",
+  "description": "Attendance you don't have to trust the organizer for.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0713",
+  "theme_color": "#0a0713",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

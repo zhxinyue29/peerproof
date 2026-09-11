@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PeerProof">
+  <!-- Three peers, each vouching for the other two. The mark is the mechanism: no centre, no
+       node that decides for the others. Drawn full-bleed so the same file works as a maskable
+       icon, with the graph inside the centre 80% that a circular mask keeps. -->
+  <rect width="512" height="512" fill="#0a0713"/>
+  <g stroke="#8e7bff" stroke-width="18" stroke-linecap="round" opacity="0.55">
+    <line x1="256" y1="138" x2="358" y2="315"/>
+    <line x1="358" y1="315" x2="154" y2="315"/>
+    <line x1="154" y1="315" x2="256" y2="138"/>
+  </g>
+  <g fill="#6e54ff">
+    <circle cx="256" cy="138" r="46"/>
+    <circle cx="358" cy="315" r="46"/>
+    <circle cx="154" cy="315" r="46"/>
+  </g>
+</svg>

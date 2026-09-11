@@ -2,9 +2,16 @@ import type { Metadata, Viewport } from "next";
 import { IdentityProvider } from "@/components/IdentityProvider";
 import "./globals.css";
 
+// The manifest is what makes "add to home screen" produce an icon and a standalone window rather
+// than a bookmark. Worth the four files: attendees reach this from a link at the door, and an app
+// store install is exactly the friction the passkey path exists to remove — but once they are here,
+// the door screen should not look like a browser tab.
 export const metadata: Metadata = {
   title: "PeerProof",
   description: "Attendance you don't have to trust the organizer for.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "PeerProof", statusBarStyle: "black-translucent" },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 // Used standing up in a crowded room, one-handed, with the camera open. Without an explicit
