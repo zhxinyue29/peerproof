@@ -1,3 +1,12 @@
 node_modules/
-generated/
 .env
+
+# Codegen output. `envio codegen` rewrites all of it, and the hosted service runs codegen itself
+# during deployment, so committing it only creates something that can go stale against the schema.
+#
+# envio 3.x writes .envio/ and envio-env.d.ts. It no longer writes generated/ — that rule is kept
+# because the version is pinned but the pin will eventually move, and an obsolete ignore costs
+# nothing next to accidentally committing a regenerated tree.
+.envio/
+envio-env.d.ts
+generated/

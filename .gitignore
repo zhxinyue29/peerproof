@@ -10,6 +10,9 @@ web/out/
 web/node_modules/
 indexer/node_modules/
 indexer/generated/
+indexer/.envio/
+indexer/envio-env.d.ts
+cre/settle-workflow/node_modules/
 contracts/out/
 contracts/cache/
 
