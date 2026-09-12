@@ -27,6 +27,15 @@ chains:
   # the indexer scan 60M+ empty blocks.
   - id: 10143
     start_block: 61225037
+    # Stated explicitly because leaving it out did not work. The schema says RPC is only a fallback
+    # "for chains supported by HyperSync" — but the hosted deployment reported `Source: RPC` and sat
+    # at 0% with zero events, so it does not consider Monad testnet supported. The endpoint is live:
+    # GET https://monad-testnet.hypersync.xyz/height returns a block height, no token required.
+    #
+    # This is not a nicety. The contract was deployed ~274,000 blocks before the chain tip, and
+    # walking that over plain RPC is the difference between minutes and not finishing.
+    hypersync_config:
+      url: https://monad-testnet.hypersync.xyz
     contracts:
       - name: AttendanceEscrow
         address:
