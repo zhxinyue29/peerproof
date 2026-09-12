@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IdentityProvider } from "@/components/IdentityProvider";
+import PrivyClientProvider from "@/components/PrivyClientProvider";
 import "./globals.css";
 
 // The manifest is what makes "add to home screen" produce an icon and a standalone window rather
@@ -28,7 +29,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-ink text-fg antialiased">
-        <IdentityProvider>{children}</IdentityProvider>
+        {/* Privy outside IdentityProvider: IdentityProvider reads Privy's hooks to build a signer,
+            so it has to sit inside the context, not beside it. */}
+        <PrivyClientProvider>
+          <IdentityProvider>{children}</IdentityProvider>
+        </PrivyClientProvider>
       </body>
     </html>
   );
