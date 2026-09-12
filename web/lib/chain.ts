@@ -6,7 +6,7 @@ import {
   type Account,
   type Address,
 } from "viem";
-import { monad } from "viem/chains";
+import { monad, monadTestnet } from "viem/chains";
 
 /// Local anvil, used by scripts/dev-chain.sh. Real transactions, no real money.
 const anvil = defineChain({
@@ -17,15 +17,29 @@ const anvil = defineChain({
 });
 
 const isLocal = process.env.NEXT_PUBLIC_CHAIN === "local";
+const isTestnet = process.env.NEXT_PUBLIC_CHAIN === "testnet";
 
-export const chain = isLocal ? anvil : monad;
+/// All three branches matter. This used to read `isLocal ? anvil : monad`, which meant a testnet
+/// build got the *mainnet* chain object (143) alongside a testnet RPC URL. viem signs EIP-155 with
+/// `chain.id`, so every write — register, attest, claim, settle — would have been signed for 143
+/// and rejected by a 10143 node.
+///
+/// It never surfaced because local runs use anvil, where the id does match, and everything done on
+/// testnet so far went through forge and cast rather than the browser. It would have surfaced on
+/// camera.
+export const chain = isLocal ? anvil : isTestnet ? monadTestnet : monad;
 export const isLocalChain = isLocal;
 
 /// Monad's public RPCs are rate limited (25 rps on the default endpoint) and the attestation
 /// burst pushes 150+ writes through in two minutes, so production reads should fan out across
 /// the alternates before this sees real traffic.
 const RPC_URL =
-  process.env.NEXT_PUBLIC_RPC_URL ?? (isLocal ? "http://127.0.0.1:8545" : "https://rpc.monad.xyz");
+  process.env.NEXT_PUBLIC_RPC_URL ??
+  (isLocal
+    ? "http://127.0.0.1:8545"
+    : isTestnet
+      ? "https://testnet-rpc.monad.xyz"
+      : "https://rpc.monad.xyz");
 
 export const ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_ADDRESS ?? "") as Address;
 export const hasDeployment = /^0x[0-9a-fA-F]{40}$/.test(ESCROW_ADDRESS);
