@@ -1,11 +1,13 @@
 # Fallback host: GitHub Pages needs no new account, which matters when signup flows demand an SMS
 # code you can't receive. The app is a static export with no server, so Pages is sufficient.
 #
-# Before the first run, set these repository variables (Settings → Secrets and variables →
-# Actions → Variables):
-#   ESCROW_ADDRESS   the deployed AttendanceEscrow
-#   EVENT_ID         which event the site points at (default 1)
-#   NETWORK          testnet or mainnet (default testnet)
+# Every value below defaults to the live testnet deployment, so a fresh clone deploys a working
+# site with no setup. Override any of them with repository variables (Settings → Secrets and
+# variables → Actions → Variables): NETWORK, ESCROW_ADDRESS, EVENT_ID, DEPLOY_BLOCK.
+#
+# They were variables with no defaults, and nobody had set them — so the site built and deployed
+# green while serving "No contract configured". A workflow that succeeds at shipping a broken page
+# is worse than one that fails.
 #
 # Then enable Settings → Pages → Source: GitHub Actions.
 #
@@ -50,9 +52,16 @@ jobs:
           # because they would be inlined into public JavaScript.
           NEXT_PUBLIC_CHAIN: ${{ vars.NETWORK || 'testnet' }}
           NEXT_PUBLIC_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc.monad.xyz' || 'https://testnet-rpc.monad.xyz' }}
-          NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || 'https://testnet-rpc.monad.xyz' }}
-          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS }}
+          # Not the same endpoint as above, and not a preference. Monad's default testnet RPC
+          # answers eth_getLogs with "limited to a 100 range"; our chunk size is 900, so /verify
+          # would fail on every request. Measured: drpc allows 10,000 per request.
+          NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || 'https://monad-testnet.drpc.org' }}
+          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1' }}
           NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '1' }}
+          # Without this the reader falls back to scanning the last 20,000 blocks. The contract was
+          # deployed ~274,000 blocks ago, so the graph would come back empty and look like nothing
+          # ever happened.
+          NEXT_PUBLIC_DEPLOY_BLOCK: ${{ vars.DEPLOY_BLOCK || '61225037' }}
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
