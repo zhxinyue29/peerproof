@@ -27,15 +27,37 @@ chains:
   # the indexer scan 60M+ empty blocks.
   - id: 10143
     start_block: 61225037
-    # Stated explicitly because leaving it out did not work. The schema says RPC is only a fallback
-    # "for chains supported by HyperSync" — but the hosted deployment reported `Source: RPC` and sat
-    # at 0% with zero events, so it does not consider Monad testnet supported. The endpoint is live:
-    # GET https://monad-testnet.hypersync.xyz/height returns a block height, no token required.
+    # Sync over RPC, deliberately, with the block interval pinned.
     #
-    # This is not a nicety. The contract was deployed ~274,000 blocks before the chain tip, and
-    # walking that over plain RPC is the difference between minutes and not finishing.
-    hypersync_config:
-      url: https://monad-testnet.hypersync.xyz
+    # HyperSync would be faster, but since V3 it needs an API token supplied as ENVIO_API_TOKEN —
+    # and environment variables are a paid feature on Envio Cloud, so on the free tier there is no
+    # way to hand the indexer a token at all. Naming the HyperSync URL here did nothing; the
+    # deployment kept reporting `Source: RPC`.
+    #
+    # It then sat at latest_processed_block = -1 — not slow, not started. No RPC was configured
+    # either, and the default block interval is far above the 100 that Monad's own endpoint allows
+    # (`eth_getLogs is limited to a 100 range`), so every request would have been rejected and
+    # backed off from.
+    #
+    # 100 is not a guess. Measured across four endpoints on 12 Sep 2026, asking for logs from this
+    # contract:
+    #
+    #   testnet-rpc.monad.xyz      100 ok, 1000 → "eth_getLogs is limited to a 100 range"
+    #   monad-testnet.drpc.org     "the method eth_getLogs does not exist/is not available"
+    #   10143.rpc.hypersync.xyz    rejected without a token
+    #   monad-testnet-rpc.publicnode.com   no response
+    #
+    # So Monad's own endpoint is the only one that serves logs at all, and it caps at 100. drpc used
+    # to allow 10,000 and no longer serves the method — worth re-measuring rather than trusting any
+    # of this, including a larger ceiling here, which would make every request fail and back off.
+    #
+    # ~274,000 blocks at 100 each is ~2,700 requests. Unattractive, but it is a one-time historical
+    # sync and it is the reason to run an indexer rather than have every page load do this.
+    rpc:
+      url: https://testnet-rpc.monad.xyz
+      for: sync
+      initial_block_interval: 100
+      interval_ceiling: 100
     contracts:
       - name: AttendanceEscrow
         address:

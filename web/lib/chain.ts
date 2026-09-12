@@ -66,25 +66,32 @@ export function walletClientFor(account: Account) {
   });
 }
 
-/// Log reads go through a separate endpoint, because the per-request block cap differs wildly and
-/// it decides whether a page load is two requests or a hundred. Measured against live nodes:
+/// Log reads go through a separate endpoint because the per-request block cap decides whether a
+/// page load is two requests or two thousand. Re-measured against live nodes on 12 Sep 2026, asking
+/// for this contract's logs on testnet:
 ///
-///   mainnet  rpc.monad.xyz            100 blocks    rpc3.monad.xyz (Ankr)   1,000
-///   testnet  testnet-rpc.monad.xyz    100 blocks    monad-testnet.drpc.org  1,000
+///   testnet-rpc.monad.xyz             100 ok · 1000 → "eth_getLogs is limited to a 100 range"
+///   monad-testnet.drpc.org            "the method eth_getLogs does not exist/is not available"
+///   10143.rpc.hypersync.xyz           rejected without a token
+///   monad-testnet-rpc.publicnode.com  no response
 ///
-/// A ten-minute attestation window spans ~2,000 blocks at 300ms, so the default endpoints are not
-/// usable for history at all — a 900-block chunk against a 100-block cap is rejected outright,
-/// which is exactly how /verify broke.
+/// So on testnet there is exactly one endpoint that serves logs, and it caps at 100. This used to
+/// point at drpc on the strength of a 1,000-block measurement that no longer holds — drpc has since
+/// withdrawn the method entirely, which would have made /verify fail on every request.
+///
+/// Re-measure before raising the chunk size. A chunk above the cap is not slower, it is rejected.
 const LOGS_RPC_URL =
   process.env.NEXT_PUBLIC_LOGS_RPC_URL ||
   (isLocal
     ? RPC_URL
     : chain.id === 143
       ? "https://rpc3.monad.xyz"
-      : "https://monad-testnet.drpc.org");
+      : "https://testnet-rpc.monad.xyz");
 
-/// Kept just under the endpoint's cap. Overridable so a swap of endpoint can raise it.
-export const LOGS_CHUNK = BigInt(process.env.NEXT_PUBLIC_LOGS_CHUNK ?? (isLocal ? "5000" : "900"));
+/// Kept at the endpoint's cap, not under it. Overridable so a swap of endpoint can raise it.
+export const LOGS_CHUNK = BigInt(
+  process.env.NEXT_PUBLIC_LOGS_CHUNK ?? (isLocal ? "5000" : chain.id === 143 ? "900" : "100"),
+);
 
 /// Scanning starts at the deployment block rather than a blind lookback: the contract cannot have
 /// emitted anything before it existed, and on a chain producing 3 blocks a second the difference

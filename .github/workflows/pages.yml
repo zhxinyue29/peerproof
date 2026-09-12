@@ -52,10 +52,10 @@ jobs:
           # because they would be inlined into public JavaScript.
           NEXT_PUBLIC_CHAIN: ${{ vars.NETWORK || 'testnet' }}
           NEXT_PUBLIC_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc.monad.xyz' || 'https://testnet-rpc.monad.xyz' }}
-          # Not the same endpoint as above, and not a preference. Monad's default testnet RPC
-          # answers eth_getLogs with "limited to a 100 range"; our chunk size is 900, so /verify
-          # would fail on every request. Measured: drpc allows 10,000 per request.
-          NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || 'https://monad-testnet.drpc.org' }}
+          # Left unset on testnet so lib/chain.ts picks the endpoint and the matching chunk size
+          # together. They are one decision: a chunk above the endpoint's cap is rejected outright,
+          # not merely slow, so splitting them across two files is how they drift apart.
+          NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || '' }}
           NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1' }}
           NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '1' }}
           # Without this the reader falls back to scanning the last 20,000 blocks. The contract was

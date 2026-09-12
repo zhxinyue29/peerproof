@@ -26,9 +26,11 @@ case "$NETWORK" in
   testnet)
     CHAIN_ID=10143
     RPC=https://testnet-rpc.monad.xyz
-    # The default testnet endpoint caps eth_getLogs at 100 blocks, which cannot cover an
-    # attestation window. drpc allows 1,000 (measured).
-    LOGS_RPC=https://monad-testnet.drpc.org
+    # Left empty so lib/chain.ts picks the endpoint and its matching chunk size together. This
+    # used to force drpc on the strength of a 1,000-block measurement; drpc has since withdrawn
+    # eth_getLogs entirely, and hardcoding it here meant that failure could not be fixed by
+    # fixing chain.ts.
+    LOGS_RPC=
     ;;
   mainnet)
     CHAIN_ID=143
