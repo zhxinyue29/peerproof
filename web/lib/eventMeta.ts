@@ -1,29 +1,49 @@
-/// Display-only event metadata.
+"use client";
+
+import { useEffect, useState } from "react";
+import { readListing, hasDirectory } from "@/lib/directory";
+
+/// Where an event's words come from.
 ///
-/// The contract deliberately stores none of this — it holds only the fields that decide where
-/// money goes. Titles and venue names have no bearing on settlement, so putting them on chain
-/// would be paying gas for decoration and giving the organizer another parameter to fiddle with.
+/// They used to come from a hardcoded map in this file, which meant only somebody editing the
+/// repository could name an event — every event an organizer actually created showed up as
+/// "PeerProof event". They now come from EventDirectory, a contract that holds no money and cannot
+/// affect who gets paid.
 ///
-/// Editable at any time. Nothing here can change a payout.
+/// The escrow still stores none of this. A title has no bearing on settlement, so it has no
+/// business in the contract that decides settlement.
 export type EventMeta = {
   title: string;
-  /// Free-form, e.g. "Sat 21 Sep · 19:00 · Some café". Authoritative timing lives on chain; this
-  /// is the human-readable line shown before anyone connects. Omit rather than fill with
-  /// placeholder text — it renders in production.
-  when?: string;
-};
-
-export const eventMeta: Record<string, EventMeta> = {
-  // Keyed by event id, as a string.
-  "1": {
-    title: "Monad meetup — attendance-backed RSVP",
-  },
+  blurb: string;
+  url: string;
 };
 
 export const fallbackMeta: EventMeta = {
   title: "PeerProof event",
+  blurb: "",
+  url: "",
 };
 
-export function metaFor(eventId: bigint): EventMeta {
-  return eventMeta[eventId.toString()] ?? fallbackMeta;
+/// Returns the fallback until the read lands, so a screen never blocks on a description. The
+/// numbers are what matter; the words are decoration that arrives a moment later.
+export function useEventMeta(eventId: bigint): EventMeta {
+  const [meta, setMeta] = useState<EventMeta>(fallbackMeta);
+
+  useEffect(() => {
+    if (!hasDirectory) return;
+    let live = true;
+    void readListing(eventId)
+      .then((l) => {
+        if (!live) return;
+        if (l.title || l.blurb || l.url) {
+          setMeta({ title: l.title || fallbackMeta.title, blurb: l.blurb, url: l.url });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [eventId]);
+
+  return meta;
 }

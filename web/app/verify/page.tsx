@@ -18,7 +18,7 @@ import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } f
 import { both, fiat, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
-import { metaFor } from "@/lib/eventMeta";
+import { useEventMeta } from "@/lib/eventMeta";
 
 /// Public, no key required. The whole product claims nobody has to be trusted, and a claim like
 /// that is worth nothing if the only way to check it is to believe our own UI. Everything here is
@@ -27,7 +27,7 @@ export default function VerifyPage() {
   const { ev } = useEvent(null, 4000);
   const [history, setHistory] = useState<EventHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const meta = metaFor(eventId());
+  const meta = useEventMeta(eventId());
 
   useEffect(() => {
     if (!hasDeployment) return;
@@ -60,7 +60,7 @@ export default function VerifyPage() {
         <Notice tone="warn">Local chain — real transactions, fake money.</Notice>
       )}
 
-      <AppHeader title="Public record" back="/" />
+      <AppHeader title="Public record" back="/events" />
 
       <header className="space-y-2">
         <h1 className="text-[24px] font-medium leading-[1.2] tracking-tight md:text-[34px]">

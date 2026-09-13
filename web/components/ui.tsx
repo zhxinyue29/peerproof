@@ -108,8 +108,10 @@ export function AppHeader({
           PEERPROOF
         </span>
       )}
-      {back && <span className="flex-1 truncate text-[15px] font-medium">{title}</span>}
-      {!back && <span className="flex-1" />}
+      {/* A root screen shows the brand, a sub-screen shows where you came from — but both show
+          the title. It used to be dropped on root screens, which left the directory with no
+          heading at all and made the prop look optional when it is not. */}
+      <span className="flex-1 truncate text-[15px] font-medium">{title}</span>
       {right}
     </header>
   );

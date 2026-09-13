@@ -16,7 +16,7 @@ import {
   syncChainClock,
 } from "@/lib/chain";
 import { makeBeaconCode } from "@/lib/codes";
-import { metaFor } from "@/lib/eventMeta";
+import { useEventMeta } from "@/lib/eventMeta";
 import { Button, Notice, Shell } from "@/components/ui";
 
 /// The venue display. Put this on a laptop or spare phone at the door: it is what makes an
@@ -34,7 +34,7 @@ export default function VenuePage() {
   const [secondsLeft, setSecondsLeft] = useState(Number(BEACON_EPOCH));
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const meta = metaFor(eventId());
+  const meta = useEventMeta(eventId());
 
   const load = useCallback((pk: string): boolean => {
     const trimmed = pk.trim();

@@ -46,8 +46,21 @@ export function shortenError(e: unknown): string {
   return m ? m[1] : s.split("\n")[0].slice(0, 160);
 }
 
+/// Written for an attestation window measured in minutes, where m:ss is exactly right. A
+/// registration window can be a day long, and "1433:18" is not a length anyone can read — so past
+/// an hour it switches to units.
 export function countdown(seconds: number): string {
   if (seconds <= 0) return "0:00";
+  if (seconds >= 86_400) {
+    const d = Math.floor(seconds / 86_400);
+    const h = Math.floor((seconds % 86_400) / 3_600);
+    return h ? `${d}d ${h}h` : `${d}d`;
+  }
+  if (seconds >= 3_600) {
+    const h = Math.floor(seconds / 3_600);
+    const m = Math.floor((seconds % 3_600) / 60);
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;

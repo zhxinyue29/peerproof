@@ -21,7 +21,7 @@ import {
 import { eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
 import { mon, shortenError } from "@/lib/format";
 import { phaseOf, projectedPayout, useEvent } from "@/lib/useEvent";
-import { metaFor } from "@/lib/eventMeta";
+import { useEventMeta } from "@/lib/eventMeta";
 
 /// The page an attendee arrives on from a link. One event, no list: a list of one is a shell.
 export default function LandingPage() {
@@ -31,7 +31,7 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const phase = phaseOf(ev);
-  const meta = metaFor(eventId());
+  const meta = useEventMeta(eventId());
 
   async function register() {
     if (!signer || !ev) return;
@@ -73,7 +73,15 @@ export default function LandingPage() {
     <Shell>
       {isLocalChain && <Notice tone="warn">Local chain — real transactions, fake money.</Notice>}
 
-      <AppHeader title="Event" />
+      <AppHeader
+        title="Event"
+        back="/events"
+        right={
+          <Link href="/verify" className="text-[13px] text-faint underline decoration-line-2">
+            public record
+          </Link>
+        }
+      />
 
       <Split
         main={
@@ -82,7 +90,7 @@ export default function LandingPage() {
               <h1 className="text-[27px] font-medium leading-[1.15] tracking-tight md:text-[38px] md:leading-[1.1]">
                 {meta.title}
               </h1>
-              {meta.when && <p className="text-[13px] text-dim md:text-[15px]">{meta.when}</p>}
+              {meta.blurb && <p className="text-[13px] leading-relaxed text-dim md:text-[15px]">{meta.blurb}</p>}
               <p className="pt-1 text-[13px] leading-relaxed text-dim md:max-w-[46ch] md:text-[15px]">
                 Put a deposit down to hold your place. Show up, vouch for the people around you,
                 and the contract gives it back — plus a share of whatever the no-shows leave

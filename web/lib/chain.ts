@@ -65,6 +65,19 @@ export function eventId(): bigint {
 }
 
 export async function resolveEventId(): Promise<bigint> {
+  // `?event=3` wins over everything: it is how the directory hands someone a specific event.
+  //
+  // Read here rather than at module load on purpose. Module load happens before React hydrates, so
+  // a URL-derived value would make the client's first render disagree with the prerendered HTML.
+  // Resolving inside the startup effect means the first render matches the server and the id
+  // arrives on the next tick.
+  if (typeof window !== "undefined") {
+    const fromUrl = new URLSearchParams(window.location.search).get("event");
+    if (fromUrl && /^\d+$/.test(fromUrl) && BigInt(fromUrl) > 0n) {
+      currentEventId = BigInt(fromUrl);
+      return currentEventId;
+    }
+  }
   if (!FOLLOWS_LATEST_EVENT || !hasDeployment) return currentEventId;
   const next = (await publicClient.readContract({
     address: ESCROW_ADDRESS,

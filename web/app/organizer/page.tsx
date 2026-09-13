@@ -43,7 +43,7 @@ export default function OrganizerPage() {
 
       <AppHeader
         title="Organizer"
-        back="/"
+        back="/events"
         right={
           <Link href="/verify" className="text-[13px] text-faint underline decoration-line-2">
             public record
