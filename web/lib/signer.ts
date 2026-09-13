@@ -24,7 +24,17 @@ export type Signer = {
   attest: LocalAccount;
   /// True when every write pops a confirmation dialog.
   prompts: boolean;
-  write: (args: { functionName: string; args: readonly unknown[]; value?: bigint; gas?: bigint }) => Promise<Hex>;
+  /// Defaults to the escrow and its ABI. `to`/`abi` override that — the event directory is a
+  /// second contract, and routing it through here keeps one code path for "sign and send",
+  /// whichever of the three identity kinds is behind it.
+  write: (args: {
+    functionName: string;
+    args: readonly unknown[];
+    value?: bigint;
+    gas?: bigint;
+    to?: Address;
+    abi?: Abi;
+  }) => Promise<Hex>;
 };
 
 export function passkeySigner(account: LocalAccount): Signer {
@@ -33,10 +43,10 @@ export function passkeySigner(account: LocalAccount): Signer {
     address: account.address,
     attest: account,
     prompts: false,
-    write: async ({ functionName, args, value, gas }) => {
+    write: async ({ functionName, args, value, gas, to, abi }) => {
       const { request } = await publicClient.simulateContract({
-        address: ESCROW_ADDRESS,
-        abi: attendanceEscrowAbi,
+        address: to ?? ESCROW_ADDRESS,
+        abi: abi ?? attendanceEscrowAbi,
         functionName,
         args,
         account,
@@ -58,12 +68,14 @@ export function walletSigner(
     address: owner,
     attest,
     prompts: true,
-    write: async ({ functionName, args, value, gas }) => {
+    write: async ({ functionName, args, value, gas, to, abi }) => {
+      const target = to ?? ESCROW_ADDRESS;
+      const useAbi = (abi ?? attendanceEscrowAbi) as Abi;
       // Simulate against the wallet address so a revert is caught before the user is asked to
       // confirm anything. Monad bills gas on the limit, so a doomed write is not free either.
       await publicClient.simulateContract({
-        address: ESCROW_ADDRESS,
-        abi: attendanceEscrowAbi,
+        address: target,
+        abi: useAbi,
         functionName,
         args,
         account: owner,
@@ -73,12 +85,8 @@ export function walletSigner(
       return walletSendTransaction(
         {
           from: owner,
-          to: ESCROW_ADDRESS,
-          data: encodeFunctionData({
-            abi: attendanceEscrowAbi as Abi,
-            functionName,
-            args: args as unknown[],
-          }),
+          to: target,
+          data: encodeFunctionData({ abi: useAbi, functionName, args: args as unknown[] }),
           value,
           gas,
         },

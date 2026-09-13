@@ -18,6 +18,8 @@ import {
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
+import { DIRECTORY_ADDRESS, describeGas, hasDirectory } from "@/lib/directory";
+import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 
 export default function OrganizerPage() {
@@ -261,8 +263,11 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [capacity, setCapacity] = useState("40");
   const [minQuorum, setMinQuorum] = useState("10");
   const [k, setK] = useState("3");
-  const [registerMins, setRegisterMins] = useState("10");
-  const [windowMins, setWindowMins] = useState("10");
+  const [registerMins, setRegisterMins] = useState("60");
+  const [windowMins, setWindowMins] = useState("180");
+  const [title, setTitle] = useState("");
+  const [blurb, setBlurb] = useState("");
+  const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: bigint; beacon: string } | null>(null);
@@ -307,7 +312,28 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         abi,
         functionName: "nextEventId",
       })) as bigint;
-      setCreated({ id: next - 1n, beacon: beaconPk });
+      const id = next - 1n;
+      setCreated({ id, beacon: beaconPk });
+
+      // A second transaction, deliberately. The escrow stores nothing but the fields that decide
+      // where money goes, so the description lives in EventDirectory — and an event that exists
+      // without a description is a listing that reads badly, not a broken event. Failing here must
+      // not look like the event failed.
+      if (hasDirectory && (title || blurb || url)) {
+        try {
+          setNotice("Saving the description…");
+          await signer.write({
+            functionName: "describe",
+            args: [id, title, blurb, url],
+            gas: describeGas(title, blurb, url),
+            to: DIRECTORY_ADDRESS,
+            abi: eventDirectoryAbi,
+          });
+          setNotice(null);
+        } catch (e) {
+          setNotice(`Event created, but the description didn't save: ${shortenError(e)}`);
+        }
+      }
       await onCreated();
     } catch (e) {
       setNotice(shortenError(e));
@@ -353,6 +379,36 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       </p>
 
       {notice && <Notice tone="bad">{notice}</Notice>}
+
+      {hasDirectory ? (
+        <div className="space-y-2.5 rounded-xl border border-line bg-panel p-3.5">
+          <Eyebrow>what is this event?</Eyebrow>
+          <Field label="Title" value={title} onChange={setTitle} hint="Shown in the listing" />
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] uppercase tracking-wide text-faint">
+              Description
+            </span>
+            <textarea
+              value={blurb}
+              onChange={(e) => setBlurb(e.target.value)}
+              rows={3}
+              maxLength={600}
+              placeholder="Who it's for, what happens, where."
+              className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[15px] text-fg"
+            />
+          </label>
+          <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
+          <p className="text-[11px] leading-relaxed text-faint">
+            Saved to a second contract that holds no money — it cannot affect who gets paid. Costs
+            about {fiat((describeGas(title, blurb, url) * 102n) / 1_000_000_000n)} in gas, charged
+            on length.
+          </p>
+        </div>
+      ) : (
+        <Notice>
+          Deploy the directory above to give this event a title and description.
+        </Notice>
+      )}
 
       <Button onClick={() => void submit()} disabled={busy} className="w-full">
         {busy ? "Creating…" : "Create event"}
