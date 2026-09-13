@@ -57,7 +57,7 @@ jobs:
           # not merely slow, so splitting them across two files is how they drift apart.
           NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || '' }}
           NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1' }}
-          NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '1' }}
+          NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '3' }}
           # Without this the reader falls back to scanning the last 20,000 blocks. The contract was
           # deployed ~274,000 blocks ago, so the graph would come back empty and look like nothing
           # ever happened.
