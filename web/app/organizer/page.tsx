@@ -9,7 +9,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
   ESCROW_ADDRESS,
-  EVENT_ID,
+  eventId,
   GAS_LIMITS,
   chainNowMs,
   hasDeployment,
@@ -96,7 +96,7 @@ function Dashboard() {
           address: ESCROW_ADDRESS,
           abi,
           functionName: "fallbackAvailable",
-          args: [EVENT_ID],
+          args: [eventId()],
         }),
       );
     };
@@ -202,7 +202,7 @@ function FallbackForm({
     try {
       const hash = await signer!.write({
         functionName: "organizerCheckIn",
-        args: [EVENT_ID, list as `0x${string}`[]],
+        args: [eventId(), list as `0x${string}`[]],
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setText("");

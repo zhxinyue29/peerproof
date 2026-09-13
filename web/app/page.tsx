@@ -18,7 +18,7 @@ import {
   Split,
   Stat,
 } from "@/components/ui";
-import { EVENT_ID, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
+import { eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
 import { mon, shortenError } from "@/lib/format";
 import { phaseOf, projectedPayout, useEvent } from "@/lib/useEvent";
 import { metaFor } from "@/lib/eventMeta";
@@ -31,7 +31,7 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const phase = phaseOf(ev);
-  const meta = metaFor(EVENT_ID);
+  const meta = metaFor(eventId());
 
   async function register() {
     if (!signer || !ev) return;
@@ -42,7 +42,7 @@ export default function LandingPage() {
       // contract verifies rotating codes against whatever is registered here.
       const hash = await signer.write({
         functionName: "register",
-        args: [EVENT_ID, signer.attest.address],
+        args: [eventId(), signer.attest.address],
         value: ev.deposit,
         gas: GAS_LIMITS.register,
       });

@@ -7,6 +7,8 @@ import {
   type Address,
 } from "viem";
 import { monad, monadTestnet } from "viem/chains";
+// abi.ts imports nothing, so this cannot close a cycle.
+import { attendanceEscrowAbi } from "@/lib/abi";
 
 /// Local anvil, used by scripts/dev-chain.sh. Real transactions, no real money.
 const anvil = defineChain({
@@ -43,7 +45,38 @@ const RPC_URL =
 
 export const ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_ADDRESS ?? "") as Address;
 export const hasDeployment = /^0x[0-9a-fA-F]{40}$/.test(ESCROW_ADDRESS);
-export const EVENT_ID = BigInt(process.env.NEXT_PUBLIC_EVENT_ID ?? "1");
+/// Which event this build shows. A number pins it; "latest" asks the contract.
+///
+/// Pinning is right for a submission — the link should always open the same event. It is wrong for
+/// testing, because a new event then needs a config change and a redeploy, and by the time that
+/// lands the registration window has usually closed. That cost four events before this existed.
+///
+/// "latest" reads `nextEventId` and takes the one below it, so creating an event and reloading the
+/// page is the whole procedure.
+const CONFIGURED_EVENT = process.env.NEXT_PUBLIC_EVENT_ID?.trim() || "latest";
+export const FOLLOWS_LATEST_EVENT = CONFIGURED_EVENT === "latest";
+
+let currentEventId = FOLLOWS_LATEST_EVENT ? 1n : BigInt(CONFIGURED_EVENT);
+
+/// Not reactive. Callers already re-render on their own polling, so a resolution that lands a
+/// moment later is picked up on the next tick rather than needing to push through React.
+export function eventId(): bigint {
+  return currentEventId;
+}
+
+export async function resolveEventId(): Promise<bigint> {
+  if (!FOLLOWS_LATEST_EVENT || !hasDeployment) return currentEventId;
+  const next = (await publicClient.readContract({
+    address: ESCROW_ADDRESS,
+    abi: attendanceEscrowAbi,
+    functionName: "nextEventId",
+  })) as bigint;
+  // nextEventId starts at 1 and post-increments, so the newest event is one below it. Before any
+  // event exists there is nothing to point at; leave it at 1 so the page reports "not found"
+  // rather than reading event 0.
+  currentEventId = next > 1n ? next - 1n : 1n;
+  return currentEventId;
+}
 
 /// viem defaults to a 4000ms polling interval, which would report ~4s for an attestation that
 /// actually settled in 300ms — and the on-screen latency is the entire point of this product.

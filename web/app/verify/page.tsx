@@ -14,7 +14,7 @@ import {
   Skeleton,
   Split,
 } from "@/components/ui";
-import { ESCROW_ADDRESS, EVENT_ID, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
+import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
 import { both, fiat, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
@@ -27,13 +27,13 @@ export default function VerifyPage() {
   const { ev } = useEvent(null, 4000);
   const [history, setHistory] = useState<EventHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const meta = metaFor(EVENT_ID);
+  const meta = metaFor(eventId());
 
   useEffect(() => {
     if (!hasDeployment) return;
     const load = async () => {
       try {
-        setHistory(await readHistory(EVENT_ID));
+        setHistory(await readHistory(eventId()));
         setError(null);
       } catch (e) {
         setError(shortenError(e));
@@ -165,7 +165,7 @@ export default function VerifyPage() {
         <div className="space-y-2 text-xs text-faint">
         <p>
           Contract <span className="font-mono">{ESCROW_ADDRESS}</span> · event{" "}
-          {EVENT_ID.toString()}
+          {eventId().toString()}
           {history && ` · blocks ${history.fromBlock}–${history.toBlock}`}
         </p>
         {/* Named, not hidden. A page arguing "do not take our word for it" has to say which reader

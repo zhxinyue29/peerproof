@@ -5,10 +5,11 @@ import type { Address } from "viem";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
   ESCROW_ADDRESS,
-  EVENT_ID,
+  eventId,
   chainNowMs,
   hasDeployment,
   publicClient,
+  resolveEventId,
   syncChainClock,
 } from "@/lib/chain";
 
@@ -65,7 +66,7 @@ export function useEvent(address: Address | null, pollMs = 2000) {
       address: ESCROW_ADDRESS,
       abi,
       functionName: "getEvent",
-      args: [EVENT_ID],
+      args: [eventId()],
     });
     setEv({
       organizer: e.organizer,
@@ -88,7 +89,7 @@ export function useEvent(address: Address | null, pollMs = 2000) {
       return;
     }
     const base = { address: ESCROW_ADDRESS, abi } as const;
-    const args = [EVENT_ID, address] as const;
+    const args = [eventId(), address] as const;
     const [registered, received, given, confirmed, claimed, balance] = await Promise.all([
       publicClient.readContract({ ...base, functionName: "isRegistered", args }),
       publicClient.readContract({ ...base, functionName: "attestCount", args }),
@@ -109,7 +110,10 @@ export function useEvent(address: Address | null, pollMs = 2000) {
 
   useEffect(() => {
     if (!hasDeployment) return;
-    void syncChainClock().then(refresh);
+    // Resolve which event before the first read, or the page renders event 1 for a moment and
+    // then swaps — which on a screen showing a deposit is not a flicker anyone should have to
+    // interpret.
+    void Promise.all([syncChainClock(), resolveEventId()]).then(refresh);
     const id = setInterval(() => void refresh(), pollMs);
     return () => clearInterval(id);
   }, [refresh, pollMs]);

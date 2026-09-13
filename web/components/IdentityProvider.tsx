@@ -13,7 +13,7 @@ import {
 } from "@/lib/passkey";
 import { deriveFromWallet, hasInjectedWallet, NoWalletError } from "@/lib/wallet";
 import { passkeySigner, walletSigner, type Signer } from "@/lib/signer";
-import { ESCROW_ADDRESS, EVENT_ID, isLocalChain } from "@/lib/chain";
+import { ESCROW_ADDRESS, eventId, isLocalChain } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 
 /// Loaded only when someone picks the email path, and only ever imported from here — that is what
@@ -81,7 +81,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     setBusy("Waiting for your wallet…");
     setError(null);
     try {
-      const { account, owner } = await deriveFromWallet(ESCROW_ADDRESS, EVENT_ID);
+      const { account, owner } = await deriveFromWallet(ESCROW_ADDRESS, eventId());
       setSigner(walletSigner(owner, account));
     } catch (e) {
       setError(e instanceof NoWalletError ? "No browser wallet found." : shortenError(e));

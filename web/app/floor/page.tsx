@@ -25,7 +25,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import {
   EPOCH,
   ESCROW_ADDRESS,
-  EVENT_ID,
+  eventId,
   GAS_LIMITS,
   chainNowMs,
   currentBeaconEpoch,
@@ -35,6 +35,7 @@ import {
   isLocalChain,
   publicClient,
   secondsLeftInEpoch,
+  resolveEventId,
   syncChainClock,
   walletClientFor,
 } from "@/lib/chain";
@@ -81,7 +82,7 @@ export default function FloorPage() {
       const e = currentEpoch();
       if (e !== shown) {
         shown = e;
-        setPayload(await makePeerCode(signer.attest, ESCROW_ADDRESS, EVENT_ID, e));
+        setPayload(await makePeerCode(signer.attest, ESCROW_ADDRESS, eventId(), e));
       }
     };
     void tick();
@@ -118,7 +119,7 @@ export default function FloorPage() {
         // free either.
         const hash = await signer.write({
           functionName: "attest",
-          args: [EVENT_ID, subject, epoch, code, beacon.epoch, beacon.sig],
+          args: [eventId(), subject, epoch, code, beacon.epoch, beacon.sig],
           gas: GAS_LIMITS.attest,
         });
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -183,7 +184,7 @@ export default function FloorPage() {
     run("Settling…", async () => {
       const hash = await signer!.write({
         functionName: "settle",
-        args: [EVENT_ID],
+        args: [eventId()],
         gas: GAS_LIMITS.settle,
       });
       await publicClient.waitForTransactionReceipt({ hash });
@@ -194,7 +195,7 @@ export default function FloorPage() {
     run("Claiming…", async () => {
       const hash = await signer!.write({
         functionName: "claim",
-        args: [EVENT_ID],
+        args: [eventId()],
         gas: GAS_LIMITS.claim,
       });
       await publicClient.waitForTransactionReceipt({ hash });
@@ -207,7 +208,7 @@ export default function FloorPage() {
     run("Reading beacon…", async () => {
       const venue = privateKeyToAccount(process.env.NEXT_PUBLIC_DEV_BEACON_PK as Hex);
       const bEpoch = currentBeaconEpoch();
-      const b = parseBeaconCode(await makeBeaconCode(venue, ESCROW_ADDRESS, EVENT_ID, bEpoch))!;
+      const b = parseBeaconCode(await makeBeaconCode(venue, ESCROW_ADDRESS, eventId(), bEpoch))!;
       setBeacon({ epoch: b.beaconEpoch, sig: b.sig });
     });
 
@@ -226,7 +227,7 @@ export default function FloorPage() {
       devPeerIndex.current += 1;
       const peer = privateKeyToAccount(pk);
       const epoch = currentEpoch();
-      const p = parsePeerCode(await makePeerCode(peer, ESCROW_ADDRESS, EVENT_ID, epoch))!;
+      const p = parsePeerCode(await makePeerCode(peer, ESCROW_ADDRESS, eventId(), epoch))!;
       await submitAttest(p.subject, p.epoch, p.sig);
     });
 
@@ -253,7 +254,7 @@ export default function FloorPage() {
       const secs = Number(target) - Math.floor(chainNowMs() / 1000) + 5;
       await devRpc("evm_increaseTime", [Math.max(secs, 1)]);
       await devRpc("evm_mine", []);
-      await syncChainClock();
+      await Promise.all([syncChainClock(), resolveEventId()]);
       await refresh();
     });
 

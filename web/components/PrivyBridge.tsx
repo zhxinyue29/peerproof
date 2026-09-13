@@ -6,7 +6,7 @@ import { monadTestnet } from "viem/chains";
 import type { Address } from "viem";
 import { deriveFromWallet, type Eip1193 } from "@/lib/wallet";
 import { walletSigner, type Signer } from "@/lib/signer";
-import { ESCROW_ADDRESS, EVENT_ID } from "@/lib/chain";
+import { ESCROW_ADDRESS, eventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 
 /// Turns a Privy session into the same Signer the wallet path produces. Rendered only once the
@@ -59,7 +59,7 @@ export default function PrivyBridge({
           await wallet.switchChain(monadTestnet.id);
         }
         const provider = (await wallet.getEthereumProvider()) as unknown as Eip1193;
-        const { account } = await deriveFromWallet(ESCROW_ADDRESS, EVENT_ID, provider);
+        const { account } = await deriveFromWallet(ESCROW_ADDRESS, eventId(), provider);
         onSigner(
           walletSigner(wallet.address as Address, account, { provider, kind: "privy" }),
         );

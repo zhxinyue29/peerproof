@@ -7,11 +7,12 @@ import RotatingCode from "@/components/RotatingCode";
 import {
   BEACON_EPOCH,
   ESCROW_ADDRESS,
-  EVENT_ID,
+  eventId,
   chainNowMs,
   currentBeaconEpoch,
   hasDeployment,
   isLocalChain,
+  resolveEventId,
   syncChainClock,
 } from "@/lib/chain";
 import { makeBeaconCode } from "@/lib/codes";
@@ -33,7 +34,7 @@ export default function VenuePage() {
   const [secondsLeft, setSecondsLeft] = useState(Number(BEACON_EPOCH));
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const meta = metaFor(EVENT_ID);
+  const meta = metaFor(eventId());
 
   const load = useCallback((pk: string): boolean => {
     const trimmed = pk.trim();
@@ -53,7 +54,7 @@ export default function VenuePage() {
   }, []);
 
   useEffect(() => {
-    void syncChainClock();
+    void Promise.all([syncChainClock(), resolveEventId()]);
     const saved = localStorage.getItem(STORAGE_KEY);
     // Dev fixtures put a throwaway key in the environment; production never does.
     const fromEnv = isLocalChain ? process.env.NEXT_PUBLIC_DEV_BEACON_PK : undefined;
@@ -74,7 +75,7 @@ export default function VenuePage() {
       const e = currentBeaconEpoch();
       if (e !== shown) {
         shown = e;
-        setPayload(await makeBeaconCode(account, ESCROW_ADDRESS, EVENT_ID, e));
+        setPayload(await makeBeaconCode(account, ESCROW_ADDRESS, eventId(), e));
       }
     };
     void tick();
@@ -147,7 +148,7 @@ export default function VenuePage() {
 
       <div className="text-center text-xs text-faint">
         <p>
-          {meta.title} · event {EVENT_ID.toString()}
+          {meta.title} · event {eventId().toString()}
         </p>
         <p className="mt-1 font-mono">beacon {account.address.slice(0, 10)}…</p>
         <button
