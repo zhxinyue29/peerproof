@@ -10,8 +10,19 @@ import { Button, Notice } from "@/components/ui";
 /// an error state the tallest thing on the landing page — the deposit and the call to action were
 /// below the fold on a phone. The explanation now lives behind a disclosure.
 export default function IdentityGate({ children }: { children: React.ReactNode }) {
-  const { signer, prf, walletAvailable, devMode, busy, error, setUpPasskey, setUpWallet, useDevKey } =
-    useIdentity();
+  const {
+    signer,
+    prf,
+    walletAvailable,
+    privyAvailable,
+    devMode,
+    busy,
+    error,
+    setUpPasskey,
+    setUpWallet,
+    setUpPrivy,
+    useDevKey,
+  } = useIdentity();
 
   if (signer) return <>{children}</>;
   if (prf === null) return <p className="text-sm text-dim">Checking this device…</p>;
@@ -21,17 +32,32 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
       <div className="space-y-3">
         <Notice tone="warn">
           This device can&apos;t hold a passkey key.{" "}
-          {walletAvailable
-            ? "You can take part with a browser wallet instead."
-            : "Open this on a phone, or install a browser wallet."}
+          {privyAvailable
+            ? "Sign in with your email instead — nothing to install."
+            : walletAvailable
+              ? "You can take part with a browser wallet instead."
+              : "Open this on a phone, or install a browser wallet."}
         </Notice>
 
         {error && <Notice tone="bad">{error}</Notice>}
 
         <div className="flex flex-col gap-2">
+          {/* Email first when it is available: it is the only route that asks for nothing the
+              person does not already have. A wallet is a better answer for people who have one,
+              and a dead end for everyone else. */}
+          {privyAvailable && (
+            <Button onClick={setUpPrivy} disabled={!!busy} className="w-full">
+              {busy ?? "Continue with email"}
+            </Button>
+          )}
           {walletAvailable && (
-            <Button onClick={() => void setUpWallet()} disabled={!!busy} className="w-full">
-              {busy ?? "Continue with my wallet"}
+            <Button
+              onClick={() => void setUpWallet()}
+              disabled={!!busy}
+              variant={privyAvailable ? "ghost" : undefined}
+              className="w-full"
+            >
+              {privyAvailable ? "Use a browser wallet" : (busy ?? "Continue with my wallet")}
             </Button>
           )}
           {devMode && (
@@ -83,11 +109,15 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         >
           I already have one
         </Button>
-        {walletAvailable && (
+        {walletAvailable ? (
           <Button onClick={() => void setUpWallet()} disabled={!!busy} variant="ghost" className="flex-1">
             Use a wallet
           </Button>
-        )}
+        ) : privyAvailable ? (
+          <Button onClick={setUpPrivy} disabled={!!busy} variant="ghost" className="flex-1">
+            Use email
+          </Button>
+        ) : null}
       </div>
 
       <p className="text-center text-[11px] text-faint">

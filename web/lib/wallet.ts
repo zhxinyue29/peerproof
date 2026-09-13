@@ -29,7 +29,7 @@ function derivationMessage(escrow: Address, eventId: bigint): string {
   ].join("\n");
 }
 
-type Eip1193 = {
+export type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
 };
 
@@ -57,11 +57,15 @@ export type WalletIdentity = {
   owner: Address;
 };
 
+/// `provider` defaults to the injected wallet, but any EIP-1193 provider works — which is the
+/// whole reason Privy needs no separate derivation path. Its embedded wallet exposes the same
+/// interface, so an email login lands in exactly this function.
 export async function deriveFromWallet(
   escrow: Address,
   eventId: bigint,
+  provider?: Eip1193 | null,
 ): Promise<WalletIdentity> {
-  const eth = injected();
+  const eth = provider ?? injected();
   if (!eth) throw new NoWalletError();
 
   const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Address[];
@@ -85,14 +89,17 @@ export async function deriveFromWallet(
 
 /// Sends a transaction from the connected wallet itself. Used for the deposit and the payout
 /// claim: those are the user's money moving, so they should see a wallet prompt for them.
-export async function walletSendTransaction(tx: {
-  from: Address;
-  to: Address;
-  data: Hex;
-  value?: bigint;
-  gas?: bigint;
-}): Promise<Hex> {
-  const eth = injected();
+export async function walletSendTransaction(
+  tx: {
+    from: Address;
+    to: Address;
+    data: Hex;
+    value?: bigint;
+    gas?: bigint;
+  },
+  provider?: Eip1193 | null,
+): Promise<Hex> {
+  const eth = provider ?? injected();
   if (!eth) throw new NoWalletError();
   return (await eth.request({
     method: "eth_sendTransaction",

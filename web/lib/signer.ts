@@ -1,7 +1,7 @@
 import { encodeFunctionData, type Abi, type Address, type Hex, type LocalAccount } from "viem";
 import { attendanceEscrowAbi } from "@/lib/abi";
 import { ESCROW_ADDRESS, publicClient, walletClientFor } from "@/lib/chain";
-import { walletSendTransaction } from "@/lib/wallet";
+import { walletSendTransaction, type Eip1193 } from "@/lib/wallet";
 
 /// Unifies the two ways in which someone can take part.
 ///
@@ -13,8 +13,11 @@ import { walletSendTransaction } from "@/lib/wallet";
 ///   wallet path  — the wallet is the participant and the derived key is only the code signer. The
 ///                  wallet must confirm each transaction, which is worse, which is why it is the
 ///                  fallback and not the default.
+///   privy path   — mechanically the wallet path, since Privy's embedded wallet is an EIP-1193
+///                  provider like any other. It is named separately only so the interface can say
+///                  which one someone is on.
 export type Signer = {
-  kind: "passkey" | "wallet";
+  kind: "passkey" | "wallet" | "privy";
   /// The registered participant: pays the deposit, submits attestations, receives the payout.
   address: Address;
   /// Signs the rotating attendance codes. Never prompts.
@@ -45,9 +48,13 @@ export function passkeySigner(account: LocalAccount): Signer {
   };
 }
 
-export function walletSigner(owner: Address, attest: LocalAccount): Signer {
+export function walletSigner(
+  owner: Address,
+  attest: LocalAccount,
+  opts?: { provider?: Eip1193 | null; kind?: "wallet" | "privy" },
+): Signer {
   return {
-    kind: "wallet",
+    kind: opts?.kind ?? "wallet",
     address: owner,
     attest,
     prompts: true,
@@ -63,17 +70,20 @@ export function walletSigner(owner: Address, attest: LocalAccount): Signer {
         value,
         gas,
       } as never);
-      return walletSendTransaction({
-        from: owner,
-        to: ESCROW_ADDRESS,
-        data: encodeFunctionData({
-          abi: attendanceEscrowAbi as Abi,
-          functionName,
-          args: args as unknown[],
-        }),
-        value,
-        gas,
-      });
+      return walletSendTransaction(
+        {
+          from: owner,
+          to: ESCROW_ADDRESS,
+          data: encodeFunctionData({
+            abi: attendanceEscrowAbi as Abi,
+            functionName,
+            args: args as unknown[],
+          }),
+          value,
+          gas,
+        },
+        opts?.provider,
+      );
     },
   };
 }

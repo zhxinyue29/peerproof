@@ -1,6 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { privyUsable, usePrivyGate } from "@/components/PrivyClientProvider";
 import {
   checkPrfSupport,
   createAttestIdentity,
@@ -14,15 +16,22 @@ import { passkeySigner, walletSigner, type Signer } from "@/lib/signer";
 import { ESCROW_ADDRESS, EVENT_ID, isLocalChain } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 
+/// Loaded only when someone picks the email path, and only ever imported from here — that is what
+/// keeps 2.1MB of Privy off the four screens that never sign anyone in.
+const PrivyBridge = dynamic(() => import("@/components/PrivyBridge"), { ssr: false });
+
 type Ctx = {
   signer: Signer | null;
   prf: PrfSupport | null;
   walletAvailable: boolean;
+  /// Email sign-in, for people with neither a PRF-capable passkey nor a browser wallet.
+  privyAvailable: boolean;
   devMode: boolean;
   busy: string | null;
   error: string | null;
   setUpPasskey: (mode: "create" | "unlock") => Promise<void>;
   setUpWallet: () => Promise<void>;
+  setUpPrivy: () => void;
   useDevKey: () => void;
   clearError: () => void;
 };
@@ -39,6 +48,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [devMode, setDevMode] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const privyGate = usePrivyGate();
 
   useEffect(() => {
     // The query string and the injected provider do not exist during the static export, so these
@@ -88,21 +98,34 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Mounting Privy is the whole action: PrivyBridge opens the sign-in as soon as it renders.
+  const setUpPrivy = useCallback(() => {
+    setError(null);
+    privyGate.enable();
+  }, [privyGate]);
+
   return (
     <IdentityContext.Provider
       value={{
         signer,
         prf,
         walletAvailable,
+        privyAvailable: privyUsable,
         devMode,
         busy,
         error,
         setUpPasskey,
         setUpWallet,
+        setUpPrivy,
         useDevKey,
         clearError: () => setError(null),
       }}
     >
+      {/* Inside Privy's context (the gate wraps this provider) and inside ours, which is the one
+          place that can read Privy's hooks and hand the result back as a Signer. */}
+      {privyGate.enabled && !signer && (
+        <PrivyBridge onSigner={setSigner} onError={setError} onBusy={setBusy} />
+      )}
       {children}
     </IdentityContext.Provider>
   );
