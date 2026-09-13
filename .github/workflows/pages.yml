@@ -57,7 +57,7 @@ jobs:
           # not merely slow, so splitting them across two files is how they drift apart.
           NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || '' }}
           NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1' }}
-          NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '3' }}
+          NEXT_PUBLIC_EVENT_ID: ${{ vars.EVENT_ID || '4' }}
           # A public client identifier, not a secret — it is inlined into the bundle by design, and
           # what actually restricts its use is the allowed-origins list in the Privy dashboard. The
           # app secret is a different value and is not used here; nothing in this app talks to
