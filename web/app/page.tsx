@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
+import Funding, { needFor } from "@/components/Funding";
 import {
   AppHeader,
   BigNumber,
@@ -150,15 +151,28 @@ export default function LandingPage() {
               </div>
             ) : phase === "registering" ? (
               <IdentityGate>
-                <div className="space-y-3">
-                  {error && <Notice tone="bad">{error}</Notice>}
-                  <Button onClick={() => void register()} disabled={busy || !ev} className="w-full">
-                    {busy ? "Staking…" : ev ? `Stake ${mon(ev.deposit)} and register` : "Loading…"}
-                  </Button>
-                  <p className="text-center text-xs text-faint">
-                    balance {me ? mon(me.balance) : "—"} · you never see a gas prompt
-                  </p>
-                </div>
+                  <div className="space-y-3">
+                    {error && <Notice tone="bad">{error}</Notice>}
+                    {ev && me && (
+                      <Funding
+                        need={needFor(ev.deposit, GAS_LIMITS.register)}
+                        have={me.balance}
+                        what="register"
+                      />
+                    )}
+                    <Button
+                      onClick={() => void register()}
+                      disabled={
+                        busy || !ev || !me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)
+                      }
+                      className="w-full"
+                    >
+                      {busy ? "Staking…" : ev ? `Stake ${mon(ev.deposit)} and register` : "Loading…"}
+                    </Button>
+                    <p className="text-center text-xs text-faint">
+                      balance {me ? mon(me.balance) : "—"} · you never see a gas prompt
+                    </p>
+                  </div>
               </IdentityGate>
             ) : (
               <Notice>Registration for this event has closed.</Notice>

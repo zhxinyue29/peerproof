@@ -6,6 +6,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
 import RotatingCode from "@/components/RotatingCode";
 import Scanner from "@/components/Scanner";
+import PayoutResult from "@/components/PayoutResult";
 import IdentityGate from "@/components/IdentityGate";
 import {
   AppHeader,
@@ -61,6 +62,7 @@ export default function FloorPage() {
 
   const [beacon, setBeacon] = useState<{ epoch: bigint; sig: Hex } | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [claimHash, setClaimHash] = useState<string | null>(null);
   const [payload, setPayload] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(Number(EPOCH));
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -199,6 +201,9 @@ export default function FloorPage() {
         gas: GAS_LIMITS.claim,
       });
       await publicClient.waitForTransactionReceipt({ hash });
+      // Kept so the payout screen can link to it. A number somebody can check beats a number they
+      // have to believe, and that distinction is the whole product.
+      setClaimHash(hash);
       await refresh();
     });
 
@@ -441,25 +446,25 @@ export default function FloorPage() {
 
                 {settled &&
                   (me?.confirmed ? (
-                    <>
-                      <div className="space-y-2.5">
-                        <KeyValue label="Your deposit back" value={mon(ev.deposit)} />
-                        <KeyValue
-                          label="Share of forfeited deposits"
-                          value={mon(ev.sharePerAttendee - ev.deposit)}
-                        />
-                        <div className="border-t border-line pt-2.5">
-                          <KeyValue label="Total" value={mon(ev.sharePerAttendee)} strong />
+                    me.claimed ? (
+                      <PayoutResult deposit={ev.deposit} total={ev.sharePerAttendee} hash={claimHash} />
+                    ) : (
+                      <>
+                        <div className="space-y-2.5">
+                          <KeyValue label="Your deposit back" value={mon(ev.deposit)} />
+                          <KeyValue
+                            label="Share of forfeited deposits"
+                            value={mon(ev.sharePerAttendee - ev.deposit)}
+                          />
+                          <div className="border-t border-line pt-2.5">
+                            <KeyValue label="Total" value={mon(ev.sharePerAttendee)} strong />
+                          </div>
                         </div>
-                      </div>
-                      <Button
-                        onClick={() => void claim()}
-                        disabled={!!busy || me.claimed}
-                        className="w-full"
-                      >
-                        {me.claimed ? "Claimed" : (busy ?? "Claim")}
-                      </Button>
-                    </>
+                        <Button onClick={() => void claim()} disabled={!!busy} className="w-full">
+                          {busy ?? `Claim ${mon(ev.sharePerAttendee)}`}
+                        </Button>
+                      </>
+                    )
                   ) : (
                     <p className="text-[13px] leading-relaxed text-dim">
                       You weren&apos;t confirmed present, so your deposit went to the people who
