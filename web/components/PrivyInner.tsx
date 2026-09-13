@@ -14,7 +14,14 @@ export default function PrivyInner({ children }: { children: React.ReactNode }) 
     <PrivyProvider
       appId={APP_ID}
       config={{
-        loginMethods: ["email", "google", "wallet"],
+        // Only methods enabled in the Privy dashboard may appear here — this list narrows that
+        // set, it cannot add to it. Listing "google" while it was disabled produced a modal that
+        // opened and then refused: "Login with Google not allowed".
+        //
+        // Email is Privy's built-in and needs no dashboard configuration, which is what makes it
+        // the dependable one. Add "google" here only after enabling it under Configure user login
+        // methods.
+        loginMethods: ["email", "wallet"],
         // Someone arriving by email has no wallet. Without this they authenticate and then have
         // nothing to register with.
         embeddedWallets: { ethereum: { createOnLogin: "users-without-wallets" } },
