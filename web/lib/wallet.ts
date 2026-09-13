@@ -3,6 +3,8 @@ import { keccak256, toBytes, type Address, type Hex } from "viem";
 import type { LocalAccount } from "viem";
 import { createSecp256k1SigningSession } from "@category-labs/mera";
 import { toViemAccount } from "@category-labs/mera/viem";
+// chain.ts does not import this file, so this cannot close a cycle.
+import { publicClient } from "@/lib/chain";
 
 /// Fallback for devices whose passkeys can't do PRF — desktop Chrome's built-in authenticator
 /// being the common case. The shape deliberately mirrors the passkey path:
@@ -89,10 +91,13 @@ export async function deriveFromWallet(
 
 /// Sends a transaction from the connected wallet itself. Used for the deposit and the payout
 /// claim: those are the user's money moving, so they should see a wallet prompt for them.
+/// `to` is optional: omitting it is how a transaction deploys a contract rather than calling one.
+/// That is the only difference, and it is why deploying from the browser needs no keystore and no
+/// password — the wallet already holds the key and asks for a click instead.
 export async function walletSendTransaction(
   tx: {
     from: Address;
-    to: Address;
+    to?: Address;
     data: Hex;
     value?: bigint;
     gas?: bigint;
@@ -106,13 +111,28 @@ export async function walletSendTransaction(
     params: [
       {
         from: tx.from,
-        to: tx.to,
+        // Must be absent, not null or zero: a zero `to` is a call to the zero address.
+        ...(tx.to ? { to: tx.to } : {}),
         data: tx.data,
         ...(tx.value !== undefined ? { value: `0x${tx.value.toString(16)}` } : {}),
         ...(tx.gas !== undefined ? { gas: `0x${tx.gas.toString(16)}` } : {}),
       },
     ],
   })) as Hex;
+}
+
+/// Waits for the receipt and returns the address the contract landed at.
+export async function walletDeploy(
+  from: Address,
+  bytecode: Hex,
+  gas: bigint,
+  provider?: Eip1193 | null,
+): Promise<{ hash: Hex; address: Address }> {
+  const hash = await walletSendTransaction({ from, data: bytecode, gas }, provider);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error("Deployment reverted.");
+  if (!receipt.contractAddress) throw new Error("No contract address in receipt.");
+  return { hash, address: receipt.contractAddress };
 }
 
 export async function walletChainId(): Promise<number | null> {

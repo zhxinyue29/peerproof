@@ -18,6 +18,7 @@ import {
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
+import DeployDirectory from "@/components/DeployDirectory";
 
 export default function OrganizerPage() {
   const { signer } = useIdentity();
@@ -63,6 +64,7 @@ export default function OrganizerPage() {
       </div>
 
       <IdentityGate>
+        <DeployDirectory />
         {tab === "dashboard" ? <Dashboard /> : <CreateForm onCreated={refresh} />}
       </IdentityGate>
 
