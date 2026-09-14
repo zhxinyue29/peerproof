@@ -55,6 +55,17 @@ export default function VenuePage() {
 
   useEffect(() => {
     void Promise.all([syncChainClock(), resolveEventId()]);
+
+    // A key handed over in the URL fragment, which is how the QR on the organizer's screen gets a
+    // 66-character key onto a tablet at the door. Nobody is typing that by hand, and pasting it
+    // requires the two devices to share a clipboard, which at a venue they do not.
+    //
+    // The fragment, not the query: fragments are never sent to a server, so the key does not reach
+    // GitHub Pages' logs or any referrer header. It is stripped from the address bar immediately
+    // afterwards, so it does not sit in the open on a screen propped up in a room, and the entry
+    // left in that browser's own history is the only copy — on the machine that is meant to hold it.
+    const hash = window.location.hash;
+    const fromLink = hash.startsWith("#k=") ? decodeURIComponent(hash.slice(3)) : null;
     const saved = localStorage.getItem(STORAGE_KEY);
     // Dev fixtures put a throwaway key in the environment; production never does.
     const fromEnv = isLocalChain ? process.env.NEXT_PUBLIC_DEV_BEACON_PK : undefined;
@@ -62,7 +73,10 @@ export default function VenuePage() {
     // move into a lazy initialiser. Restoring the key on mount is the whole point: reloading the
     // venue display mid-event must not make the organizer paste the beacon key again.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved) load(saved);
+    if (fromLink && load(fromLink)) {
+      localStorage.setItem(STORAGE_KEY, fromLink.trim());
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    } else if (saved) load(saved);
     else if (fromEnv) load(fromEnv);
   }, [load]);
 

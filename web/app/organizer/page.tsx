@@ -23,6 +23,7 @@ import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
+import VenueHandoff from "@/components/VenueHandoff";
 
 export default function OrganizerPage() {
   const { signer, devMode } = useIdentity();
@@ -171,6 +172,15 @@ function Dashboard() {
       {/* Only the organizer can write it, and the contract enforces that too — showing the form to
           anyone else would be offering a button that reverts. */}
       {isMine && <EditListing />}
+
+      {/* The display has to be reachable from here. It used to be a URL you typed from memory, on
+          the one screen where the organizer is already standing. */}
+      <p className="text-[11px] text-faint">
+        <Link href="/venue" className="underline decoration-line-2">
+          Open the venue display
+        </Link>{" "}
+        — the screen at the door. It remembers its key in that browser.
+      </p>
 
       {fallbackOpen && isMine && (
         <div className="space-y-2 rounded-2xl border border-warn/30 bg-warn/10 p-4">
@@ -385,8 +395,10 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         </p>
         <CopyableCode value={created.beacon} tone="ok" />
         <p className="text-xs text-faint">
-          Shown once. It holds no funds, but losing it means the venue display can&apos;t sign.
+          Shown once. It holds no funds, but losing it means the venue display can&apos;t sign — and
+          the contract only lets the key be replaced before the doors open.
         </p>
+        <VenueHandoff beaconPk={created.beacon} />
         {/* The description is a second transaction and it can fail on its own. This card used to
             not render `notice` at all, so when it did fail the message was written to state nobody
             displayed: an event appeared with no title and no explanation, and no way to fix it. */}
