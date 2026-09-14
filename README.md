@@ -6,7 +6,7 @@ Attendees stake a deposit to register for an event. At the venue they attest to 
 
 Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropolis) · Track: Consumer Products & Payments
 
-**Live:** [peerproof.pages.dev](https://peerproof.pages.dev) · **Contract:** [`0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1`](https://testnet.monadscan.com/address/0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1) on Monad testnet (10143), source verified
+**Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1`](https://testnet.monadscan.com/address/0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1) on Monad testnet (10143), source verified
 
 ---
 
