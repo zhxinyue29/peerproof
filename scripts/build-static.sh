@@ -62,9 +62,29 @@ rm -rf .next out
 
 # `env -i` guarantees .env.local's dev keys cannot reach the bundle. Next still reads .env.local
 # from disk, so it is moved aside for the duration of the build.
+#
+# A dev server watches that file. It reloads the moment it disappears, comes back configured
+# against nothing, and keeps serving "No contract configured" long after this script has restored
+# the file — the restore is not a change it watches for. That is not a hypothetical: it produced a
+# full set of documentation screenshots that were all pictures of an unconfigured app, and it took
+# a second occurrence to notice, because nothing about it looks like a build problem.
+DEV_PID=$(ss -lptnH 'sport = :3000' 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1 || true)
+if [ -n "${DEV_PID:-}" ]; then
+  echo
+  echo "⚠️  A dev server is running on :3000 (pid $DEV_PID)."
+  echo "   This build hides web/.env.local for its duration, and the dev server will notice and"
+  echo "   come back unconfigured. Restart it when this finishes, before taking any screenshots."
+  echo
+fi
+
 MOVED=0
 if [ -f .env.local ]; then mv .env.local .env.local.bak && MOVED=1; fi
-restore() { [ "$MOVED" = 1 ] && mv -f .env.local.bak .env.local || true; }
+restore() {
+  [ "$MOVED" = 1 ] && mv -f .env.local.bak .env.local || true
+  if [ -n "${DEV_PID:-}" ] && kill -0 "$DEV_PID" 2>/dev/null; then
+    echo "⚠️  Restart the dev server (pid $DEV_PID) — it is serving an unconfigured app."
+  fi
+}
 trap restore EXIT
 
 NEXT_PUBLIC_CHAIN="$NETWORK" \

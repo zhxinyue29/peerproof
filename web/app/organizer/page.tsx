@@ -21,6 +21,7 @@ import { canRegister, phaseOf, useEvent } from "@/lib/useEvent";
 import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
+import EditListing from "@/components/EditListing";
 
 export default function OrganizerPage() {
   const { signer, devMode } = useIdentity();
@@ -160,6 +161,10 @@ function Dashboard() {
       </Card>
 
       {notice && <Notice tone="bad">{notice}</Notice>}
+
+      {/* Only the organizer can write it, and the contract enforces that too — showing the form to
+          anyone else would be offering a button that reverts. */}
+      {isMine && <EditListing />}
 
       {fallbackOpen && isMine && (
         <div className="space-y-2 rounded-2xl border border-warn/30 bg-warn/10 p-4">
@@ -376,10 +381,16 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         <p className="text-xs text-faint">
           Shown once. It holds no funds, but losing it means the venue display can&apos;t sign.
         </p>
-        <p className="text-xs text-faint">
-          To point this build at the new event, set{" "}
-          <code>NEXT_PUBLIC_EVENT_ID={created.id.toString()}</code>.
-        </p>
+        {/* The description is a second transaction and it can fail on its own. This card used to
+            not render `notice` at all, so when it did fail the message was written to state nobody
+            displayed: an event appeared with no title and no explanation, and no way to fix it. */}
+        {notice && <Notice tone="warn">{notice}</Notice>}
+        {notice && (
+          <p className="text-xs leading-relaxed text-faint">
+            The event itself is fine — deposits, check-in and settlement do not depend on it. Add
+            the words from the Dashboard tab whenever you like.
+          </p>
+        )}
       </Card>
     );
   }

@@ -213,6 +213,20 @@ for (const size of SIZES) {
       }
       await page.waitForTimeout(3000);
 
+      // Refuse to photograph an unconfigured app. scripts/build-static.sh hides web/.env.local for
+      // the duration of a build, a running dev server notices and reloads against nothing, and the
+      // restore afterwards is not a change it watches for. The result is a full set of frames that
+      // are all the same "No contract configured" card — which happened, went unnoticed, and was
+      // committed. Missing anchors alone did not make it obvious; this does.
+      if (await page.evaluate(() => document.body.innerText.includes("No contract configured"))) {
+        console.error(
+          `\n${shot.id}: the dev server is serving an unconfigured app.\n` +
+            `Restart it (web/.env.local is on disk but the running server has lost it) and re-run.\n`,
+        );
+        await browser.close();
+        process.exit(1);
+      }
+
       const missing = await page.evaluate((marks) => {
         const notFound = [];
         for (const m of marks) {
