@@ -80,7 +80,8 @@ NEXT_PUBLIC_BASE_PATH="$BASE_PATH" \
 echo
 echo "✓ web/out ready ($(du -sh out | cut -f1))"
 echo
-echo "deploy — Cloudflare Pages:"
-echo "  npx wrangler pages deploy out --project-name=peerproof"
+# GitHub Pages only. The Cloudflare Pages hint used to be here and it was worse than no hint:
+# MetaMask blocks *.pages.dev sites outright — 14,600 of those subdomains are on its phishing list,
+# so a fresh one asking for a signature is judged malicious before anyone reads the page.
 echo "deploy — GitHub Pages:"
-echo "  git subtree push --prefix web/out origin gh-pages     # or use the Actions workflow"
+echo "  git push     # the Actions workflow builds and publishes"
