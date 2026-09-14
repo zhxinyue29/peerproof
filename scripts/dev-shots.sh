@@ -151,6 +151,18 @@ OPEN=$(create 86400 86400 172800)
 enrol "$OPEN" "${PKS[0]}" "${PKS[1]}"
 echo "  event $OPEN open"
 
+# ------------------------------------------------------- mine (the organizer's own dashboard) ----
+# Created by the browser identity rather than the funder, so the organizer-only parts of the
+# dashboard render. Without this the dashboard screenshot is the read-only view, and the spec ends
+# up describing a module the picture does not contain.
+say "building MINE — an event the screenshot identity organizes"
+MINE_ORG=$FUNDER_PK
+FUNDER_PK=$AB_PK
+MINE=$(create 86400 86400 172800)
+FUNDER_PK=$MINE_ORG
+enrol "$MINE" "${PKS[0]}" "${PKS[1]}" "${PKS[2]}"
+echo "  event $MINE mine"
+
 # ------------------------------------------------------------------------------ titles ----
 # The listing page reads these from the directory contract, so without them every card on it is
 # "Event #11" and the screenshot shows a product nobody would design for. Organizer-gated, and
@@ -187,6 +199,12 @@ if [ -n "${DIRECTORY:-}" ] && [ "$(cast code "$DIRECTORY" --rpc-url "$RPC")" != 
     "开发者聚会，现场签到中。进门扫一下门口的大屏，再互相扫一下就算到场。" ""
   describe "$SETTLED" "九月摄影散步" \
     "沿着河走两个小时，随便拍。已经结束并结算完毕——四个人到场，一个人没来。" ""
+  # MINE is described by its own organizer, not the funder.
+  cast send "$DIRECTORY" "describe(uint256,string,string,string)" "$MINE" \
+    "Monad Builders Shenzhen — September" \
+    "An evening for people building on Monad. Scan the screen at the door, then scan the people around you." \
+    "" --private-key "$AB_PK" --rpc-url "$RPC" >/dev/null
+  echo "  #$MINE Monad Builders Shenzhen — September"
 else
   echo "  (no directory deployed — the listing page will show ids instead of titles)"
 fi
@@ -196,6 +214,7 @@ cat > "$OUT" <<JSON
 {
   "escrow": "$ESCROW",
   "open": $OPEN,
+  "mine": $MINE,
   "locked": $LOCKED,
   "live": $LIVE,
   "settled": $SETTLED

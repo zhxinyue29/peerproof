@@ -58,14 +58,17 @@ const SHOTS = [
   },
   {
     id: "04-organizer-dashboard",
-    path: "/organizer/?dev=1",
+    // An event this identity organizes. Pointed at someone else's, the organizer-only parts do not
+    // render and the picture is the read-only view — a spec describing modules the image lacks.
+    path: `/organizer/?event=${FIX.mine}&dev=1`,
     devKey: true,
     marks: [
       { n: 1, text: "Dashboard" },
       { n: 2, text: "Registered" },
       { n: 3, text: "Held in escrow" },
       { n: 4, text: "Deposit per attendee" },
-      { n: 5, text: "PAYOUTS" },
+      { n: 5, text: "What people see in the listing" },
+      { n: 6, text: "PAYOUTS" },
     ],
   },
   {

@@ -31,6 +31,8 @@ const LazyPrivy = dynamic(() => import("./PrivyInner"), {
   ssr: false,
 });
 
+const LazyPrivyLogout = dynamic(() => import("./PrivyLogout"), { ssr: false });
+
 type GateCtx = { enabled: boolean; enable: () => void; disable: () => void };
 const PrivyGateContext = createContext<GateCtx>({
   enabled: false,
@@ -44,6 +46,11 @@ export function usePrivyGate(): GateCtx {
 
 export default function PrivyClientProvider({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabled] = useState(false);
+  // Unmounting Privy does not end its session — that lives in browser storage, and a remount picks
+  // it straight back up. So disabling has two steps: keep the provider mounted long enough for a
+  // logout to run inside it, then take it down. Without the first step "use a different account"
+  // silently returned the same account.
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (!privyUsable) return;
@@ -55,19 +62,35 @@ export default function PrivyClientProvider({ children }: { children: React.Reac
   const enable = useCallback(() => {
     if (!privyUsable) return;
     sessionStorage.setItem(SESSION_KEY, "1");
+    setLoggingOut(false);
     setEnabled(true);
   }, []);
 
+  // Set unconditionally, without consulting `enabled`: this callback is handed out through context
+  // and has to stay stable, and the flag is harmless when Privy was never mounted — the provider
+  // does not render, so nothing observes it, and `enable` clears it on the way back in.
   const disable = useCallback(() => {
     sessionStorage.removeItem(SESSION_KEY);
+    setLoggingOut(true);
+  }, []);
+
+  const finishLogout = useCallback(() => {
+    setLoggingOut(false);
     setEnabled(false);
   }, []);
 
-  const gate = { enabled: enabled && privyUsable, enable, disable };
+  const gate = { enabled: enabled && privyUsable && !loggingOut, enable, disable };
 
   return (
     <PrivyGateContext.Provider value={gate}>
-      {gate.enabled ? <LazyPrivy>{children}</LazyPrivy> : children}
+      {enabled && privyUsable ? (
+        <LazyPrivy>
+          {loggingOut && <LazyPrivyLogout onDone={finishLogout} />}
+          {children}
+        </LazyPrivy>
+      ) : (
+        children
+      )}
     </PrivyGateContext.Provider>
   );
 }
