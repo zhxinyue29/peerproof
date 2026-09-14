@@ -55,6 +55,7 @@ export default function EventsPage() {
 
       <AppHeader
         title="Events"
+        back="/"
         right={
           <Link href="/organizer" className="text-[13px] text-faint underline decoration-line-2">
             host one
@@ -167,7 +168,7 @@ function EventRow({ event: e }: { event: EventSummary }) {
 
   return (
     <Link
-      href={`/?event=${e.id}`}
+      href={`/event?event=${e.id}`}
       className="block rounded-2xl border border-line bg-panel p-4 transition-colors hover:border-line-2 md:p-5"
     >
       <div className="flex items-start justify-between gap-3">

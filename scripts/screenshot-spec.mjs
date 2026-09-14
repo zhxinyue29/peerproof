@@ -22,6 +22,18 @@ const SIZES = [
 /// coordinates do not.
 const SHOTS = [
   {
+    // The door. Two roles ran through the same screens until somebody hosting an event pressed
+    // back and landed in the participants' listing, full of other people's events.
+    id: "00-home",
+    path: "/",
+    marks: [
+      { n: 1, text: "Attendance you don" },
+      { n: 2, text: "Find an event" },
+      { n: 3, text: "Host an event" },
+      { n: 4, text: "two ways in, not two kinds of person" },
+    ],
+  },
+  {
     id: "01-events",
     path: "/events/",
     marks: [
@@ -69,6 +81,7 @@ const SHOTS = [
       { n: 4, text: "Deposit per attendee" },
       { n: 5, text: "What people see in the listing" },
       { n: 6, text: "PAYOUTS" },
+      { n: 7, text: "YOUR EVENTS" },
     ],
   },
   {

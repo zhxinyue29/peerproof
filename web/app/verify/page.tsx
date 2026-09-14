@@ -65,7 +65,7 @@ export default function VerifyPage() {
         <Notice tone="warn">Local chain — real transactions, fake money.</Notice>
       )}
 
-      <AppHeader title="Public record" back="/events" />
+      <AppHeader title="Public record" back="/" />
 
       <header className="space-y-2">
         <h1 className="text-[24px] font-medium leading-[1.2] tracking-tight md:text-[34px]">
@@ -189,7 +189,7 @@ export default function VerifyPage() {
           <span className="font-mono">msg.sender</span>, and only registered attendees can reach
           it.
         </p>
-          <Link href="/" className="inline-block text-dim underline decoration-line-2">
+          <Link href="/event" className="inline-block text-dim underline decoration-line-2">
             back to the event
           </Link>
         </div>

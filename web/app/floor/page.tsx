@@ -301,7 +301,7 @@ export default function FloorPage() {
     <Shell handheld>
       <AppHeader
         title="Attendance floor"
-        back="/"
+        back="/event"
         right={
           windowOpen && ev ? (
             <span className="font-mono text-lg tabular-nums text-fg">
@@ -327,7 +327,7 @@ export default function FloorPage() {
               A deposit is what makes an attestation worth anything, so the floor is only open to
               people who staked one.
             </p>
-            <LinkButton href="/">Go back and register</LinkButton>
+            <LinkButton href="/event">Go back and register</LinkButton>
           </div>
         ) : (
           <>

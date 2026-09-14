@@ -96,6 +96,11 @@ export async function resolveEventId(): Promise<bigint> {
 /// Monad finalises in two 300ms slots, so poll well inside that.
 const POLLING_INTERVAL = 100;
 
+/// Where the app is mounted. GitHub Pages serves a project repo from /<repo>/, so a bare "/event/"
+/// would leave the app entirely. next/link handles this on its own; a window.location assignment
+/// does not.
+export const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const publicClient = createPublicClient({
   chain,
   // Monad has no global mempool, so confirmation logic must never depend on pending visibility.

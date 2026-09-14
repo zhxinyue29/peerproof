@@ -23,6 +23,7 @@ import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
+import MyEvents from "@/components/MyEvents";
 import VenueHandoff from "@/components/VenueHandoff";
 
 export default function OrganizerPage() {
@@ -46,7 +47,7 @@ export default function OrganizerPage() {
 
       <AppHeader
         title="Organizer"
-        back="/events"
+        back="/"
         right={
           <Link href="/verify" className="text-[13px] text-faint underline decoration-line-2">
             public record
@@ -69,7 +70,14 @@ export default function OrganizerPage() {
       </div>
 
       <IdentityGate>
-        {tab === "dashboard" ? <Dashboard /> : <CreateForm onCreated={refresh} />}
+        {tab === "dashboard" ? (
+          <div className="space-y-5">
+            <MyEvents />
+            <Dashboard />
+          </div>
+        ) : (
+          <CreateForm onCreated={refresh} />
+        )}
         {/* Dev only. Creating an event deploys this on demand, so an organizer never meets it —
             "deploy a contract" is our infrastructure problem, not something to put in front of
             somebody who wanted to invite people to a reading group. */}
