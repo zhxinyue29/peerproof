@@ -69,13 +69,31 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     void resolveEventId().then((id) => {
       const saved = loadSession(id);
       if (!saved) return;
+
+      // An email session cannot be rebuilt from the stored key alone. The key signs attendance
+      // codes; sending a transaction needs Privy's provider, which lives in memory and is gone
+      // after a reload. Restoring a signer without one produced an account that looked ready,
+      // showed "Stake and register", and then failed with "your wallet has not authorised this
+      // site" — because the write had fallen through to a browser extension that was not there.
+      //
+      // So the gate is re-enabled instead, and PrivyBridge rebuilds the signer with a live
+      // provider. Privy is already authenticated, and embedded wallets sign without prompting, so
+      // this costs a chunk download and nothing the person has to do.
+      if (saved.kind === "privy") {
+        privyGate.enable();
+        return;
+      }
+
       const attest = privateKeyToAccount(saved.attestPk);
       setSigner(
         saved.kind === "passkey"
           ? passkeySigner(attest)
-          : walletSigner(saved.owner, attest, { kind: saved.kind }),
+          : // A browser wallet is reachable again through window.ethereum, so this one does rebuild.
+            walletSigner(saved.owner, attest, { kind: saved.kind }),
       );
     });
+    // privyGate.enable is stable — it is a useCallback with no dependencies in the gate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setUpPasskey = useCallback(async (mode: "create" | "unlock") => {

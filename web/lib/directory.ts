@@ -44,6 +44,11 @@ const EMPTY: Listing = { title: "", blurb: "", url: "", updatedAt: 0n };
 
 /// Cached because every screen asks, and the answer only changes once — at the moment somebody
 /// deploys it. `null` means "not asked yet".
+///
+/// Only a *successful* read is cached. Caching the failure too meant one flaky RPC call at startup
+/// settled the question for the rest of the session: every event on every screen fell back to
+/// "PeerProof event", with the titles sitting on chain the whole time and nothing retrying. A
+/// network error is not an answer to "is it deployed".
 let deployed: boolean | null = null;
 
 export async function checkDirectory(): Promise<boolean> {
@@ -52,10 +57,11 @@ export async function checkDirectory(): Promise<boolean> {
   try {
     const code = await publicClient.getCode({ address: directoryAddress() });
     deployed = !!code && code !== "0x";
+    return deployed;
   } catch {
-    deployed = false;
+    // Left null so the next caller asks again.
+    return false;
   }
-  return deployed;
 }
 
 export function directoryReady(): boolean {

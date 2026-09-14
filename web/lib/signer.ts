@@ -69,6 +69,13 @@ export function walletSigner(
     attest,
     prompts: true,
     write: async ({ functionName, args, value, gas, to, abi }) => {
+      // An email account has exactly one way to send a transaction, and it is this provider. Left
+      // to fall through, walletSendTransaction reaches for window.ethereum instead — a different
+      // wallet, or none — and the failure arrives as "your wallet has not authorised this site",
+      // which is true of a wallet the person never chose and never knew was involved.
+      if (opts?.kind === "privy" && !opts.provider) {
+        throw new Error("This email session lost its connection. Reload the page to restore it.");
+      }
       const target = to ?? ESCROW_ADDRESS;
       const useAbi = (abi ?? attendanceEscrowAbi) as Abi;
       // Simulate against the wallet address so a revert is caught before the user is asked to

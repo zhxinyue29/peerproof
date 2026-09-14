@@ -31,14 +31,26 @@ export function useEventMeta(eventId: bigint): EventMeta {
 
   useEffect(() => {
     let live = true;
-    void readListing(eventId)
-      .then((l) => {
-        if (!live) return;
-        if (l.title || l.blurb || l.url) {
-          setMeta({ title: l.title || fallbackMeta.title, blurb: l.blurb, url: l.url });
-        }
-      })
-      .catch(() => {});
+    // Retried, because one read is one chance. A single failed request left the event titled
+    // "PeerProof event" for as long as the page stayed open, with the real title on chain and
+    // nothing going back for it. Stops as soon as words arrive; a genuinely undescribed event
+    // costs four cheap reads and then sits quiet.
+    let tries = 0;
+    const attempt = () => {
+      void readListing(eventId)
+        .then((l) => {
+          if (!live) return;
+          if (l.title || l.blurb || l.url) {
+            setMeta({ title: l.title || fallbackMeta.title, blurb: l.blurb, url: l.url });
+            return;
+          }
+          if (++tries < 4) setTimeout(attempt, 1500 * tries);
+        })
+        .catch(() => {
+          if (live && ++tries < 4) setTimeout(attempt, 1500 * tries);
+        });
+    };
+    attempt();
     return () => {
       live = false;
     };
