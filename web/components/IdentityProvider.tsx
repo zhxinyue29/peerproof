@@ -142,7 +142,25 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   // Mounting Privy is the whole action: PrivyBridge opens the sign-in as soon as it renders.
   const setUpPrivy = useCallback(() => {
     setError(null);
+    // Feedback before anything else. This used to only flip the gate, and the gate's only visible
+    // effect is 2.1MB of Privy beginning to download — so on a slow connection, or with an
+    // extension blocking privy.io, pressing the button did nothing at all, for as long as you
+    // cared to watch. "Nothing happened" is the one outcome a button must never produce.
+    setBusy("Opening sign-in…");
     privyGate.enable();
+
+    // And if it really is being blocked, say so rather than spinning forever. The bridge takes
+    // over this message the moment it mounts, so this only fires when it never did.
+    window.setTimeout(() => {
+      setBusy((b) => {
+        if (b !== "Opening sign-in…") return b;
+        setError(
+          "Sign-in didn't load. Something on this browser may be blocking privy.io — an ad blocker, " +
+            "a privacy extension, or a strict tracking setting. Allow it for this site, or use a browser wallet.",
+        );
+        return null;
+      });
+    }, 20_000);
   }, [privyGate]);
 
   return (
