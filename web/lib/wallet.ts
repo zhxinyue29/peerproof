@@ -57,6 +57,9 @@ export type WalletIdentity = {
   account: LocalAccount;
   /// The wallet that authorised the derivation — this is what pays the deposit.
   owner: Address;
+  /// Returned so the session can be restored after a refresh without a second signature. It signs
+  /// attendance codes and nothing else; the wallet above still authorises every transaction.
+  attestPk: Hex;
 };
 
 /// `provider` defaults to the injected wallet, but any EIP-1193 provider works — which is the
@@ -86,7 +89,8 @@ export async function deriveFromWallet(
   if (!node.privateKey) throw new Error("derivation produced no private key");
 
   const session = createSecp256k1SigningSession({ privateKey: node.privateKey });
-  return { account: toViemAccount(session), owner };
+  const attestPk = `0x${Buffer.from(node.privateKey).toString("hex")}` as Hex;
+  return { account: toViemAccount(session), owner, attestPk };
 }
 
 /// Sends a transaction from the connected wallet itself. Used for the deposit and the payout

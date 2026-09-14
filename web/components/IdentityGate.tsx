@@ -2,6 +2,7 @@
 
 import { useIdentity } from "@/components/IdentityProvider";
 import { relyingPartyId } from "@/lib/passkey";
+import { shortAddress } from "@/lib/format";
 import { Button, Notice } from "@/components/ui";
 
 /// Renders key setup, or `children` once a signer exists.
@@ -22,9 +23,25 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
     setUpWallet,
     setUpPrivy,
     useDevKey,
+    signOut,
   } = useIdentity();
 
-  if (signer) return <>{children}</>;
+  if (signer) {
+    return (
+      <>
+        {children}
+        {/* The way out. A remembered key is a convenience until somebody needs to be a different
+            person on the same device — testing with two accounts, or handing a phone to a friend. */}
+        <p className="text-center text-[11px] text-faint">
+          signed in as <span className="font-mono">{shortAddress(signer.address)}</span>
+          {" · "}
+          <button onClick={signOut} className="underline decoration-line-2">
+            use a different account
+          </button>
+        </p>
+      </>
+    );
+  }
   if (prf === null) return <p className="text-sm text-dim">Checking this device…</p>;
 
   if (!prf.available) {

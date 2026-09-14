@@ -8,6 +8,7 @@ import { deriveFromWallet, type Eip1193 } from "@/lib/wallet";
 import { walletSigner, type Signer } from "@/lib/signer";
 import { ESCROW_ADDRESS, resolveEventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
+import { saveSession } from "@/lib/session";
 
 /// Turns a Privy session into the same Signer the wallet path produces. Rendered only once the
 /// gate has mounted Privy, and imported dynamically, so nothing here reaches a page that never
@@ -64,7 +65,8 @@ export default function PrivyBridge({
         // cheap and idempotent; not resolving showed up as a signature prompt naming event 2 on a
         // page pointing at event 3.
         const id = await resolveEventId();
-        const { account } = await deriveFromWallet(ESCROW_ADDRESS, id, provider);
+        const { account, attestPk } = await deriveFromWallet(ESCROW_ADDRESS, id, provider);
+        saveSession(id, "privy", attestPk, wallet.address as Address);
         onSigner(
           walletSigner(wallet.address as Address, account, { provider, kind: "privy" }),
         );

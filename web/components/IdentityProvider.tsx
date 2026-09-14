@@ -13,7 +13,9 @@ import {
 } from "@/lib/passkey";
 import { deriveFromWallet, hasInjectedWallet, NoWalletError } from "@/lib/wallet";
 import { passkeySigner, walletSigner, type Signer } from "@/lib/signer";
-import { ESCROW_ADDRESS, isLocalChain, resolveEventId } from "@/lib/chain";
+import { ESCROW_ADDRESS, eventId, isLocalChain, resolveEventId } from "@/lib/chain";
+import { clearSession, loadSession, saveSession } from "@/lib/session";
+import { privateKeyToAccount } from "viem/accounts";
 import { shortenError } from "@/lib/format";
 
 /// Loaded only when someone picks the email path, and only ever imported from here — that is what
@@ -33,6 +35,8 @@ type Ctx = {
   setUpWallet: () => Promise<void>;
   setUpPrivy: () => void;
   useDevKey: () => void;
+  /// Forgets the stored key. The wallet or passkey itself is untouched.
+  signOut: () => void;
   clearError: () => void;
 };
 
@@ -58,6 +62,20 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     setDevMode(new URLSearchParams(window.location.search).get("dev") === "1" || isLocalChain);
     setWalletAvailable(hasInjectedWallet());
     checkPrfSupport().then(setPrf);
+
+    // Bring back the key from last time rather than asking for another signature. Without this a
+    // refresh costs a wallet prompt or a biometric, which during an event means interrupting
+    // somebody mid-scan.
+    void resolveEventId().then((id) => {
+      const saved = loadSession(id);
+      if (!saved) return;
+      const attest = privateKeyToAccount(saved.attestPk);
+      setSigner(
+        saved.kind === "passkey"
+          ? passkeySigner(attest)
+          : walletSigner(saved.owner, attest, { kind: saved.kind }),
+      );
+    });
   }, []);
 
   const setUpPasskey = useCallback(async (mode: "create" | "unlock") => {
@@ -69,6 +87,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
           ? await createAttestIdentity("PeerProof attendee")
           : await unlockAttestIdentity();
       setSigner(passkeySigner(id.account));
+      saveSession(await resolveEventId(), "passkey", id.attestPk, id.account.address);
     } catch (e) {
       if (e instanceof PrfUnavailableError) setPrf({ available: false, reason: "prf-unavailable" });
       else setError(shortenError(e));
@@ -83,8 +102,10 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     try {
       // Same race as the Privy path: the derived key is bound to the event id, so it has
       // to be resolved before deriving rather than alongside.
-      const { account, owner } = await deriveFromWallet(ESCROW_ADDRESS, await resolveEventId());
+      const id = await resolveEventId();
+      const { account, owner, attestPk } = await deriveFromWallet(ESCROW_ADDRESS, id);
       setSigner(walletSigner(owner, account));
+      saveSession(id, "wallet", attestPk, owner);
     } catch (e) {
       setError(e instanceof NoWalletError ? "No browser wallet found." : shortenError(e));
     } finally {
@@ -120,7 +141,12 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
         setUpWallet,
         setUpPrivy,
         useDevKey,
-        clearError: () => setError(null),
+        signOut: () => {
+      clearSession(eventId());
+      privyGate.disable();
+      setSigner(null);
+    },
+    clearError: () => setError(null),
       }}
     >
       {/* Inside Privy's context (the gate wraps this provider) and inside ours, which is the one

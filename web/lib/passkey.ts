@@ -1,3 +1,4 @@
+import type { Hex } from "viem";
 import {
   createPasskeyWithPrfOutput,
   createSecp256k1SigningSession,
@@ -52,9 +53,12 @@ export type AttestIdentity = {
   /// Signs rotating codes. Never prompts after the one derivation ceremony.
   account: LocalAccount;
   credentialId: string;
+  /// On this path the derived key *is* the participant — it holds the deposit — so it is only ever
+  /// kept for the life of a tab. See lib/session.ts.
+  attestPk: Hex;
 };
 
-function deriveAccount(prfOutput: Uint8Array): LocalAccount {
+function deriveKey(prfOutput: Uint8Array): { account: LocalAccount; attestPk: Hex } {
   // prfOutput is a deterministic 32 bytes per (credential, rpId, salt). Mera leaves derivation
   // to the caller; BIP-39/32 keeps it interoperable with normal wallet tooling.
   const mnemonic = entropyToMnemonic(prfOutput, wordlist);
@@ -63,7 +67,10 @@ function deriveAccount(prfOutput: Uint8Array): LocalAccount {
   if (!node.privateKey) throw new Error("derivation produced no private key");
 
   const session = createSecp256k1SigningSession({ privateKey: node.privateKey });
-  return toViemAccount(session);
+  return {
+    account: toViemAccount(session),
+    attestPk: `0x${Buffer.from(node.privateKey).toString("hex")}` as Hex,
+  };
 }
 
 export class PrfUnavailableError extends Error {
@@ -81,7 +88,7 @@ export async function createAttestIdentity(displayName: string): Promise<AttestI
       rp: { id: rpId, name: "PeerProof" },
       user: { name: displayName, displayName },
     });
-    return { account: deriveAccount(res.prfOutput), credentialId: res.credentialId };
+    return { ...deriveKey(res.prfOutput), credentialId: res.credentialId };
   } catch (err) {
     if (isMeraError(err) && err.code === "PRF_UNAVAILABLE") throw new PrfUnavailableError();
     throw err;
@@ -100,7 +107,7 @@ export function createDevIdentity(): AttestIdentity {
     sessionStorage.setItem(KEY, hex);
   }
   const entropy = Uint8Array.from(hex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
-  return { account: deriveAccount(entropy), credentialId: "dev" };
+  return { ...deriveKey(entropy), credentialId: "dev" };
 }
 
 /// Returning user: re-derives the identical key from an existing passkey.
@@ -108,7 +115,7 @@ export async function unlockAttestIdentity(): Promise<AttestIdentity> {
   const rpId = relyingPartyId();
   try {
     const res = await getPasskeyPrfOutput({ rpId });
-    return { account: deriveAccount(res.prfOutput), credentialId: res.credentialId };
+    return { ...deriveKey(res.prfOutput), credentialId: res.credentialId };
   } catch (err) {
     if (isMeraError(err) && err.code === "PRF_UNAVAILABLE") throw new PrfUnavailableError();
     throw err;
