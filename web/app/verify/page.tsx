@@ -15,6 +15,7 @@ import {
   Split,
 } from "@/components/ui";
 import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
+import { useVisiblePoll } from "@/lib/poll";
 import { both, fiat, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
@@ -40,9 +41,13 @@ export default function VerifyPage() {
       }
     };
     void load();
-    const id = setInterval(() => void load(), 5000);
-    return () => clearInterval(id);
   }, []);
+
+  // 15s, and only while somebody is looking. The public record is an archive, not a ticker.
+  useVisiblePoll(() => {
+    if (!hasDeployment) return;
+    void readHistory(eventId()).then(setHistory).catch(() => {});
+  }, 15000);
 
   if (!hasDeployment) {
     return (

@@ -18,6 +18,7 @@ import {
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { canRegister, phaseOf, useEvent } from "@/lib/useEvent";
+import { useVisiblePoll } from "@/lib/poll";
 import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
@@ -109,9 +110,14 @@ function Dashboard() {
       );
     };
     void poll();
-    const id = setInterval(() => void poll(), 3000);
-    return () => clearInterval(id);
   }, []);
+
+  useVisiblePoll(() => {
+    void publicClient.getBalance({ address: ESCROW_ADDRESS }).then(setEscrowed);
+    void publicClient
+      .readContract({ address: ESCROW_ADDRESS, abi, functionName: "fallbackAvailable", args: [eventId()] })
+      .then(setFallbackOpen);
+  }, 8000);
 
   if (!ev) return <p className="text-sm text-dim">Loading event…</p>;
 

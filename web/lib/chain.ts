@@ -99,7 +99,10 @@ const POLLING_INTERVAL = 100;
 export const publicClient = createPublicClient({
   chain,
   // Monad has no global mempool, so confirmation logic must never depend on pending visibility.
-  transport: http(RPC_URL, { retryCount: 2 }),
+  // One retry, not two. The endpoint allows fifteen eth_call per second and answers a breach with
+  // an error — so a retry during a burst is another call against the same budget, and the storm
+  // feeds itself. One retry covers a dropped packet; the rest is arithmetic working against us.
+  transport: http(RPC_URL, { retryCount: 1, retryDelay: 400 }),
   pollingInterval: POLLING_INTERVAL,
 });
 

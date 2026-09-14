@@ -149,8 +149,23 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     setBusy("Opening sign-in…");
     privyGate.enable();
 
-    // And if it really is being blocked, say so rather than spinning forever. The bridge takes
-    // over this message the moment it mounts, so this only fires when it never did.
+    // The same import the gate performs, requested again so its failure is observable. `next/dynamic`
+    // swallows a failed chunk load: it renders nothing and says nothing, which is why this was a
+    // button that did nothing rather than a button that reported a problem. Module loads are cached
+    // by the runtime, so asking twice costs one request and no extra bytes.
+    void import("@/components/PrivyInner").catch((e: unknown) => {
+      setBusy(null);
+      setError(
+        `Sign-in failed to load — ${shortenError(e)}. This is the email sign-in code itself not ` +
+          `arriving, usually an ad blocker or privacy extension blocking it, or a page left open ` +
+          `across a redeploy. Reload the page first; if that does not help, allow this site in the ` +
+          `extension.`,
+      );
+    });
+
+    // And if it neither loads nor fails — blocked at the network layer, or simply very slow — say
+    // so rather than spinning forever. The bridge takes over this message the moment it mounts, so
+    // this only fires when it never did.
     window.setTimeout(() => {
       setBusy((b) => {
         if (b !== "Opening sign-in…") return b;

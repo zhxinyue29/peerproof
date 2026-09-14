@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useVisiblePoll } from "@/lib/poll";
 import type { Address } from "viem";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
@@ -72,7 +73,11 @@ export function canRegister(ev: EventInfo | null): boolean {
   return Math.floor(chainNowMs() / 1000) < Number(ev.registerDeadline);
 }
 
-export function useEvent(address: Address | null, pollMs = 2000) {
+/// 4s, not 2s. Each refresh is seven reads — the event, five per-address views, and a balance —
+/// against an endpoint that allows fifteen calls a second. Two seconds was three and a half calls
+/// per second from a single open tab, before retries, and the app is not a trading screen: a
+/// registration count that is four seconds old has never misled anyone.
+export function useEvent(address: Address | null, pollMs = 4000) {
   const [ev, setEv] = useState<EventInfo | null>(null);
   const [me, setMe] = useState<MyState | null>(null);
 
@@ -130,9 +135,11 @@ export function useEvent(address: Address | null, pollMs = 2000) {
     // then swaps — which on a screen showing a deposit is not a flicker anyone should have to
     // interpret.
     void Promise.all([syncChainClock(), resolveEventId()]).then(refresh);
-    const id = setInterval(() => void refresh(), pollMs);
-    return () => clearInterval(id);
-  }, [refresh, pollMs]);
+  }, [refresh]);
+
+  useVisiblePoll(() => {
+    if (hasDeployment) void refresh();
+  }, pollMs);
 
   return { ev, me, refresh };
 }

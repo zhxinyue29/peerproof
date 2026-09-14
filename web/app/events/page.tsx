@@ -6,6 +6,7 @@ import { AppHeader, Card, Notice, Shell, Skeleton } from "@/components/ui";
 import { both, countdown } from "@/lib/format";
 import { chainNowMs, hasDeployment, isLocalChain, syncChainClock } from "@/lib/chain";
 import { readAllEvents, splitByActionable, stillJoinable, type EventSummary, type Phase } from "@/lib/events";
+import { useVisiblePoll } from "@/lib/poll";
 
 /// The directory. Every event the contract knows about, newest first.
 ///
@@ -28,9 +29,15 @@ export default function EventsPage() {
       }
     };
     void load();
-    const id = setInterval(() => void load(), 5000);
-    return () => clearInterval(id);
   }, []);
+
+  // 12s, and only while somebody is looking. Each pass is one read per event against an endpoint
+  // that allows fifteen a second; a listing page does not need to be fresher than that, and a
+  // backgrounded tab does not need to be fresh at all.
+  useVisiblePoll(() => {
+    if (!hasDeployment) return;
+    void readAllEvents().then(setEvents).catch(() => {});
+  }, 12000);
 
   if (!hasDeployment) {
     return (
