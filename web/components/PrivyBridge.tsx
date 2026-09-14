@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getEmbeddedConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
+import { getEmbeddedConnectedWallet, useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { monadTestnet } from "viem/chains";
 import type { Address } from "viem";
 import { deriveFromWallet, type Eip1193 } from "@/lib/wallet";
@@ -28,7 +28,7 @@ export default function PrivyBridge({
   onError: (msg: string) => void;
   onBusy: (msg: string | null) => void;
 }) {
-  const { ready, authenticated, login } = usePrivy();
+  const { ready, authenticated } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
 
   // Privy re-renders on every state change and each phase here must run exactly once: `login()`
@@ -36,6 +36,19 @@ export default function PrivyBridge({
   // dialog on top of the first.
   const askedToLogIn = useRef(false);
   const derived = useRef(false);
+  const seenDialog = useRef(false);
+
+  // Closing the modal is a normal thing to do and it used to be a dead end. `login()` only opens
+  // the dialog; it reports nothing when somebody dismisses it. The button stayed on "Opening
+  // sign-in…", disabled, with askedToLogIn already spent — so the screen sat there offering no way
+  // back in, which reads as the button being broken rather than as the dialog having been closed.
+  const { login } = useLogin({
+    onComplete: () => onBusy(null),
+    onError: () => {
+      askedToLogIn.current = false;
+      onBusy(null);
+    },
+  });
 
   useEffect(() => {
     if (!ready || authenticated || askedToLogIn.current) return;
@@ -43,6 +56,25 @@ export default function PrivyBridge({
     onBusy("Opening sign-in…");
     login();
   }, [ready, authenticated, login, onBusy]);
+
+  // A belt for the same brace: onError does not fire on every dismissal, so watch the dialog
+  // itself. When it leaves the document without anyone having authenticated, the attempt is over.
+  useEffect(() => {
+    if (!askedToLogIn.current || authenticated) return;
+    const id = setInterval(() => {
+      if (authenticated) return;
+      if (document.getElementById("privy-dialog")) {
+        seenDialog.current = true;
+        return;
+      }
+      if (seenDialog.current) {
+        seenDialog.current = false;
+        askedToLogIn.current = false;
+        onBusy(null);
+      }
+    }, 600);
+    return () => clearInterval(id);
+  }, [authenticated, onBusy]);
 
   useEffect(() => {
     if (!authenticated || !walletsReady || derived.current) return;
