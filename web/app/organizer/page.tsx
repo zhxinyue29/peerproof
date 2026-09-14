@@ -66,8 +66,10 @@ export default function OrganizerPage() {
       </div>
 
       <IdentityGate>
-        <DeployDirectory />
         {tab === "dashboard" ? <Dashboard /> : <CreateForm onCreated={refresh} />}
+        {/* Below the form, not above it. It is one-time setup for a nicety, and sitting at the top
+            in primary styling made it read as a step you had to complete before anything else. */}
+        <DeployDirectory />
       </IdentityGate>
 
       {tab === "dashboard" && ev && <PayoutControls />}

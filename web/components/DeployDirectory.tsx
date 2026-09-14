@@ -31,10 +31,11 @@ export default function DeployDirectory() {
   return (
     <div className="space-y-3 rounded-xl border border-dashed border-line-2 p-4">
       <div>
-        <p className="text-[15px] font-medium">Event descriptions aren&apos;t set up yet</p>
-        <p className="mt-1 text-sm leading-relaxed text-dim">
-          Titles and blurbs live in a second contract, so the one holding deposits never has to
-          change to store text. Deploy it once and every event after this can describe itself.
+        <p className="text-[13px] font-medium text-dim">Optional · one-time setup</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-dim">
+          Events currently show as <span className="font-mono">Event #5</span> rather than a name.
+          Titles live in a second contract, so the one holding deposits never has to change to
+          store text — deploy it once and every event after this can describe itself.
         </p>
       </div>
 
@@ -59,6 +60,7 @@ export default function DeployDirectory() {
       ) : (
         <>
           <Button
+            variant="ghost"
             onClick={() => {
               setBusy(true);
               setError(null);
@@ -70,7 +72,7 @@ export default function DeployDirectory() {
             disabled={busy}
             className="w-full"
           >
-            {busy ? "Deploying…" : "Deploy the directory"}
+            {busy ? "Deploying…" : "Enable event titles"}
           </Button>
           <p className="text-[11px] leading-relaxed text-faint">
             About 0.12 MON. The gas limit is pinned at 1,300,000 rather than estimated, because
