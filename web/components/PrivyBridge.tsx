@@ -36,7 +36,6 @@ export default function PrivyBridge({
   // dialog on top of the first.
   const askedToLogIn = useRef(false);
   const derived = useRef(false);
-  const seenDialog = useRef(false);
 
   // Closing the modal is a normal thing to do and it used to be a dead end. `login()` only opens
   // the dialog; it reports nothing when somebody dismisses it. The button stayed on "Opening
@@ -55,31 +54,22 @@ export default function PrivyBridge({
     askedToLogIn.current = true;
     onBusy("Opening sign-in…");
     login();
-  }, [ready, authenticated, login, onBusy]);
 
-  // A belt for the same brace: onError does not fire on every dismissal, so watch the dialog
-  // itself. When it leaves the document without anyone having authenticated, the attempt is over.
-  //
-  // The guard is checked inside the interval, not around it. Checked outside, this effect ran once
-  // — before `login()` had been called, because Privy was not ready yet — decided there was nothing
-  // to watch, and never reran, since its dependencies do not change when a ref does. The watcher
-  // was there and switched off, which is the most expensive kind of absent.
-  useEffect(() => {
-    if (authenticated) return;
-    const id = setInterval(() => {
-      if (!askedToLogIn.current) return;
-      if (document.getElementById("privy-dialog")) {
-        seenDialog.current = true;
-        return;
-      }
-      if (seenDialog.current) {
-        seenDialog.current = false;
-        askedToLogIn.current = false;
-        onBusy(null);
-      }
-    }, 600);
-    return () => clearInterval(id);
-  }, [authenticated, onBusy]);
+    // "Opening sign-in…" describes opening the dialog, which takes a moment; it does not describe
+    // the dialog being open, and the app has no business being frozen behind somebody else's modal.
+    // So it expires, and the one-shot guard expires with it.
+    //
+    // Deliberately not driven off the dialog's presence in the DOM: #privy-dialog is a
+    // zero-height shell that stays mounted whether or not anything is shown, so watching for it to
+    // disappear was watching for something that never happens. Anything reading Privy's internals
+    // here can be wrong in a way that leaves the only way in disabled — which is exactly the
+    // failure being fixed.
+    const t = setTimeout(() => {
+      askedToLogIn.current = false;
+      onBusy(null);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [ready, authenticated, login, onBusy]);
 
   useEffect(() => {
     if (!authenticated || !walletsReady || derived.current) return;
