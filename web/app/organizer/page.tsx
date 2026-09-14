@@ -266,8 +266,11 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [capacity, setCapacity] = useState("40");
   const [minQuorum, setMinQuorum] = useState("10");
   const [k, setK] = useState("3");
-  const [registerMins, setRegisterMins] = useState("60");
-  const [windowMins, setWindowMins] = useState("180");
+  // Expressed the way somebody plans an event, not the way the contract stores it: when the doors
+  // open, how long it runs, and whether people can still join once it has started.
+  const [doorsMins, setDoorsMins] = useState("30");
+  const [runsMins, setRunsMins] = useState("180");
+  const [walkIns, setWalkIns] = useState(true);
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
@@ -299,9 +302,11 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       const beacon = privateKeyToAccount(beaconPk);
 
       const now = BigInt(Math.floor(chainNowMs() / 1000));
-      const regDeadline = now + BigInt(Number(registerMins) * 60);
-      const attestOpen = regDeadline;
-      const attestClose = attestOpen + BigInt(Number(windowMins) * 60);
+      const attestOpen = now + BigInt(Number(doorsMins) * 60);
+      const attestClose = attestOpen + BigInt(Number(runsMins) * 60);
+      // Walk-ins keep registration open until the event ends. Without them it closes when the
+      // doors do, which is the classic RSVP shape — the organizer picks.
+      const regDeadline = walkIns ? attestClose : attestOpen;
 
       const hash = await signer.write({
         functionName: "createEvent",
@@ -415,9 +420,26 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
             <Field label="Capacity" value={capacity} onChange={setCapacity} />
             <Field label="Runs if at least" value={minQuorum} onChange={setMinQuorum} hint="must exceed vouches" />
             <Field label="Vouches needed" value={k} onChange={setK} hint="3 is a good default" />
-            <Field label="Registration (mins)" value={registerMins} onChange={setRegisterMins} />
-            <Field label="Window (mins)" value={windowMins} onChange={setWindowMins} hint="starts when registration closes" />
+            <Field label="Doors open in (mins)" value={doorsMins} onChange={setDoorsMins} hint="when check-in starts" />
+            <Field label="Runs for (mins)" value={runsMins} onChange={setRunsMins} hint="how long check-in stays open" />
           </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-2 bg-ink p-3.5">
+            <input
+              type="checkbox"
+              checked={walkIns}
+              onChange={(e) => setWalkIns(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-accent"
+            />
+            <span className="text-[13px] leading-relaxed">
+              <span className="font-medium text-fg">Take walk-ins</span>
+              <span className="block text-dim">
+                {walkIns
+                  ? "People can still join after the doors open — the ones a room attracts on the night are often the ones worth keeping."
+                  : "Registration closes when the doors open. Classic RSVP: decide in advance, or not at all."}
+              </span>
+            </span>
+          </label>
+
           <p className="text-xs leading-relaxed text-faint">
             You send no funds and gain no spending power. Deposits go to the contract; the split is
             decided by who vouches for whom.

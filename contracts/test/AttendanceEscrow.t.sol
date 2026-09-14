@@ -622,4 +622,50 @@ contract AttendanceEscrowTest is Test {
         vm.expectRevert(AttendanceEscrow.AlreadyRegistered.selector);
         esc.register{value: DEPOSIT}(eid, _attestKey(0));
     }
+
+
+    /* ------------------------------------------------------------------ */
+    /*                              Walk-ins                              */
+    /* ------------------------------------------------------------------ */
+
+    /// An organizer may let registration run into the check-in window. The people a room actually
+    /// attracts on the night are the ones most worth keeping, and nothing downstream cares whether
+    /// the two windows were sequential.
+    function test_registrationMayOverlapCheckIn() public {
+        vm.prank(organizer);
+        uint256 id = esc.createEvent(
+            beaconKey, DEPOSIT, CAPACITY, MIN_QUORUM, K, t0 + 2 hours, t0 + 1 hours, t0 + 3 hours
+        );
+        assertGt(id, 0);
+    }
+
+    /// Registration outliving check-in would let somebody pay a deposit they can never reclaim —
+    /// nobody can vouch for them once the window has shut.
+    function test_registrationMayNotOutlastCheckIn() public {
+        vm.prank(organizer);
+        vm.expectRevert(AttendanceEscrow.BadParams.selector);
+        esc.createEvent(
+            beaconKey, DEPOSIT, CAPACITY, MIN_QUORUM, K, t0 + 4 hours, t0 + 1 hours, t0 + 3 hours
+        );
+    }
+
+    /// The point of allowing it: somebody who joins after check-in started is confirmed on exactly
+    /// the same terms as the people who booked a week ago.
+    function test_walkInIsConfirmedLikeAnyoneElse() public {
+        vm.prank(organizer);
+        eid = esc.createEvent(beaconKey, DEPOSIT, CAPACITY, 2, 1, t0 + 2 hours, t0 + 1 hours, t0 + 3 hours);
+
+        _register(0);
+        _register(1);
+
+        // Doors open. Registration is still running.
+        vm.warp(t0 + 1 hours + 1);
+        _register(2);
+        assertTrue(esc.isRegistered(eid, _wallet(2)));
+
+        _attest(0, 2);
+        _attest(2, 1);
+
+        assertTrue(esc.isConfirmed(eid, _wallet(2)));
+    }
 }

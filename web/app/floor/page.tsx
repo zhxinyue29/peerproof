@@ -176,10 +176,22 @@ export default function FloorPage() {
       }).catch(() => null);
       if (!recovered) return setNotice("That code failed verification.");
 
-      setScanning(false);
-      await submitAttest(p.subject, p.epoch, p.sig);
-    },
-    [beacon, signer, submitAttest],
+        setScanning(false);
+
+        // Everything above is worth exercising whenever somebody wants to: the camera, the
+        // permission prompt, the decode, the signature check. Only submitting is time-bound, so
+        // only submitting is refused — and it says why rather than reverting on chain.
+        if (!windowOpen) {
+          return setNotice(
+            ev && Math.floor(chainNowMs() / 1000) < Number(ev.attestOpen)
+              ? `Code reads fine — check-in opens in ${countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000))}.`
+              : "Code reads fine, but check-in has closed for this event.",
+          );
+        }
+
+        await submitAttest(p.subject, p.epoch, p.sig);
+      },
+      [beacon, signer, submitAttest, windowOpen, ev],
   );
 
   const settle = () =>

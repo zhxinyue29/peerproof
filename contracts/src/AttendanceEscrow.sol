@@ -158,7 +158,16 @@ contract AttendanceEscrow {
         // A room needs at least k+1 people for peers to reach quorum without the fallback.
         if (minQuorum <= k) revert BadParams();
         if (registerDeadline <= block.timestamp) revert BadParams();
-        if (attestOpen < registerDeadline || attestClose <= attestOpen) revert BadParams();
+        if (attestClose <= attestOpen) revert BadParams();
+        // Registration may run into the check-in window, so an organizer can take walk-ins — the
+        // people a room actually attracts are the ones most worth keeping. Nothing downstream
+        // depends on the two being sequential: attest() only asks that both parties are
+        // registered, and settle() reads the final counts.
+        //
+        // What is refused is registration outliving check-in. Somebody who joins after the window
+        // has shut can never be vouched for, so their deposit is forfeit the moment they pay it,
+        // and no organizer should be able to configure that.
+        if (registerDeadline > attestClose) revert BadParams();
 
         eventId = nextEventId++;
         Event storage e = _events[eventId];
