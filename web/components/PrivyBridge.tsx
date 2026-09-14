@@ -36,6 +36,7 @@ export default function PrivyBridge({
   // dialog on top of the first.
   const askedToLogIn = useRef(false);
   const derived = useRef(false);
+  const expiry = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Closing the modal is a normal thing to do and it used to be a dead end. `login()` only opens
   // the dialog; it reports nothing when somebody dismisses it. The button stayed on "Opening
@@ -64,12 +65,20 @@ export default function PrivyBridge({
     // disappear was watching for something that never happens. Anything reading Privy's internals
     // here can be wrong in a way that leaves the only way in disabled — which is exactly the
     // failure being fixed.
-    const t = setTimeout(() => {
+    //
+    // Held in a ref rather than cleaned up by this effect. `login` is a new function on every
+    // render, so the effect reruns constantly; each rerun hit the guard above and returned early,
+    // while the cleanup from the previous run had already cancelled the timer. It was scheduled and
+    // killed, over and over, and the button stayed disabled.
+    expiry.current = setTimeout(() => {
       askedToLogIn.current = false;
-      onBusy(null);
+      // Not if a key is being derived — that has its own message and finishes on its own.
+      if (!derived.current) onBusy(null);
     }, 4000);
-    return () => clearTimeout(t);
   }, [ready, authenticated, login, onBusy]);
+
+  // The one place cancelling it is right: going away entirely.
+  useEffect(() => () => clearTimeout(expiry.current), []);
 
   useEffect(() => {
     if (!authenticated || !walletsReady || derived.current) return;
