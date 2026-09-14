@@ -47,13 +47,29 @@ export function projectedPayout(ev: EventInfo): bigint {
   return ev.deposit + (ev.deposit * noShows) / winners;
 }
 
+/// Where the event is in its own life. This says nothing about whether registration is still open:
+/// ask `canRegister` for that.
+///
+/// The two used to be one ladder — registering, then waiting, then open — because registration had
+/// to finish before check-in could start. Walk-ins removed that, and the ladder kept answering
+/// "registering" for the entire event, so the check-in screen never unlocked and the scan buttons
+/// were never rendered at all. Check-in is now decided by the check-in window and nothing else.
 export function phaseOf(ev: EventInfo | null): "loading" | "registering" | "waiting" | "open" | "closed" {
   if (!ev) return "loading";
   const now = Math.floor(chainNowMs() / 1000);
-  if (now < Number(ev.registerDeadline)) return "registering";
-  if (now < Number(ev.attestOpen)) return "waiting";
-  if (now < Number(ev.attestClose)) return "open";
-  return "closed";
+  if (now >= Number(ev.attestClose)) return "closed";
+  if (now >= Number(ev.attestOpen)) return "open";
+  // Before the doors. "registering" and "waiting" differ only in whether anyone can still join.
+  return now < Number(ev.registerDeadline) ? "registering" : "waiting";
+}
+
+/// Whether somebody can still put a deposit down. With walk-ins this stays true after the doors
+/// open — that is the whole point of the setting.
+export function canRegister(ev: EventInfo | null): boolean {
+  if (!ev) return false;
+  if (ev.status !== 0) return false;
+  if (ev.registered >= ev.capacity) return false;
+  return Math.floor(chainNowMs() / 1000) < Number(ev.registerDeadline);
 }
 
 export function useEvent(address: Address | null, pollMs = 2000) {

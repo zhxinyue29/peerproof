@@ -17,7 +17,7 @@ import {
   publicClient,
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
-import { phaseOf, useEvent } from "@/lib/useEvent";
+import { canRegister, phaseOf, useEvent } from "@/lib/useEvent";
 import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
@@ -137,7 +137,11 @@ function Dashboard() {
           }
           sub={
             phase === "open"
-              ? `closes in ${countdown(Number(ev.attestClose) - Math.floor(chainNowMs() / 1000))}`
+              ? // Walk-ins make these two separate facts, and an organizer watching the room wants
+                // both: how long is left, and whether the door is still letting people in.
+                `ends in ${countdown(Number(ev.attestClose) - Math.floor(chainNowMs() / 1000))}${
+                  canRegister(ev) ? " · still taking walk-ins" : ""
+                }`
               : phase === "registering"
                 ? `until ${new Date(Number(ev.registerDeadline) * 1000).toLocaleTimeString()}`
                 : ""

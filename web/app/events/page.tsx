@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AppHeader, Card, Notice, Shell, Skeleton } from "@/components/ui";
 import { both, countdown } from "@/lib/format";
 import { chainNowMs, hasDeployment, isLocalChain, syncChainClock } from "@/lib/chain";
-import { readAllEvents, splitByActionable, type EventSummary, type Phase } from "@/lib/events";
+import { readAllEvents, splitByActionable, stillJoinable, type EventSummary, type Phase } from "@/lib/events";
 
 /// The directory. Every event the contract knows about, newest first.
 ///
@@ -145,7 +145,9 @@ const PHASE_TONE: Record<Phase, string> = {
 
 function EventRow({ event: e }: { event: EventSummary }) {
   const now = Math.floor(chainNowMs() / 1000);
-  const joinable = e.phase === "registering";
+  // A live event can still be taking walk-ins, which is the case worth surfacing here: somebody
+  // scrolling this list is exactly the person that setting exists for.
+  const joinable = stillJoinable(now, e.registerDeadline, e.registered, e.capacity, e.status);
 
   const when =
     e.phase === "registering"
@@ -153,7 +155,7 @@ function EventRow({ event: e }: { event: EventSummary }) {
       : e.phase === "waiting"
         ? `check-in opens in ${countdown(Number(e.attestOpen) - now)}`
         : e.phase === "live"
-          ? `closes in ${countdown(Number(e.attestClose) - now)}`
+          ? `ends in ${countdown(Number(e.attestClose) - now)}`
           : "";
 
   return (
@@ -188,7 +190,11 @@ function EventRow({ event: e }: { event: EventSummary }) {
         {when && <span className="tabular-nums">{when}</span>}
       </div>
 
-      {!joinable && e.phase === "registering" && null}
+      {/* An event that is already running but still open is the one thing a list like this can tell
+          somebody that they could not guess. Say it plainly where the badge cannot. */}
+      {joinable && e.phase === "live" && (
+        <p className="mt-2 text-[11px] text-ok">Check-in has started — you can still join.</p>
+      )}
       {e.phase === "registering" && e.registered < e.minQuorum && (
         <p className="mt-2 text-[11px] text-faint">
           Needs {e.minQuorum - e.registered} more to run — everyone is refunded otherwise.

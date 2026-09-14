@@ -21,7 +21,7 @@ import {
 } from "@/components/ui";
 import { eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
 import { mon, shortenError } from "@/lib/format";
-import { phaseOf, projectedPayout, useEvent } from "@/lib/useEvent";
+import { canRegister, phaseOf, projectedPayout, useEvent } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
 
 /// The page an attendee arrives on from a link. One event, no list: a list of one is a shell.
@@ -32,6 +32,9 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const phase = phaseOf(ev);
+  // Not `phase === "registering"`: with walk-ins a room that is already checking people in
+  // is still taking them, and asking the phase hid the button for the entire event.
+  const joinable = canRegister(ev);
   const meta = useEventMeta(eventId());
 
   async function register() {
@@ -149,7 +152,7 @@ export default function LandingPage() {
                   {phase === "open" ? "Go to the floor" : "Open my attendance code"}
                 </LinkButton>
               </div>
-            ) : phase === "registering" ? (
+            ) : joinable ? (
               <IdentityGate>
                   <div className="space-y-3">
                     {error && <Notice tone="bad">{error}</Notice>}
@@ -176,7 +179,11 @@ export default function LandingPage() {
                   </div>
               </IdentityGate>
             ) : (
-              <Notice>Registration for this event has closed.</Notice>
+              <Notice>
+                  {ev && ev.registered >= ev.capacity
+                    ? "This event is full."
+                    : "Registration for this event has closed."}
+                </Notice>
             )}
           </>
         }

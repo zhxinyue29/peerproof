@@ -32,10 +32,17 @@ export function phaseOfRaw(
 ): Phase {
   if (status === 1) return "cancelled";
   if (status === 2) return "settled";
-  if (now < Number(registerDeadline)) return "registering";
-  if (now < Number(attestOpen)) return "waiting";
-  if (now < Number(attestClose)) return "live";
-  return "closed";
+  // Check-in first: with walk-ins registration runs to the end of the event, so asking about it
+  // before asking about the doors labelled a room that was already checking people in as
+  // "Registering". See phaseOf in lib/useEvent.ts, which had the same bug with worse consequences.
+  if (now >= Number(attestClose)) return "closed";
+  if (now >= Number(attestOpen)) return "live";
+  return now < Number(registerDeadline) ? "registering" : "waiting";
+}
+
+/// A live event can still be taking walk-ins, which is not something `phase` can express.
+export function stillJoinable(now: number, registerDeadline: bigint, registered: number, capacity: number, status: number): boolean {
+  return status === 0 && registered < capacity && now < Number(registerDeadline);
 }
 
 /// Reads every event. One `getEvent` per event, because the escrow has no batch read — it was
