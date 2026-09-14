@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Builds the deployable static site.
 #
-#   scripts/build-static.sh testnet 0xEscrowAddress [eventId]
+#   scripts/build-static.sh testnet 0xEscrowAddress [eventId]   # eventId defaults to `latest`
 #   scripts/build-static.sh mainnet 0xEscrowAddress [eventId]
+#
+# Pass an id only to pin the site to one event on purpose. `latest` follows whatever the escrow's
+# newest event is, and `?event=N` overrides it per link either way.
 #
 # Output lands in web/out — 1.8MB of static files, no server. Host it anywhere.
 #
@@ -14,7 +17,11 @@ set -euo pipefail
 
 NETWORK=${1:-}
 ESCROW=${2:-}
-EVENT_ID=${3:-1}
+# `latest`, not 1. A numeric id here switches off the resolve-to-newest path entirely, so the site
+# shows one fixed event forever — and since the id is optional, a build that forgot it pinned
+# itself silently. That is what put a finished event on the public demo: the page rendered
+# correctly, it was simply describing something that had ended.
+EVENT_ID=${3:-latest}
 DEPLOY_BLOCK=${4:-0}
 BASE_PATH=${BASE_PATH:-}
 
@@ -67,7 +74,7 @@ NEXT_PUBLIC_ESCROW_ADDRESS="$ESCROW" \
 NEXT_PUBLIC_EVENT_ID="$EVENT_ID" \
 NEXT_PUBLIC_BASE_PATH="$BASE_PATH" \
   NEXT_PUBLIC_DEPLOY_BLOCK="$DEPLOY_BLOCK" \
-  NEXT_PUBLIC_PRIVY_APP_ID="${NEXT_PUBLIC_PRIVY_APP_ID:-$PRIVY_APP_ID}" \
+  NEXT_PUBLIC_PRIVY_APP_ID="${NEXT_PUBLIC_PRIVY_APP_ID:-${PRIVY_APP_ID:-}}" \
   npm run build
 
 echo

@@ -4,6 +4,12 @@ import fs from "node:fs";
 const OUT = "/home/liyakun/文档/Monad_Circle/docs/screens";
 const BASE = "http://localhost:3000";
 
+/// Event ids used to come from literals here, and fixture events age: a window that was open the
+/// day the pictures were taken is closed the next, so a re-run quietly produced the wrong screen
+/// for three frames and the spec described states the images no longer showed. scripts/dev-shots.sh
+/// builds the states and writes their ids; this file asks for a state by name.
+const FIX = JSON.parse(fs.readFileSync(`${OUT}/fixture.json`, "utf8"));
+
 const SIZES = [
   { name: "mobile", width: 390, height: 844 },
   { name: "desktop", width: 1280, height: 900 },
@@ -29,7 +35,7 @@ const SHOTS = [
   },
   {
     id: "02-event",
-    path: "/?event=4",
+    path: `/?event=${FIX.open}`,
     marks: [
       { n: 1, text: "Web3 设计工作坊" },
       { n: 2, text: "Put a deposit down" },
@@ -41,8 +47,10 @@ const SHOTS = [
   },
   {
     id: "03-event-signed-in",
-    path: "/?event=4&dev=1",
+    path: `/?event=${FIX.open}&dev=1`,
     devKey: true,
+    // Funded but registered nowhere, so the call to action is what renders.
+    entropy: "ef",
     marks: [
       { n: 1, text: "and register" },
       { n: 2, text: "you never see a gas prompt" },
@@ -66,18 +74,32 @@ const SHOTS = [
     devKey: true,
     tab: "new event",
     marks: [
-      { n: 1, text: "DEPOSIT (MON)" },
-      { n: 2, text: "RUNS IF AT LEAST" },
-      { n: 3, text: "VOUCHES NEEDED" },
-      { n: 4, text: "REGISTRATION (MINS)" },
-      { n: 5, text: "WINDOW (MINS)" },
-      { n: 6, text: "WHAT IS THIS EVENT" },
-      { n: 7, text: "Create event" },
+      { n: 1, text: "1 · ABOUT THE EVENT" },
+      { n: 2, text: "TITLE" },
+      { n: 3, text: "2 · THE RULES" },
+      { n: 4, text: "DEPOSIT (MON)" },
+      { n: 5, text: "DOORS OPEN IN (MINS)" },
+      { n: 6, text: "RUNS FOR (MINS)" },
+      { n: 7, text: "Take walk-ins" },
+      { n: 8, text: "Create event" },
+    ],
+  },
+  {
+    // The check-in screen before the doors open. It was a screen of disabled buttons at 35%
+    // opacity, which read as "this feature does not exist" rather than "not yet" — so it is now
+    // a state of its own, and a state of its own needs a frame of its own.
+    id: "06b-floor-locked",
+    path: `/floor/?event=${FIX.locked}&dev=1`,
+    devKey: true,
+    marks: [
+      { n: 1, text: "refreshes in" },
+      { n: 2, text: "Doors open in" },
+      { n: 3, text: "it unlocks on its own" },
     ],
   },
   {
     id: "06-floor",
-    path: "/floor/?event=6&dev=1",
+    path: `/floor/?event=${FIX.live}&dev=1`,
     devKey: true,
     marks: [
       { n: 1, text: "refreshes in" },
@@ -101,7 +123,7 @@ const SHOTS = [
   },
   {
     id: "08-verify",
-    path: "/verify/?event=6",
+    path: `/verify/?event=${FIX.settled}`,
     marks: [
       { n: 1, text: "confirmed present" },
       { n: 2, text: "vouches received" },
@@ -111,7 +133,7 @@ const SHOTS = [
   },
   {
     id: "09-funding",
-    path: "/?event=4&dev=1",
+    path: `/?event=${FIX.open}&dev=1`,
     devKey: true,
     // A different derived identity, deliberately unfunded — this screen only exists for somebody
     // who has just signed in and has nothing.
@@ -124,7 +146,7 @@ const SHOTS = [
   },
   {
     id: "10-payout",
-    path: "/floor/?event=6&dev=1",
+    path: `/floor/?event=${FIX.settled}&dev=1`,
     devKey: true,
     marks: [
       { n: 1, text: "PAID OUT" },

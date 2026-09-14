@@ -339,7 +339,9 @@ export default function FloorPage() {
                 which, and a countdown says for how long. */}
             {!windowOpen ? (
               <div className="space-y-2.5 rounded-xl border border-line-2 bg-raised p-4 text-center">
-                <p className="text-[15px] font-medium">Scanning opens when registration closes</p>
+                {/* Not "when registration closes" — walk-ins let registration run past the doors,
+                    so the two are no longer the same moment. Doors are the one this screen waits on. */}
+                <p className="text-[15px] font-medium">Doors open in</p>
                 <p className="text-[32px] font-medium leading-none tabular-nums text-accent-2">
                   {ev ? countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)) : "…"}
                 </p>

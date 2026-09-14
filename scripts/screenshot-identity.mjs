@@ -7,6 +7,11 @@ const LOCAL = "http://localhost:3000";
 // the local fixture. The deployed site has both, so that one screen is captured from there.
 const LIVE = "https://zhxinyue29.github.io/peerproof";
 
+/// Local fixture ids, written by scripts/dev-shots.sh. The two frames captured from the deployed
+/// site deliberately take no `?event=`: that site runs on testnet, where these ids mean nothing,
+/// and an unparameterised load resolves to the newest event — which is the open one by definition.
+const FIX = JSON.parse(fs.readFileSync(`${OUT}/fixture.json`, "utf8"));
+
 const SIZES = [
   { name: "mobile", width: 390, height: 844 },
   { name: "desktop", width: 1280, height: 900 },
@@ -32,11 +37,19 @@ const FAKE_WALLET = () => {
   });
 };
 
+/// Two of these are captured from the deployed site, and the deployed site is currently pinned to a
+/// finished event: the repository variable EVENT_ID is set to 2, which makes NEXT_PUBLIC_EVENT_ID
+/// "2" in the build and switches off the resolve-to-newest path entirely. The identity gate only
+/// renders while registration is open, so both frames come back as a closed event instead.
+///
+/// Deleting that variable (or setting it to `latest`) fixes the site and these frames together. The
+/// committed 13- and 14- images predate the pin and are correct; re-running this will overwrite
+/// them with the wrong screen until the variable is gone.
 const SHOTS = [
   {
     id: "11-identity-wallet",
     base: LOCAL,
-    path: "/?event=4",
+    path: `/?event=${FIX.open}`,
     wallet: true,
     marks: [
       { n: 1, text: "can't hold a passkey key" },
@@ -47,7 +60,7 @@ const SHOTS = [
   {
     id: "12-identity-none",
     base: LOCAL,
-    path: "/?event=4",
+    path: `/?event=${FIX.open}`,
     marks: [
       { n: 1, text: "Open this on a phone" },
     ],
@@ -55,9 +68,7 @@ const SHOTS = [
   {
     id: "13-identity-email",
     base: LIVE,
-    // Event 1 is the one still open on testnet; the identity gate only renders while registration
-    // is open, so pointing at a closed event captures the wrong branch.
-    path: "/?event=1",
+    path: "/",
     marks: [
       { n: 1, text: "Sign in with your email" },
       { n: 2, text: "Continue with email" },
@@ -67,9 +78,7 @@ const SHOTS = [
   {
     id: "14-privy-modal",
     base: LIVE,
-    // Event 1 is the one still open on testnet; the identity gate only renders while registration
-    // is open, so pointing at a closed event captures the wrong branch.
-    path: "/?event=1",
+    path: "/",
     clickEmail: true,
     marks: [],
   },
