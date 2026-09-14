@@ -26,10 +26,10 @@ import { monadTestnet } from "viem/chains";
 /// faucet page. It is now behind `?dev=1` with the rest of the scaffolding, and the instruction for
 /// people trying this on a testnet lives in the README, where instructions to testers belong.
 ///
-/// Topping up is a real button on the email path, not a grey "not yet available" box. The box was
-/// accurate and useless: somebody with an empty wallet cannot act on a sentence. It opens Privy's
-/// funding flow, and when that flow has nothing to offer — no provider sells native MON into a
-/// wallet yet — it says why, in the place where the person is standing. See TopUp.tsx.
+/// Topping up is a button on the email path, not a grey "not yet available" box — the box was
+/// accurate and useless, since somebody with an empty wallet cannot act on a sentence. Pressing it
+/// explains where card payment stands and why; it does not open a payment flow that cannot
+/// complete. See TopUp.tsx for what that cost us to learn.
 const FAUCETS: Record<number, { label: string; url: string }[]> = {
   [monadTestnet.id]: [
     { label: "Official faucet", url: "https://faucet.monad.xyz" },
@@ -121,10 +121,9 @@ export default function Funding({
         </div>
       </div>
 
-      {/* Top up. A real entry point on the email path, where Privy can open its funding flow; an
-          explanation everywhere else, because buying MON into somebody's own MetaMask is not ours
-          to drive. A grey "not yet available" box was accurate and useless — an empty wallet cannot
-          act on it. */}
+      {/* Top up. On the email path it is a button that answers where card payment stands; with a
+          browser wallet it is a sentence, because buying MON into somebody's own MetaMask is not
+          ours to drive. */}
       <div className="space-y-2 rounded-lg border border-dashed border-warn/25 p-3">
         <p className="text-[13px] font-medium text-fg">Top up</p>
         {privyGate.enabled ? (
