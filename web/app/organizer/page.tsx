@@ -18,12 +18,12 @@ import {
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
-import { checkDirectory, describeGas, directoryAddress, directoryReady } from "@/lib/directory";
+import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 
 export default function OrganizerPage() {
-  const { signer } = useIdentity();
+  const { signer, devMode } = useIdentity();
   const { ev, refresh } = useEvent(signer?.address ?? null);
   const [tab, setTab] = useState<"dashboard" | "create">("dashboard");
 
@@ -67,9 +67,10 @@ export default function OrganizerPage() {
 
       <IdentityGate>
         {tab === "dashboard" ? <Dashboard /> : <CreateForm onCreated={refresh} />}
-        {/* Below the form, not above it. It is one-time setup for a nicety, and sitting at the top
-            in primary styling made it read as a step you had to complete before anything else. */}
-        <DeployDirectory />
+        {/* Dev only. Creating an event deploys this on demand, so an organizer never meets it —
+            "deploy a contract" is our infrastructure problem, not something to put in front of
+            somebody who wanted to invite people to a reading group. */}
+        {devMode && <DeployDirectory />}
       </IdentityGate>
 
       {tab === "dashboard" && ev && <PayoutControls />}
@@ -270,13 +271,8 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
-  // Whether the directory exists is a chain read, not a build setting, so it
-  // arrives after mount like any other on-chain fact.
-  const [hasDir, setHasDir] = useState(false);
-  useEffect(() => {
-    void checkDirectory().then(setHasDir);
-  }, []);
   const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState("Creating…");
   const [notice, setNotice] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: bigint; beacon: string } | null>(null);
 
@@ -285,6 +281,15 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
     setBusy(true);
     setNotice(null);
     try {
+      // Descriptions live in a second contract. Whether it exists yet is our problem, not the
+      // organizer's — so if it does not, deploy it as part of this action rather than putting a
+      // "deploy a contract" button in front of somebody who wanted to create an event.
+      const wantsWords = !!(title || blurb || url);
+      if (wantsWords && !(await checkDirectory())) {
+        setBusyLabel("Setting up descriptions…");
+        await deployDirectory(signer.address);
+      }
+      setBusyLabel("Creating…");
       // The venue display's key. Generated fresh per event and handed to the device at the door;
       // it signs beacons and nothing else, so it never needs funding.
       const beaconPk = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
@@ -327,9 +332,9 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       // where money goes, so the description lives in EventDirectory — and an event that exists
       // without a description is a listing that reads badly, not a broken event. Failing here must
       // not look like the event failed.
-      if (directoryReady() && (title || blurb || url)) {
+      if (wantsWords) {
         try {
-          setNotice("Saving the description…");
+          setBusyLabel("Saving the description…");
           await signer.write({
             functionName: "describe",
             args: [id, title, blurb, url],
@@ -372,26 +377,16 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <Field label="Deposit (MON)" value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
-        <Field label="Capacity" value={capacity} onChange={setCapacity} />
-        <Field label="Runs if at least" value={minQuorum} onChange={setMinQuorum} hint="must exceed vouches" />
-        <Field label="Vouches needed" value={k} onChange={setK} hint="3 is a good default" />
-        <Field label="Registration (mins)" value={registerMins} onChange={setRegisterMins} />
-        <Field label="Window (mins)" value={windowMins} onChange={setWindowMins} />
-      </div>
-
-      <p className="text-xs leading-relaxed text-faint">
-        You send no funds and gain no spending power. Deposits go to the contract; the split is
-        decided by who vouches for whom.
-      </p>
-
-      {notice && <Notice tone="bad">{notice}</Notice>}
-
-      {hasDir ? (
-        <div className="space-y-2.5 rounded-xl border border-line bg-panel p-3.5">
-          <Eyebrow>what is this event?</Eyebrow>
-          <Field label="Title" value={title} onChange={setTitle} hint="Shown in the listing" />
+      <div className="space-y-4">
+        {/* Description first. Somebody creating an event thinks about what it is before they think
+            about deposit mechanics, and a form that opens with six numbers reads as a config screen
+            rather than a way to invite people. */}
+        <section className="space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5">
+          <div>
+            <Eyebrow>1 · about the event</Eyebrow>
+            <p className="mt-1 text-[13px] text-dim">What people see in the listing.</p>
+          </div>
+          <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
           <label className="block">
             <span className="mb-1.5 block text-[11px] uppercase tracking-wide text-faint">
               Description
@@ -406,21 +401,35 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
             />
           </label>
           <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
-          <p className="text-[11px] leading-relaxed text-faint">
-            Saved to a second contract that holds no money — it cannot affect who gets paid. Costs
-            about {fiat((describeGas(title, blurb, url) * 102n) / 1_000_000_000n)} in gas, charged
-            on length.
-          </p>
-        </div>
-      ) : (
-        <Notice>
-          Deploy the directory above to give this event a title and description.
-        </Notice>
-      )}
+        </section>
 
-      <Button onClick={() => void submit()} disabled={busy} className="w-full">
-        {busy ? "Creating…" : "Create event"}
-      </Button>
+        <section className="space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5">
+          <div>
+            <Eyebrow>2 · the rules</Eyebrow>
+            <p className="mt-1 text-[13px] text-dim">
+              Fixed once registration opens — including for you.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <Field label="Deposit (MON)" value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
+            <Field label="Capacity" value={capacity} onChange={setCapacity} />
+            <Field label="Runs if at least" value={minQuorum} onChange={setMinQuorum} hint="must exceed vouches" />
+            <Field label="Vouches needed" value={k} onChange={setK} hint="3 is a good default" />
+            <Field label="Registration (mins)" value={registerMins} onChange={setRegisterMins} />
+            <Field label="Window (mins)" value={windowMins} onChange={setWindowMins} hint="starts when registration closes" />
+          </div>
+          <p className="text-xs leading-relaxed text-faint">
+            You send no funds and gain no spending power. Deposits go to the contract; the split is
+            decided by who vouches for whom.
+          </p>
+        </section>
+
+        {notice && <Notice tone="bad">{notice}</Notice>}
+
+        <Button onClick={() => void submit()} disabled={busy} className="w-full">
+          {busy ? busyLabel : "Create event"}
+        </Button>
+      </div>
     </div>
   );
 }
