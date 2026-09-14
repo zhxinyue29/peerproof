@@ -59,10 +59,15 @@ export default function PrivyBridge({
 
   // A belt for the same brace: onError does not fire on every dismissal, so watch the dialog
   // itself. When it leaves the document without anyone having authenticated, the attempt is over.
+  //
+  // The guard is checked inside the interval, not around it. Checked outside, this effect ran once
+  // — before `login()` had been called, because Privy was not ready yet — decided there was nothing
+  // to watch, and never reran, since its dependencies do not change when a ref does. The watcher
+  // was there and switched off, which is the most expensive kind of absent.
   useEffect(() => {
-    if (!askedToLogIn.current || authenticated) return;
+    if (authenticated) return;
     const id = setInterval(() => {
-      if (authenticated) return;
+      if (!askedToLogIn.current) return;
       if (document.getElementById("privy-dialog")) {
         seenDialog.current = true;
         return;
