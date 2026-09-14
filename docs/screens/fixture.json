@@ -1,7 +1,7 @@
 {
   "escrow": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  "open": 20,
-  "locked": 19,
-  "live": 18,
-  "settled": 17
+  "open": 24,
+  "locked": 23,
+  "live": 22,
+  "settled": 21
 }

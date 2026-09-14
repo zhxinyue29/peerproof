@@ -139,9 +139,12 @@ const SHOTS = [
     // who has just signed in and has nothing.
     entropy: "cd",
     marks: [
-      { n: 1, text: "Not enough MON" },
+      { n: 1, text: "Add MON to register" },
       { n: 2, text: "cannot be covered for you" },
-      { n: 3, text: "fund this address" },
+      { n: 3, text: "Send MON to your address" },
+      { n: 4, text: "Buy with a card" },
+      // No mark for the faucet row: it renders only on testnet, and this runs against the local
+      // chain, which prints a `cast send` hint instead. Neither is a thing a designer lays out.
     ],
   },
   {
