@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useIdentity } from "@/components/IdentityProvider";
 import { relyingPartyId } from "@/lib/passkey";
 import { shortAddress } from "@/lib/format";
@@ -11,6 +12,9 @@ import { Button, Notice } from "@/components/ui";
 /// an error state the tallest thing on the landing page — the deposit and the call to action were
 /// below the fold on a phone. The explanation now lives behind a disclosure.
 export default function IdentityGate({ children }: { children: React.ReactNode }) {
+  // Tapping the truncated address copies it in full. Needed before it is possible to
+  // send anything to a wallet the app just created for somebody.
+  const [copied, setCopied] = useState(false);
   const {
     signer,
     prf,
@@ -33,7 +37,18 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         {/* The way out. A remembered key is a convenience until somebody needs to be a different
             person on the same device — testing with two accounts, or handing a phone to a friend. */}
         <p className="text-center text-[11px] text-faint">
-          signed in as <span className="font-mono">{shortAddress(signer.address)}</span>
+          signed in as{" "}
+          <button
+            onClick={() => {
+              void navigator.clipboard?.writeText(signer.address);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1600);
+            }}
+            className="font-mono underline decoration-line-2"
+            title={signer.address}
+          >
+            {copied ? "copied" : shortAddress(signer.address)}
+          </button>
           {" · "}
           <button onClick={signOut} className="underline decoration-line-2">
             use a different account

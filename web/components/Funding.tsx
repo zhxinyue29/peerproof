@@ -1,6 +1,7 @@
 "use client";
 
-import { Notice } from "@/components/ui";
+import { CopyableCode, Notice } from "@/components/ui";
+import type { Address } from "viem";
 import { chain, isLocalChain } from "@/lib/chain";
 import { mon } from "@/lib/format";
 import { monadTestnet } from "viem/chains";
@@ -26,12 +27,16 @@ export default function Funding({
   need,
   have,
   what,
+  address,
 }: {
   /// Total required, deposit plus room for gas.
   need: bigint;
   have: bigint;
   /// What the money is for, e.g. "register".
   what: string;
+  /// Where to send it. Shown in full and copyable — an address you cannot copy is an address
+  /// nobody can fund, and truncating it here was the one thing that made this screen useless.
+  address: Address;
 }) {
   if (have >= need) return null;
 
@@ -48,6 +53,11 @@ export default function Funding({
         own money going into the contract, so it cannot be covered for you; that is the part that
         makes a no-show cost something.
       </p>
+
+      <div className="space-y-1.5 pt-0.5">
+        <p className="text-[11px] uppercase tracking-wide text-warn/70">Your address</p>
+        <CopyableCode value={address} />
+      </div>
 
       {faucets.length > 0 ? (
         <div className="flex flex-wrap gap-2 pt-0.5">

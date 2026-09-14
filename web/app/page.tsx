@@ -153,11 +153,12 @@ export default function LandingPage() {
               <IdentityGate>
                   <div className="space-y-3">
                     {error && <Notice tone="bad">{error}</Notice>}
-                    {ev && me && (
+                    {ev && me && signer && (
                       <Funding
                         need={needFor(ev.deposit, GAS_LIMITS.register)}
                         have={me.balance}
                         what="register"
+                        address={signer.address}
                       />
                     )}
                     <Button
