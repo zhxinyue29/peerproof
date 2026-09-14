@@ -8,6 +8,17 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 **Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0xf0c53014079acc58912621caa434b01029355a6f`](https://testnet.monadscan.com/address/0xf0c53014079acc58912621caa434b01029355a6f) on Monad testnet (10143), source verified
 
+### Trying it
+
+Sign in with an email — no wallet, no extension, nothing to install. You will need a little testnet
+MON to put down a deposit; the app does not offer to fetch it for you, because claiming test tokens
+is not part of the product. Get some from the [Monad faucet](https://faucet.monad.xyz) or the
+`#faucet` channel in [Monad's Discord](https://discord.gg/monad), send it to the address the app
+shows you, and register.
+
+Two accounts are needed to see the mechanism work: the contract refuses self-attestation, so one
+person scanning their own code proves nothing. Two phones, or a phone and a browser wallet.
+
 ---
 
 ## The problem

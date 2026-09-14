@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { CopyableCode, Notice } from "@/components/ui";
+import { useIdentity } from "@/components/IdentityProvider";
 import type { Address } from "viem";
 import { chain, isLocalChain } from "@/lib/chain";
 import { mon } from "@/lib/format";
@@ -15,10 +16,13 @@ import { monadTestnet } from "viem/chains";
 /// button that fails — which reads as a broken product rather than an empty wallet.
 ///
 /// The screen is arranged around the one method that works on every network today: send MON to
-/// this address. It used to lead with a faucet link, which is a thing only we do — nobody attending
-/// a reading group is going to claim test tokens, and putting that first described our test setup
-/// rather than their situation. The faucet is still here on testnet, at the bottom, labelled as
-/// what it is.
+/// this address.
+///
+/// It used to lead with a faucet link, which is a thing only we do — nobody attending a reading
+/// group is going to claim test tokens, so that described our test setup rather than their
+/// situation. Demoting it to a small row at the bottom was not enough either: it still read as a
+/// faucet page. It is now behind `?dev=1` with the rest of the scaffolding, and the instruction for
+/// people trying this on a testnet lives in the README, where instructions to testers belong.
 ///
 /// Buying with a card is the entry that is deliberately inert. MoonPay has built native MON on
 /// chain 143 and has it suspended; Stripe's destination list does not include Monad at all. A
@@ -77,6 +81,8 @@ export default function Funding({
   /// address nobody can fund, and on a phone a QR is the only way to get it into another wallet.
   address: Address;
 }) {
+  const { devMode } = useIdentity();
+
   if (have >= need) return null;
 
   const faucets = FAUCETS[chain.id] ?? [];
@@ -127,11 +133,17 @@ export default function Funding({
         <p className="text-[11px] text-warn/70">
           Local chain — fund this address with <code>cast send</code>.
         </p>
-      ) : faucets.length > 0 ? (
-        <div className="space-y-1.5">
-          <p className="text-[11px] text-faint">
-            Testing on {chain.name}? These hand out test MON, which is worth nothing anywhere.
-          </p>
+      ) : devMode && faucets.length > 0 ? (
+        // Behind ?dev=1, like every other affordance that exists for us rather than for the person
+        // using this. Claiming test tokens is not something somebody attending a reading group will
+        // ever do, and leaving it on the screen — even small, even at the bottom — kept this reading
+        // as a faucet page after the rest of it had been rewritten around receiving money.
+        //
+        // The cost is real: this build runs on a testnet, so somebody opening the link to try the
+        // product has no other way to obtain MON. That is answered in the README and the submission
+        // notes, which is where an instruction to testers belongs.
+        <div className="space-y-1.5 border-t border-line pt-2.5">
+          <p className="text-[11px] text-faint">Dev · testnet faucets</p>
           <div className="flex flex-wrap gap-2">
             {faucets.map((f) => (
               <a
