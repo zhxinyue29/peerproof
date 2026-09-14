@@ -36,24 +36,48 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         {children}
         {/* The way out. A remembered key is a convenience until somebody needs to be a different
             person on the same device — testing with two accounts, or handing a phone to a friend. */}
+        {/* The email first when there is one. Somebody who signed in with an email cannot check
+            "0x7497…a80d" against anything they know — it is a number the app made up on their
+            behalf — and the whole point of that route is that they never had to think about
+            wallets. The address stays underneath, because it is what you send MON to. */}
         <p className="text-center text-[11px] text-faint">
           signed in as{" "}
-          <button
-            onClick={() => {
-              void navigator.clipboard?.writeText(signer.address);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1600);
-            }}
-            className="font-mono underline decoration-line-2"
-            title={signer.address}
-          >
-            {copied ? "copied" : shortAddress(signer.address)}
-          </button>
+          {signer.label ? (
+            <span className="text-dim">{signer.label}</span>
+          ) : (
+            <button
+              onClick={() => {
+                void navigator.clipboard?.writeText(signer.address);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+              }}
+              className="font-mono underline decoration-line-2"
+              title={signer.address}
+            >
+              {copied ? "copied" : shortAddress(signer.address)}
+            </button>
+          )}
           {" · "}
           <button onClick={signOut} className="underline decoration-line-2">
             use a different account
           </button>
         </p>
+        {signer.label && (
+          <p className="text-center text-[11px] text-faint">
+            wallet{" "}
+            <button
+              onClick={() => {
+                void navigator.clipboard?.writeText(signer.address);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+              }}
+              className="font-mono underline decoration-line-2"
+              title={signer.address}
+            >
+              {copied ? "copied" : shortAddress(signer.address)}
+            </button>
+          </p>
+        )}
       </>
     );
   }

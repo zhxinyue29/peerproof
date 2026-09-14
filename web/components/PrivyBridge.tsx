@@ -28,7 +28,7 @@ export default function PrivyBridge({
   onError: (msg: string) => void;
   onBusy: (msg: string | null) => void;
 }) {
-  const { ready, authenticated } = usePrivy();
+  const { ready, authenticated, user } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
 
   // Privy re-renders on every state change and each phase here must run exactly once: `login()`
@@ -54,7 +54,11 @@ export default function PrivyBridge({
     if (!ready || authenticated || askedToLogIn.current) return;
     askedToLogIn.current = true;
     onBusy("Opening sign-in…");
-    login();
+    // Email only. The dashboard config lists wallet as well, and the shared modal offered both —
+    // so pressing "Continue with email" produced a wallet chooser, next to a button on our own page
+    // that already does wallets. Narrowing here, not in the config, keeps the wallet route
+    // available to anything that wants it.
+    login({ loginMethods: ["email"] });
 
     // "Opening sign-in…" describes opening the dialog, which takes a moment; it does not describe
     // the dialog being open, and the app has no business being frozen behind somebody else's modal.
@@ -104,7 +108,11 @@ export default function PrivyBridge({
         const { account, attestPk } = await deriveFromWallet(ESCROW_ADDRESS, id, provider);
         saveSession(id, "privy", attestPk, wallet.address as Address);
         onSigner(
-          walletSigner(wallet.address as Address, account, { provider, kind: "privy" }),
+          walletSigner(wallet.address as Address, account, {
+            provider,
+            kind: "privy",
+            label: user?.email?.address,
+          }),
         );
       } catch (e) {
         derived.current = false;
@@ -113,7 +121,7 @@ export default function PrivyBridge({
         onBusy(null);
       }
     })();
-  }, [authenticated, walletsReady, wallets, onSigner, onError, onBusy]);
+  }, [authenticated, walletsReady, wallets, user, onSigner, onError, onBusy]);
 
   return null;
 }

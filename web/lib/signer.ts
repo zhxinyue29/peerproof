@@ -20,6 +20,10 @@ export type Signer = {
   kind: "passkey" | "wallet" | "privy";
   /// The registered participant: pays the deposit, submits attestations, receives the payout.
   address: Address;
+  /// What to call this account when showing it to its owner. An email address on the email path:
+  /// somebody who signed in with an email has no idea which 0x… belongs to them, and "signed in as
+  /// 0x7497…a80d" is not something they can check against anything they know.
+  label?: string;
   /// Signs the rotating attendance codes. Never prompts.
   attest: LocalAccount;
   /// True when every write pops a confirmation dialog.
@@ -61,11 +65,12 @@ export function passkeySigner(account: LocalAccount): Signer {
 export function walletSigner(
   owner: Address,
   attest: LocalAccount,
-  opts?: { provider?: Eip1193 | null; kind?: "wallet" | "privy" },
+  opts?: { provider?: Eip1193 | null; kind?: "wallet" | "privy"; label?: string },
 ): Signer {
   return {
     kind: opts?.kind ?? "wallet",
     address: owner,
+    label: opts?.label,
     attest,
     prompts: true,
     write: async ({ functionName, args, value, gas, to, abi }) => {
