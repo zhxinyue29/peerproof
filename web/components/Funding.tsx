@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { CopyableCode, Notice } from "@/components/ui";
+import dynamic from "next/dynamic";
 import { useIdentity } from "@/components/IdentityProvider";
+import { usePrivyGate } from "@/components/PrivyClientProvider";
 import type { Address } from "viem";
 import { chain, isLocalChain } from "@/lib/chain";
 import { mon } from "@/lib/format";
@@ -24,16 +26,20 @@ import { monadTestnet } from "viem/chains";
 /// faucet page. It is now behind `?dev=1` with the rest of the scaffolding, and the instruction for
 /// people trying this on a testnet lives in the README, where instructions to testers belong.
 ///
-/// Buying with a card is the entry that is deliberately inert. MoonPay has built native MON on
-/// chain 143 and has it suspended; Stripe's destination list does not include Monad at all. A
-/// button that opens a provider with nothing to sell is worse than a line saying so — and when one
-/// of them does list MON, this becomes a link and nothing else here changes.
+/// Topping up is a real button on the email path, not a grey "not yet available" box. The box was
+/// accurate and useless: somebody with an empty wallet cannot act on a sentence. It opens Privy's
+/// funding flow, and when that flow has nothing to offer — no provider sells native MON into a
+/// wallet yet — it says why, in the place where the person is standing. See TopUp.tsx.
 const FAUCETS: Record<number, { label: string; url: string }[]> = {
   [monadTestnet.id]: [
     { label: "Official faucet", url: "https://faucet.monad.xyz" },
     { label: "via Discord", url: "https://discord.gg/monad" },
   ],
 };
+
+/// Privy's hooks only work under its provider, which is mounted only for people who chose the
+/// email path. Loaded separately so nobody else downloads it.
+const LazyTopUp = dynamic(() => import("./TopUp"), { ssr: false });
 
 function AddressQR({ address }: { address: Address }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -82,6 +88,7 @@ export default function Funding({
   address: Address;
 }) {
   const { devMode } = useIdentity();
+  const privyGate = usePrivyGate();
 
   if (have >= need) return null;
 
@@ -114,19 +121,21 @@ export default function Funding({
         </div>
       </div>
 
-      {/* The reserved entry. Inert on purpose, and honest about why. */}
-      <div className="space-y-1 rounded-lg border border-dashed border-warn/25 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-medium text-dim">Buy with a card</p>
-          <span className="shrink-0 rounded-full bg-raised px-2 py-0.5 text-[11px] text-faint">
-            not yet available
-          </span>
-        </div>
-        <p className="text-[11px] leading-relaxed text-faint">
-          No provider sells MON into a wallet yet — MoonPay has built it and has it suspended, and
-          Stripe does not list Monad as a destination. This opens up as the chain matures; nothing
-          else on this screen changes when it does.
-        </p>
+      {/* Top up. A real entry point on the email path, where Privy can open its funding flow; an
+          explanation everywhere else, because buying MON into somebody's own MetaMask is not ours
+          to drive. A grey "not yet available" box was accurate and useless — an empty wallet cannot
+          act on it. */}
+      <div className="space-y-2 rounded-lg border border-dashed border-warn/25 p-3">
+        <p className="text-[13px] font-medium text-fg">Top up</p>
+        {privyGate.enabled ? (
+          <LazyTopUp address={address} />
+        ) : (
+          <p className="text-[11px] leading-relaxed text-faint">
+            Card top-up runs through the account you signed in with, and is offered on the email
+            path. With a browser wallet, buy MON wherever you normally would and send it to the
+            address above.
+          </p>
+        )}
       </div>
 
       {isLocalChain ? (
