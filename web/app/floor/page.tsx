@@ -321,28 +321,36 @@ export default function FloorPage() {
           <>
             <RotatingCode payload={payload} secondsLeft={secondsLeft} totalSeconds={Number(EPOCH)} />
 
-            {phase === "waiting" && (
-              <Notice tone="warn">The attestation window hasn&apos;t opened yet.</Notice>
+            {/* Scanning before the window opens is not something the contract allows, so the buttons
+                were disabled — but at 35% opacity they read as absent rather than as not-yet, and
+                somebody looked for them and concluded the feature was missing. A locked state says
+                which, and a countdown says for how long. */}
+            {!windowOpen ? (
+              <div className="space-y-2.5 rounded-xl border border-line-2 bg-raised p-4 text-center">
+                <p className="text-[15px] font-medium">Scanning opens when registration closes</p>
+                <p className="text-[32px] font-medium leading-none tabular-nums text-accent-2">
+                  {ev ? countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)) : "…"}
+                </p>
+                <p className="text-[13px] leading-relaxed text-dim">
+                  Until then your code above is live and so is everyone else&apos;s — there is just
+                  nothing to submit yet. Keep this page open; it unlocks on its own.
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-2.5">
+                <Button onClick={() => setScanning(true)} disabled={!!busy} className="flex-1">
+                  {busy ?? "Scan someone"}
+                </Button>
+                <button
+                  onClick={() => setScanning(true)}
+                  className={`min-h-[46px] rounded-xl border px-4 text-[15px] font-medium transition-transform duration-100 active:scale-[0.985] ${
+                    beacon ? "border-line-2 text-faint" : "border-warn/50 text-warn"
+                  }`}
+                >
+                  {beacon ? "Venue ✓" : "Scan venue"}
+                </button>
+              </div>
             )}
-
-            <div className="flex gap-2.5">
-              <Button
-                onClick={() => setScanning(true)}
-                disabled={!!busy || !windowOpen}
-                className="flex-1"
-              >
-                {busy ?? "Scan someone"}
-              </Button>
-              <button
-                onClick={() => setScanning(true)}
-                disabled={!windowOpen}
-                className={`min-h-[46px] rounded-xl border px-4 text-[15px] font-medium transition-transform duration-100 active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${
-                  beacon ? "border-line-2 text-faint" : "border-warn/50 text-warn"
-                }`}
-              >
-                {beacon ? "Venue ✓" : "Scan venue"}
-              </button>
-            </div>
 
             {notice && <Notice tone="bad">{notice}</Notice>}
 
