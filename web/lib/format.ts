@@ -40,10 +40,41 @@ export function shortAddress(a: string): string {
 }
 
 /// Contract reverts arrive as long simulation dumps; surface only the custom error name.
+/// EIP-1193 rejections that are worth saying in words. A wallet reports these as numbers, and the
+/// number is never the thing the person needs to know.
+const PROVIDER_CODES: Record<number, string> = {
+  4001: "You rejected this in your wallet.",
+  4100: "Your wallet has not authorised this site. Reconnect and try again.",
+  4902: "Your wallet does not have this network configured.",
+  [-32002]: "Your wallet already has a request open — check it for a pending prompt.",
+};
+
 export function shortenError(e: unknown): string {
-  const s = e instanceof Error ? e.message : String(e);
+  // Wallets throw plain objects, not Errors: `{ code: 4001, message: "User rejected the request" }`
+  // goes through String() as "[object Object]", which is how a rejected transaction came back to
+  // somebody as no reason at all. Read the shape before falling back to stringifying it.
+  if (e && typeof e === "object") {
+    const o = e as { code?: unknown; shortMessage?: unknown; details?: unknown; message?: unknown };
+    if (typeof o.code === "number" && PROVIDER_CODES[o.code]) return PROVIDER_CODES[o.code];
+    // viem's shortMessage is written for humans; message is the whole trace.
+    for (const k of ["shortMessage", "details", "message"] as const) {
+      if (typeof o[k] === "string" && o[k]) {
+        e = o[k] as string;
+        break;
+      }
+    }
+  }
+
+  const s = typeof e === "string" ? e : e instanceof Error ? e.message : String(e);
+  if (/user (rejected|denied)/i.test(s)) return PROVIDER_CODES[4001];
+  if (/insufficient funds/i.test(s)) {
+    return "Not enough MON in this wallet to cover the gas for this transaction.";
+  }
   const m = s.match(/Error:\s*(\w+)\(\)/) ?? s.match(/reverted with the following reason:\s*(\S+)/);
-  return m ? m[1] : s.split("\n")[0].slice(0, 160);
+  if (m) return m[1];
+  const line = s.split("\n")[0].slice(0, 160);
+  // Still nothing legible — better to admit that than to print "[object Object]".
+  return line && line !== "[object Object]" ? line : "The wallet refused this without saying why.";
 }
 
 /// Written for an attestation window measured in minutes, where m:ss is exactly right. A
