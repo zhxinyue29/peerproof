@@ -37,14 +37,10 @@ const FAKE_WALLET = () => {
   });
 };
 
-/// Two of these are captured from the deployed site, and the deployed site is currently pinned to a
-/// finished event: the repository variable EVENT_ID is set to 2, which makes NEXT_PUBLIC_EVENT_ID
-/// "2" in the build and switches off the resolve-to-newest path entirely. The identity gate only
-/// renders while registration is open, so both frames come back as a closed event instead.
-///
-/// Deleting that variable (or setting it to `latest`) fixes the site and these frames together. The
-/// committed 13- and 14- images predate the pin and are correct; re-running this will overwrite
-/// them with the wrong screen until the variable is gone.
+/// Two of these come from the deployed site, because the email path needs a real Privy app id and
+/// an allowed origin, and the local fixture has neither. They take no `?event=`: that site is on
+/// testnet, where the fixture ids mean nothing, and an unparameterised load resolves to the newest
+/// event — which is the open one by definition.
 const SHOTS = [
   {
     id: "11-identity-wallet",
@@ -72,7 +68,8 @@ const SHOTS = [
     marks: [
       { n: 1, text: "Sign in with your email" },
       { n: 2, text: "Continue with email" },
-      { n: 3, text: "Use a browser wallet" },
+      // No wallet mark: this frame is captured headless, where there is no window.ethereum, so the
+      // wallet button does not render. Its own frame is 11.
     ],
   },
   {

@@ -24,6 +24,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 type Stored = {
   kind: "passkey" | "wallet" | "privy";
   attestPk: Hex;
+  /// What to call this account when showing it to its owner — an email address on the email path.
+  /// Stored so a reload does not turn a recognisable account back into a hex string.
+  label?: string;
   /// The registered participant. Same as the attest key's address on the passkey path.
   owner: Address;
   expiresAt: number;
@@ -44,6 +47,7 @@ export function saveSession(
   kind: Stored["kind"],
   attestPk: Hex,
   owner: Address,
+  label?: string,
 ): void {
   const store = storeFor(kind);
   if (!store) return;
@@ -51,6 +55,7 @@ export function saveSession(
     kind,
     attestPk,
     owner,
+    label,
     expiresAt: Date.now() + (kind === "passkey" ? DAY_MS : DAY_MS),
   };
   try {

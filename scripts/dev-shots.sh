@@ -183,6 +183,41 @@ process.stdout.write(getCreate2Address({
   bytecodeHash: keccak256(init),
 }));
 ')
+# Deploy it if it is not there. The app does this from the browser on demand, which a fixture
+# cannot do — and without it every card on the listing page reads "Event #5", so the screenshots
+# would document a product with no titles.
+#
+# Through node rather than shell: the call is a 32-byte salt concatenated with init code, and
+# getting that wrong in bash produces a transaction that succeeds while deploying nothing at an
+# address nobody checks. viem computes the address too, so the result is verified rather than
+# assumed.
+if [ -n "${DIRECTORY:-}" ] && [ "$(cast code "$DIRECTORY" --rpc-url "$RPC")" = "0x" ]; then
+  say "deploying the directory"
+  ROOT="$ROOT" ESCROW="$ESCROW" RPC="$RPC" PK="$FUNDER_PK" node -e '
+    const fs = require("fs"), path = require("path");
+    const m = require(path.join(process.env.ROOT, "web/node_modules/viem"));
+    const { privateKeyToAccount } = require(path.join(process.env.ROOT, "web/node_modules/viem/accounts"));
+    const src = fs.readFileSync(path.join(process.env.ROOT, "web/lib/directoryArtifact.ts"), "utf8");
+    const bytecode = src.match(/eventDirectoryBytecode = "(0x[0-9a-fA-F]+)"/)[1];
+    const init = bytecode + process.env.ESCROW.slice(2).toLowerCase().padStart(64, "0");
+    const salt = m.pad("0x5065657250726f6f662d6469726563746f7279", { size: 32 });
+    const factory = "0x4e59b44847b379578588920cA78FbF26c0B4956C";
+    const expected = m.getCreate2Address({ from: factory, salt, bytecodeHash: m.keccak256(init) });
+    const chain = m.defineChain({ id: 31337, name: "anvil", nativeCurrency: { name: "E", symbol: "E", decimals: 18 }, rpcUrls: { default: { http: [process.env.RPC] } } });
+    const account = privateKeyToAccount(process.env.PK);
+    const wallet = m.createWalletClient({ account, chain, transport: m.http(process.env.RPC) });
+    const pub = m.createPublicClient({ chain, transport: m.http(process.env.RPC) });
+    (async () => {
+      const hash = await wallet.sendTransaction({ to: factory, data: (salt + init.slice(2)) });
+      const r = await pub.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") throw new Error("factory call reverted");
+      const code = await pub.getCode({ address: expected });
+      if (!code || code === "0x") throw new Error("nothing at " + expected);
+      console.log("  directory " + expected);
+    })().catch((e) => { console.error("  directory deploy failed: " + e.message); process.exit(1); });
+  '
+fi
+
 if [ -n "${DIRECTORY:-}" ] && [ "$(cast code "$DIRECTORY" --rpc-url "$RPC")" != "0x" ]; then
   say "describing the events"
   describe() {

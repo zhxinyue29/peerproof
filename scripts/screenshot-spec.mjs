@@ -145,7 +145,7 @@ const SHOTS = [
       { n: 1, text: "Add MON to register" },
       { n: 2, text: "cannot be covered for you" },
       { n: 3, text: "Send MON to your address" },
-      { n: 4, text: "Buy with a card" },
+      { n: 4, text: "Top up" },
       // No mark for the faucet row: it renders only on testnet, and this runs against the local
       // chain, which prints a `cast send` hint instead. Neither is a thing a designer lays out.
     ],

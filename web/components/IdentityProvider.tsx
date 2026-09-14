@@ -89,7 +89,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
         saved.kind === "passkey"
           ? passkeySigner(attest)
           : // A browser wallet is reachable again through window.ethereum, so this one does rebuild.
-            walletSigner(saved.owner, attest, { kind: saved.kind }),
+            walletSigner(saved.owner, attest, { kind: saved.kind, label: saved.label }),
       );
     });
     // privyGate.enable is stable — it is a useCallback with no dependencies in the gate.

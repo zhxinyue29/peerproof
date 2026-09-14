@@ -19,6 +19,15 @@ import { saveSession } from "@/lib/session";
 /// have either. Someone with neither could not take part at all. An email login can be taken by
 /// anyone, in any browser, with nothing installed — which is the difference between a judge
 /// opening the link and seeing the product, or seeing a dead end.
+/// Privy reports the identifier under whichever method was used, not in one place.
+function privyLabel(user: unknown): string | undefined {
+  const u = user as
+    | { email?: { address?: string }; google?: { email?: string }; phone?: { number?: string } }
+    | null
+    | undefined;
+  return u?.email?.address ?? u?.google?.email ?? u?.phone?.number ?? undefined;
+}
+
 export default function PrivyBridge({
   onSigner,
   onError,
@@ -106,12 +115,16 @@ export default function PrivyBridge({
         // page pointing at event 3.
         const id = await resolveEventId();
         const { account, attestPk } = await deriveFromWallet(ESCROW_ADDRESS, id, provider);
-        saveSession(id, "privy", attestPk, wallet.address as Address);
+        saveSession(id, "privy", attestPk, wallet.address as Address, privyLabel(user));
         onSigner(
           walletSigner(wallet.address as Address, account, {
             provider,
             kind: "privy",
-            label: user?.email?.address,
+            // Whichever identifier they actually signed in with. `user.email` is only populated
+            // for the email method; a Google login puts it under google, a phone under phone. An
+            // account shown back as a bare 0x… is the failure this is here to prevent, so take
+            // anything human before falling through to nothing.
+            label: privyLabel(user),
           }),
         );
       } catch (e) {
