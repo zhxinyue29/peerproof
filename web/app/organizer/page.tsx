@@ -18,7 +18,7 @@ import {
 } from "@/lib/chain";
 import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
-import { DIRECTORY_ADDRESS, describeGas, hasDirectory } from "@/lib/directory";
+import { checkDirectory, describeGas, directoryAddress, directoryReady } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 
@@ -268,6 +268,12 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
+  // Whether the directory exists is a chain read, not a build setting, so it
+  // arrives after mount like any other on-chain fact.
+  const [hasDir, setHasDir] = useState(false);
+  useEffect(() => {
+    void checkDirectory().then(setHasDir);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: bigint; beacon: string } | null>(null);
@@ -319,14 +325,14 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       // where money goes, so the description lives in EventDirectory — and an event that exists
       // without a description is a listing that reads badly, not a broken event. Failing here must
       // not look like the event failed.
-      if (hasDirectory && (title || blurb || url)) {
+      if (directoryReady() && (title || blurb || url)) {
         try {
           setNotice("Saving the description…");
           await signer.write({
             functionName: "describe",
             args: [id, title, blurb, url],
             gas: describeGas(title, blurb, url),
-            to: DIRECTORY_ADDRESS,
+            to: directoryAddress(),
             abi: eventDirectoryAbi,
           });
           setNotice(null);
@@ -380,7 +386,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 
       {notice && <Notice tone="bad">{notice}</Notice>}
 
-      {hasDirectory ? (
+      {hasDir ? (
         <div className="space-y-2.5 rounded-xl border border-line bg-panel p-3.5">
           <Eyebrow>what is this event?</Eyebrow>
           <Field label="Title" value={title} onChange={setTitle} hint="Shown in the listing" />

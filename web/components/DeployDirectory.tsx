@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIdentity } from "@/components/IdentityProvider";
 import { Button, CopyableCode, Notice } from "@/components/ui";
-import { deployDirectory, hasDirectory } from "@/lib/directory";
-import { ESCROW_ADDRESS, explorerTxUrl } from "@/lib/chain";
+import { checkDirectory, deployDirectory } from "@/lib/directory";
+import { explorerTxUrl } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 
 /// One-time setup, shown only while the directory is unconfigured.
@@ -19,7 +19,14 @@ export default function DeployDirectory() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ hash: string; address: string } | null>(null);
 
-  if (hasDirectory || !signer) return null;
+  // A chain read, so it is unknown on the first render — render nothing rather than flashing a
+  // deploy prompt at somebody whose directory already exists.
+  const [exists, setExists] = useState<boolean | null>(null);
+  useEffect(() => {
+    void checkDirectory().then(setExists);
+  }, []);
+
+  if (exists !== false || !signer) return null;
 
   return (
     <div className="space-y-3 rounded-xl border border-dashed border-line-2 p-4">
@@ -35,8 +42,11 @@ export default function DeployDirectory() {
 
       {result ? (
         <div className="space-y-2">
-          <Notice tone="ok">Deployed. Add this to the build configuration.</Notice>
-          <CopyableCode value={`NEXT_PUBLIC_DIRECTORY_ADDRESS=${result.address}`} tone="ok" />
+          <Notice tone="ok">
+            Deployed. Nothing to configure — the address is derived from the bytecode, so every
+            build finds it.
+          </Notice>
+          <CopyableCode value={result.address} tone="ok" />
           {explorerTxUrl(result.hash) && (
             <a
               href={explorerTxUrl(result.hash)}
@@ -52,7 +62,7 @@ export default function DeployDirectory() {
             onClick={() => {
               setBusy(true);
               setError(null);
-              void deployDirectory(signer.address, ESCROW_ADDRESS)
+              void deployDirectory(signer.address)
                 .then(setResult)
                 .catch((e) => setError(shortenError(e)))
                 .finally(() => setBusy(false));

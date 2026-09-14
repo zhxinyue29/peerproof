@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { readListing, hasDirectory } from "@/lib/directory";
+import { readListing } from "@/lib/directory";
 
 /// Where an event's words come from.
 ///
@@ -30,7 +30,6 @@ export function useEventMeta(eventId: bigint): EventMeta {
   const [meta, setMeta] = useState<EventMeta>(fallbackMeta);
 
   useEffect(() => {
-    if (!hasDirectory) return;
     let live = true;
     void readListing(eventId)
       .then((l) => {
