@@ -13,6 +13,18 @@ export default function Scanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Held in a ref so starting the camera does not depend on it.
+  //
+  // It used to be an effect dependency, and the callback it receives is rebuilt whenever the event
+  // data changes — which is every four seconds, because that screen polls. So the effect tore the
+  // camera down and started it again on every poll: a black frame twice a second, and a decoder
+  // that never had long enough to lock onto anything. On a phone at a venue it reads as the app
+  // being broken, which is nearly what it was.
+  const handler = useRef(onResult);
+  useEffect(() => {
+    handler.current = onResult;
+  }, [onResult]);
+
   useEffect(() => {
     let scanner: { stop: () => void; destroy: () => void } | null = null;
     let cancelled = false;
@@ -24,7 +36,7 @@ export default function Scanner({
 
         const s = new QrScanner(
           videoRef.current,
-          (res: { data: string }) => onResult(res.data),
+          (res: { data: string }) => handler.current(res.data),
           { preferredCamera: "environment", highlightScanRegion: true, maxScansPerSecond: 10 },
         );
         scanner = s;
@@ -45,24 +57,36 @@ export default function Scanner({
       scanner?.stop();
       scanner?.destroy();
     };
-  }, [onResult]);
+    // Starts once. The result handler is read through a ref above.
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-ink">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center justify-between px-5 py-4 text-fg">
-        <span className="text-sm">Point at someone&apos;s code</span>
-        <button onClick={onClose} className="rounded-lg border border-line-2 px-3 py-1.5 text-sm text-dim">
+        <span className="text-[15px]">Point at someone&apos;s code</span>
+        <button
+          onClick={onClose}
+          className="min-h-[44px] rounded-lg border border-line-2 px-4 text-[15px] text-dim"
+        >
           Close
         </button>
       </div>
       <div className="relative flex-1">
-        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
+        {/* `contain`, not `cover`. The camera hands back a landscape frame and this box is portrait,
+            so covering it scaled the picture about three times and cropped away both sides —
+            everything looked enormous and you had to stand back to fit a code in. Letterboxed, what
+            you see is what the camera sees, which is what every other scanner does. */}
+        <video ref={videoRef} className="h-full w-full object-contain" playsInline muted />
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-dim">
+          <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-[15px] text-dim">
             {error}
           </div>
         )}
       </div>
+      <p className="px-5 pb-6 pt-3 text-center text-[14px] text-faint">
+        Hold the other phone steady inside the frame. Codes change every 15 seconds — if one expires
+        mid-scan, the next one is already on screen.
+      </p>
     </div>
   );
 }
