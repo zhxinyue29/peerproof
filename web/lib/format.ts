@@ -49,7 +49,46 @@ const PROVIDER_CODES: Record<number, string> = {
   [-32002]: "Your wallet already has a request open — check it for a pending prompt.",
 };
 
+/// What the escrow's own errors mean to somebody standing in a room holding a phone.
+///
+/// The contract refuses with a named error and viem carries that name in the middle of a stack of
+/// wrapped exceptions. Reading `shortMessage` first — which is what this did — throws it away and
+/// leaves "The contract function \"attest\" reverted", a sentence that tells a person nothing about
+/// what to do next. The name is the only part that does.
+const CONTRACT_ERRORS: Record<string, string> = {
+  StaleBeacon:
+    "The venue code has expired — it changes every two minutes. Scan the screen at the door again, then scan this person.",
+  BadBeacon: "That venue code is for a different event.",
+  StaleCode: "Their code expired before it reached the chain. Ask them to hold it steady and scan again.",
+  BadCode: "That code didn't verify. It may belong to a different event.",
+  PairAlreadyUsed: "You two have already vouched for each other. One scan counts for both of you.",
+  SelfAttestation: "That's your own code — you need somebody else's.",
+  NotRegistered: "One of you hasn't registered for this event.",
+  WindowOpen: "Check-in hasn't opened yet.",
+  WindowClosed: "Check-in has closed for this event.",
+  WrongStatus: "This event is no longer open.",
+  AlreadyRegistered: "You're already registered.",
+  AtCapacity: "This event is full.",
+  DeadlinePassed: "Registration has closed.",
+  QuorumNotMet: "Too few people registered for this event to run.",
+  FallbackPending: "Settlement is waiting out the fallback window.",
+};
+
+/// viem wraps the revert several layers deep; the name lives on a `cause` somewhere in the chain.
+function contractErrorName(e: unknown): string | undefined {
+  let cur = e as { cause?: unknown; data?: { errorName?: string }; name?: string } | undefined;
+  for (let i = 0; cur && i < 8; i++) {
+    const named = cur.data?.errorName;
+    if (typeof named === "string") return named;
+    cur = cur.cause as typeof cur;
+  }
+  return undefined;
+}
+
 export function shortenError(e: unknown): string {
+  const named = contractErrorName(e);
+  if (named) return CONTRACT_ERRORS[named] ?? named;
+
   // Wallets throw plain objects, not Errors: `{ code: 4001, message: "User rejected the request" }`
   // goes through String() as "[object Object]", which is how a rejected transaction came back to
   // somebody as no reason at all. Read the shape before falling back to stringifying it.

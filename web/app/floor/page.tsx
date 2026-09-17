@@ -83,6 +83,13 @@ export default function FloorPage() {
   const phase = phaseOf(ev);
   const windowOpen = phase === "open";
 
+  // The venue code is valid for its own two-minute epoch and the next one, and no longer. The badge
+  // used to read "Venue ✓" for the rest of the event, so somebody who scanned the door and then
+  // spent four minutes getting a peer code into frame submitted a transaction the contract had
+  // already decided to reject — and the only feedback was the word "reverted".
+  const beaconFresh =
+    !!beacon && (beacon.epoch === currentBeaconEpoch() || beacon.epoch + 1n === currentBeaconEpoch());
+
   /* ---------------- rotating code ---------------- */
 
   useEffect(() => {
@@ -192,6 +199,14 @@ export default function FloorPage() {
         setScanning(true);
         return setNotice("Scan the venue display first.");
       }
+      // Checked here rather than left to the chain: a doomed transaction still costs gas on Monad,
+      // which bills the limit rather than the amount used.
+      if (!beaconFresh) {
+        setScanning(true);
+        return setNotice(
+          "The venue code has expired — it changes every two minutes. Scan the screen at the door again.",
+        );
+      }
       // The same check the contract performs, done locally so a bad scan never costs gas.
       const recovered = await recoverAddress({
         hash: codeDigest(ESCROW_ADDRESS, p.eventId, p.subject, p.epoch),
@@ -214,7 +229,7 @@ export default function FloorPage() {
 
         await submitAttest(p.subject, p.epoch, p.sig);
       },
-      [beacon, signer, submitAttest, windowOpen, ev],
+      [beacon, beaconFresh, signer, submitAttest, windowOpen, ev],
   );
 
   const settle = () =>
@@ -381,10 +396,10 @@ export default function FloorPage() {
                 <button
                   onClick={() => setScanning(true)}
                   className={`min-h-[46px] rounded-xl border px-4 text-[16px] font-medium transition-transform duration-100 active:scale-[0.985] ${
-                    beacon ? "border-line-2 text-faint" : "border-warn/50 text-warn"
+                    beaconFresh ? "border-line-2 text-faint" : "border-warn/50 text-warn"
                   }`}
                 >
-                  {beacon ? "Venue ✓" : "Scan venue"}
+                  {beaconFresh ? "Venue ✓" : beacon ? "Venue · expired" : "Scan venue"}
                 </button>
               </div>
             )}

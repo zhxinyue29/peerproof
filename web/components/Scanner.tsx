@@ -43,7 +43,30 @@ export default function Scanner({
         const s = new QrScanner(
           videoRef.current,
           (res: { data: string }) => handler.current(res.data),
-          { preferredCamera: "environment", highlightScanRegion: true, maxScansPerSecond: 10 },
+          {
+            preferredCamera: "environment",
+            highlightScanRegion: true,
+            // Eight, not ten: each pass now decodes a larger image, and a slower loop that succeeds
+            // beats a faster one that cannot see.
+            maxScansPerSecond: 8,
+            // The whole frame, at 1024 across.
+            //
+            // The default scans the middle two thirds and shrinks it to 400×400 before decoding. A
+            // 49-module code filling a third of that region comes out at barely two pixels per
+            // module — unreadable, silently, with the code sitting in plain view inside the
+            // highlight box. Letterboxing the video made it worse by making the picture look
+            // roomier, so codes got held further away.
+            calculateScanRegion: (v: HTMLVideoElement) => ({
+              x: 0,
+              y: 0,
+              width: v.videoWidth,
+              height: v.videoHeight,
+              downScaledWidth: Math.min(1024, v.videoWidth),
+              downScaledHeight: Math.round(
+                (Math.min(1024, v.videoWidth) * v.videoHeight) / v.videoWidth,
+              ),
+            }),
+          },
         );
         scanner = s;
         await s.start();
@@ -95,8 +118,8 @@ export default function Scanner({
         )}
       </div>
       <p className="px-5 pb-6 pt-3 text-center text-[14px] text-faint">
-        Hold the other phone steady inside the frame. Codes change every 15 seconds — if one expires
-        mid-scan, the next one is already on screen.
+        Hold the other phone close, so the code fills most of the picture. Codes change every 15
+        seconds — if one expires mid-scan, the next is already on screen.
       </p>
     </div>
   );
