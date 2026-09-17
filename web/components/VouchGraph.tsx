@@ -76,7 +76,7 @@ export default function VouchGraph({
                 x={pt.x}
                 y={pt.y + 4}
                 textAnchor="middle"
-                className={`text-[11px] tabular-nums ${p.confirmed ? "fill-ink" : "fill-faint"}`}
+                className={`text-[13px] tabular-nums ${p.confirmed ? "fill-ink" : "fill-faint"}`}
               >
                 {n}
               </text>
@@ -96,7 +96,7 @@ export default function VouchGraph({
         <span>number = vouches received</span>
       </div>
 
-      <ul className="space-y-0.5 font-mono text-[11px] text-faint">
+      <ul className="space-y-0.5 font-mono text-[13px] text-faint">
         {participants.map((p) => (
           <li key={p.address} className="flex items-center gap-2">
             <span className={p.confirmed ? "text-fg" : ""}>{shortAddress(p.address)}</span>

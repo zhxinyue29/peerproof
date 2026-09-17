@@ -346,7 +346,7 @@ export default function FloorPage() {
             <h1 className="text-[22px] font-medium leading-snug">
               You&apos;re not registered for this event
             </h1>
-            <p className="text-[13px] leading-relaxed text-dim">
+            <p className="text-[15px] leading-relaxed text-dim">
               A deposit is what makes an attestation worth anything, so the floor is only open to
               people who staked one.
             </p>
@@ -364,11 +364,11 @@ export default function FloorPage() {
               <div className="space-y-2.5 rounded-xl border border-line-2 bg-raised p-4 text-center">
                 {/* Not "when registration closes" — walk-ins let registration run past the doors,
                     so the two are no longer the same moment. Doors are the one this screen waits on. */}
-                <p className="text-[15px] font-medium">Doors open in</p>
+                <p className="text-[16px] font-medium">Doors open in</p>
                 <p className="text-[32px] font-medium leading-none tabular-nums text-accent-2">
                   {ev ? countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)) : "…"}
                 </p>
-                <p className="text-[13px] leading-relaxed text-dim">
+                <p className="text-[15px] leading-relaxed text-dim">
                   Until then your code above is live and so is everyone else&apos;s — there is just
                   nothing to submit yet. Keep this page open; it unlocks on its own.
                 </p>
@@ -380,7 +380,7 @@ export default function FloorPage() {
                 </Button>
                 <button
                   onClick={() => setScanning(true)}
-                  className={`min-h-[46px] rounded-xl border px-4 text-[15px] font-medium transition-transform duration-100 active:scale-[0.985] ${
+                  className={`min-h-[46px] rounded-xl border px-4 text-[16px] font-medium transition-transform duration-100 active:scale-[0.985] ${
                     beacon ? "border-line-2 text-faint" : "border-warn/50 text-warn"
                   }`}
                 >
@@ -404,7 +404,7 @@ export default function FloorPage() {
                   <Dots filled={received} total={k} />
                 </span>
               </div>
-              <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-relaxed">
+              <p className="mt-3.5 border-t border-line pt-3.5 text-[15px] leading-relaxed">
                 {me?.confirmed ? (
                   <span className="text-ok">You count as present.</span>
                 ) : (me?.given ?? 0) === 0 ? (
@@ -431,7 +431,7 @@ export default function FloorPage() {
                       <span className="block font-mono text-xs text-dim">
                         {shortAddress(e.who)}
                       </span>
-                      <span className="block text-[11px] text-faint">vouched by you</span>
+                      <span className="block text-[13px] text-faint">vouched by you</span>
                     </span>
                     {explorerTxUrl(e.hash) ? (
                       <a
@@ -452,7 +452,7 @@ export default function FloorPage() {
 
             {ev && (
               <div className="space-y-2 border-t border-line pt-4">
-                <div className="flex justify-between text-[13px]">
+                <div className="flex justify-between text-[15px]">
                   <span className="text-faint">confirmed present</span>
                   <span className="tabular-nums text-dim">
                     {ev.confirmed}/{ev.registered}
@@ -470,7 +470,7 @@ export default function FloorPage() {
 
                 {!settled && !cancelled && (
                   <>
-                    <p className="text-[13px] leading-relaxed text-dim">
+                    <p className="text-[15px] leading-relaxed text-dim">
                       Payouts are fixed by the contract, not by anyone&apos;s decision. Anyone can
                       trigger it — in production a scheduled job does, so nobody can stall it.
                     </p>
@@ -511,7 +511,7 @@ export default function FloorPage() {
                       </>
                     )
                   ) : (
-                    <p className="text-[13px] leading-relaxed text-dim">
+                    <p className="text-[15px] leading-relaxed text-dim">
                       You weren&apos;t confirmed present, so your deposit went to the people who
                       were. Nothing to claim.
                     </p>
@@ -519,7 +519,7 @@ export default function FloorPage() {
 
                 {cancelled && (
                   <>
-                    <p className="text-[13px] leading-relaxed text-dim">
+                    <p className="text-[15px] leading-relaxed text-dim">
                       Attendance couldn&apos;t be established, so the contract refunded every
                       deposit rather than issue an unreliable verdict. Nobody was penalised and the
                       organizer received nothing.
@@ -551,7 +551,7 @@ export default function FloorPage() {
               <DevBtn onClick={devReadBeacon} label="read beacon" />
               <DevBtn onClick={devAttestPeer} label="attest scripted peer" />
             </div>
-            <p className="mt-2.5 font-mono text-[10px] leading-relaxed text-faint">
+            <p className="mt-2.5 font-mono text-[13px] leading-relaxed text-faint">
               me {signer.address}
               <br />
               phase {phase} · epoch {currentEpoch().toString()} · beacon{" "}

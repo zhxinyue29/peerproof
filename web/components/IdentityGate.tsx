@@ -40,7 +40,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
             "0x7497…a80d" against anything they know — it is a number the app made up on their
             behalf — and the whole point of that route is that they never had to think about
             wallets. The address stays underneath, because it is what you send MON to. */}
-        <p className="text-center text-[11px] text-faint">
+        <p className="text-center text-[13px] text-faint">
           signed in as{" "}
           {signer.label ? (
             <span className="text-dim">{signer.label}</span>
@@ -63,7 +63,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
           </button>
         </p>
         {signer.label && (
-          <p className="text-center text-[11px] text-faint">
+          <p className="text-center text-[13px] text-faint">
             wallet{" "}
             <button
               onClick={() => {
@@ -143,7 +143,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-[15px] font-medium">Set up your attendance key</p>
+        <p className="text-[16px] font-medium">Set up your attendance key</p>
         <p className="mt-1 text-sm leading-relaxed text-dim">
           One prompt, once. After that the app signs your codes silently — no fingerprint every
           fifteen seconds, no seed phrase, nothing to install.
@@ -176,7 +176,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         ) : null}
       </div>
 
-      <p className="text-center text-[11px] text-faint">
+      <p className="text-center text-[13px] text-faint">
         bound to <code>{relyingPartyId()}</code>
       </p>
     </div>

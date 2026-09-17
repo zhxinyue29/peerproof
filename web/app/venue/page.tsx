@@ -148,7 +148,7 @@ export default function VenuePage() {
         <h1 className="text-[30px] font-medium tracking-tight md:text-[42px]">
           Scan me to check in
         </h1>
-        <p className="mt-1.5 text-[15px] text-dim md:mt-2.5 md:text-[19px]">
+        <p className="mt-1.5 text-[16px] text-dim md:mt-2.5 md:text-[19px]">
           Then scan the people around you. Both are required.
         </p>
       </div>

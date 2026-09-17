@@ -39,16 +39,16 @@ export default function HomePage() {
   return (
     <Shell>
       <div className="space-y-3 pt-6 md:pt-14">
-        <p className="text-[13px] uppercase tracking-[0.18em] text-faint">PeerProof</p>
+        <p className="text-[15px] uppercase tracking-[0.18em] text-faint">PeerProof</p>
         <h1 className="text-[30px] font-medium leading-[1.12] tracking-tight md:text-[46px] md:leading-[1.05]">
           Attendance you don&apos;t have to trust the organizer for.
         </h1>
-        <p className="max-w-[54ch] text-[15px] leading-relaxed text-dim md:text-[17px]">
+        <p className="max-w-[54ch] text-[16px] leading-relaxed text-dim md:text-[17px]">
           People put a deposit down to hold a place. At the venue they scan each other, and the
           contract settles on its own: everyone confirmed present takes their deposit back, plus a
           share of what the no-shows left behind.
         </p>
-        <p className="max-w-[54ch] text-[13px] leading-relaxed text-faint md:text-[15px]">
+        <p className="max-w-[54ch] text-[15px] leading-relaxed text-faint md:text-[16px]">
           Whoever created the event has no function that releases, withholds, or receives a single
           wei. That is not a promise — it is the absence of a door.
         </p>
@@ -69,7 +69,7 @@ export default function HomePage() {
         />
       </div>
 
-      <p className="pt-2 text-[11px] leading-relaxed text-faint md:max-w-[70ch]">
+      <p className="pt-2 text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
         The same account can do both — these are two ways in, not two kinds of person. Anyone can
         host; there is no approval step.{" "}
         <Link href="/verify" className="underline decoration-line-2">
@@ -97,10 +97,10 @@ function Door({
       href={href}
       className="block rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-accent/50 md:p-6"
     >
-      <p className="text-[11px] uppercase tracking-wider text-faint">{eyebrow}</p>
+      <p className="text-[13px] uppercase tracking-wider text-faint">{eyebrow}</p>
       <p className="mt-2 text-[21px] font-medium tracking-tight">{title}</p>
-      <p className="mt-2 text-[13px] leading-relaxed text-dim">{body}</p>
-      <p className="mt-4 text-[13px] text-accent-2">Go →</p>
+      <p className="mt-2 text-[15px] leading-relaxed text-dim">{body}</p>
+      <p className="mt-4 text-[15px] text-accent-2">Go →</p>
     </Link>
   );
 }

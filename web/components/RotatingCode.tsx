@@ -71,7 +71,7 @@ export default function RotatingCode({
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-2 text-[13px] text-dim">
+      <div className="flex items-center justify-center gap-2 text-[15px] text-dim">
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.25" />
           <circle

@@ -9,16 +9,15 @@ import IdentityGate from "@/components/IdentityGate";
 import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import {
+  Accordion,
   AppHeader,
-  BigNumber,
   Button,
-  Card,
   Footer,
   FooterLinks,
   LinkButton,
   Notice,
-  Row,
   Shell,
+  Sheet,
   Split,
   Stat,
 } from "@/components/ui";
@@ -40,6 +39,7 @@ export default function EventPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
+  const [joining, setJoining] = useState(false);
 
   const phase = phaseOf(ev);
   // Not `phase === "registering"`: with walk-ins a room that is already checking people in
@@ -94,7 +94,7 @@ export default function EventPage() {
         title="Event"
         back="/events"
         right={
-          <Link href="/verify" className="text-[13px] text-faint underline decoration-line-2">
+          <Link href="/verify" className="text-[15px] text-faint underline decoration-line-2">
             public record
           </Link>
         }
@@ -107,11 +107,23 @@ export default function EventPage() {
               <h1 className="text-[27px] font-medium leading-[1.15] tracking-tight md:text-[38px] md:leading-[1.1]">
                 {meta.title}
               </h1>
-              {meta.blurb && <p className="text-[13px] leading-relaxed text-dim md:text-[15px]">{meta.blurb}</p>}
-              <p className="pt-1 text-[13px] leading-relaxed text-dim md:max-w-[46ch] md:text-[15px]">
+              {meta.blurb && <p className="text-[15px] leading-relaxed text-dim md:text-[16px]">{meta.blurb}</p>}
+              <p className="pt-1 text-[15px] leading-relaxed text-dim md:max-w-[46ch] md:text-[16px]">
                 Put a deposit down to hold your place. Show up, vouch for the people around you,
                 and the contract gives it back — plus a share of whatever the no-shows leave
                 behind.
+              </p>
+            </div>
+
+            {/* One unit, because it is one argument: this is the amount, and this is who holds it.
+                Split across two cards it was two facts; together it is the reason to keep reading. */}
+            <div className="flex items-center gap-4 rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5">
+              <p className="whitespace-nowrap text-[30px] font-extrabold tracking-tight tabular-nums md:text-[32px]">
+                {ev ? mon(ev.deposit) : "—"}
+              </p>
+              <p className="text-[15px] font-medium leading-snug text-ok">
+                Held by the contract.
+                <span className="mt-0.5 block font-normal text-dim">Not by the organizer.</span>
               </p>
             </div>
 
@@ -132,29 +144,6 @@ export default function EventPage() {
         }
         side={
           <>
-            <Card>
-              <BigNumber
-                value={ev && mon(ev.deposit)}
-                loading={!ev}
-                label="Deposit to hold a place"
-                sub="Held by the contract. Not by the organizer."
-              />
-              <dl className="mt-5 space-y-3 border-t border-line pt-4">
-                <Row label="Show up">
-                  You get it back
-                  {ev && ev.confirmed > 0 && surplus > 0n ? (
-                    <>
-                      , plus about{" "}
-                      <span className="font-medium tabular-nums">{mon(surplus)}</span> from the
-                      no-shows
-                    </>
-                  ) : (
-                    <>, plus a share of whatever the no-shows forfeit</>
-                  )}
-                </Row>
-                <Row label="Don't">Your deposit goes to the people who did</Row>
-              </dl>
-            </Card>
 
             {justRegistered && ev ? (
               <RegisteredResult
@@ -174,31 +163,36 @@ export default function EventPage() {
                 </LinkButton>
               </div>
             ) : joinable ? (
-              <IdentityGate>
-                  <div className="space-y-3">
-                    {error && <Notice tone="bad">{error}</Notice>}
-                    {ev && me && signer && (
-                      <Funding
-                        need={needFor(ev.deposit, GAS_LIMITS.register)}
-                        have={me.balance}
-                        what="register"
-                        address={signer.address}
-                      />
-                    )}
-                    <Button
-                      onClick={() => void register()}
-                      disabled={
-                        busy || !ev || !me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)
-                      }
-                      className="w-full"
-                    >
-                      {busy ? "Staking…" : ev ? `Stake ${mon(ev.deposit)} and register` : "Loading…"}
-                    </Button>
-                    <p className="text-center text-xs text-faint">
-                      balance {me ? mon(me.balance) : "—"} · you never see a gas prompt
-                    </p>
-                  </div>
-              </IdentityGate>
+              /* Signed in: the button is the whole thing. Not signed in: the button opens the
+                 sheet, and the three ways to sign in appear at the moment they become a question
+                 somebody is asking — not while they are still deciding whether to come. */
+              <div className="space-y-3">
+                {error && <Notice tone="bad">{error}</Notice>}
+                {ev && me && signer && (
+                  <Funding
+                    need={needFor(ev.deposit, GAS_LIMITS.register)}
+                    have={me.balance}
+                    what="register"
+                    address={signer.address}
+                  />
+                )}
+                <Button
+                  onClick={() => (signer ? void register() : setJoining(true))}
+                  disabled={
+                    busy || !ev || (!!signer && (!me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)))
+                  }
+                  className="w-full"
+                >
+                  {busy ? "Staking…" : ev ? `Stake ${mon(ev.deposit)} and register` : "Loading…"}
+                </Button>
+                <p className="text-center text-[14px] text-dim">
+                  {signer ? (
+                    <>balance {me ? mon(me.balance) : "—"} · you never see a gas prompt</>
+                  ) : (
+                    <>Choose how to sign in when you join. No wallet plugin required.</>
+                  )}
+                </p>
+              </div>
             ) : (
               <Notice>
                   {ev && ev.registered >= ev.capacity
@@ -206,9 +200,60 @@ export default function EventPage() {
                     : "Registration for this event has closed."}
                 </Notice>
             )}
+
+            {/* The case for the mechanism, in the same words as before, one tap away instead of
+                between somebody and the decision they came to make. */}
+            <div className="pt-1">
+              <Accordion
+                title="How attendance works"
+                sub="Scan the venue, then prove the people around you"
+              >
+                <p>
+                  Your code changes every fifteen seconds, so a screenshot forwarded to somebody
+                  else is worthless two rotations later.
+                </p>
+                <p>
+                  Every vouch carries a signature from the screen at the door, which changes every
+                  two minutes — so whoever submitted it had to read that screen in the room.
+                </p>
+                <p>
+                  And being counted present requires having vouched for somebody yourself. Every
+                  account that settles as present held a live venue code. You cannot be relayed in
+                  by a friend.
+                </p>
+              </Accordion>
+              <Accordion title="What happens to the deposit" sub="Show up, and it comes back with more">
+                <p>
+                  Show up and it returns to you, plus a share of the deposits left behind by people
+                  who did not
+                  {ev && ev.confirmed > 0 && surplus > 0n ? (
+                    <> — about <span className="font-medium tabular-nums">{mon(surplus)}</span> at
+                    the current count</>
+                  ) : null}
+                  .
+                </p>
+                <p>Don&apos;t, and your deposit goes to the people who did.</p>
+                <p>
+                  If too few people register for the event to run, every deposit is refunded in
+                  full — including yours.
+                </p>
+              </Accordion>
+            </div>
           </>
         }
       />
+
+      {joining && !signer && (
+        <Sheet
+          title="How do you want to sign in?"
+          sub="One of these, once. Nothing to install."
+          onClose={() => setJoining(false)}
+        >
+          <IdentityGate>
+            <p className="text-[15px] text-dim">You&apos;re signed in — press register again.</p>
+          </IdentityGate>
+        </Sheet>
+      )}
 
       <Footer>
         <p className="leading-relaxed">

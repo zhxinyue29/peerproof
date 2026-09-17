@@ -31,7 +31,7 @@ export default function DeployDirectory() {
   return (
     <div className="space-y-3 rounded-xl border border-dashed border-line-2 p-4">
       <div>
-        <p className="text-[13px] font-medium text-dim">Optional · one-time setup</p>
+        <p className="text-[15px] font-medium text-dim">Optional · one-time setup</p>
         <p className="mt-1.5 text-sm leading-relaxed text-dim">
           Events currently show as <span className="font-mono">Event #5</span> rather than a name.
           Titles live in a second contract, so the one holding deposits never has to change to
@@ -51,7 +51,7 @@ export default function DeployDirectory() {
           {explorerTxUrl(result.hash) && (
             <a
               href={explorerTxUrl(result.hash)}
-              className="inline-block text-[13px] text-dim underline decoration-line-2"
+              className="inline-block text-[15px] text-dim underline decoration-line-2"
             >
               deployment transaction
             </a>
@@ -74,7 +74,7 @@ export default function DeployDirectory() {
           >
             {busy ? "Deploying…" : "Enable event titles"}
           </Button>
-          <p className="text-[11px] leading-relaxed text-faint">
+          <p className="text-[13px] leading-relaxed text-faint">
             About 0.12 MON. The gas limit is pinned at 1,300,000 rather than estimated, because
             Monad charges the limit and not the amount used.
           </p>

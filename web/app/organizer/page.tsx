@@ -49,7 +49,7 @@ export default function OrganizerPage() {
         title="Organizer"
         back="/"
         right={
-          <Link href="/verify" className="text-[13px] text-faint underline decoration-line-2">
+          <Link href="/verify" className="text-[15px] text-faint underline decoration-line-2">
             public record
           </Link>
         }
@@ -86,7 +86,7 @@ export default function OrganizerPage() {
 
       {tab === "dashboard" && ev && <PayoutControls />}
 
-      <p className="text-[11px] leading-relaxed text-faint md:max-w-[70ch]">
+      <p className="text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
         Everything on this screen is read from the contract. The organizer role exists to describe
         an event, not to decide its outcome.
       </p>
@@ -183,7 +183,7 @@ function Dashboard() {
 
       {/* The display has to be reachable from here. It used to be a URL you typed from memory, on
           the one screen where the organizer is already standing. */}
-      <p className="text-[11px] text-faint">
+      <p className="text-[13px] text-faint">
         <Link href="/venue" className="underline decoration-line-2">
           Open the venue display
         </Link>{" "}
@@ -279,7 +279,7 @@ function PayoutControls() {
   return (
     <section className="rounded-2xl border border-dashed border-line-2 p-5">
       <Eyebrow>payouts</Eyebrow>
-      <p className="mt-2.5 text-[15px] leading-relaxed text-dim">
+      <p className="mt-2.5 text-[16px] leading-relaxed text-dim">
         Settlement is automatic. You cannot release or withhold funds.
       </p>
       <p className="mt-3 text-xs leading-relaxed text-faint">
@@ -430,11 +430,11 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         <section className="space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5">
           <div>
             <Eyebrow>1 · about the event</Eyebrow>
-            <p className="mt-1 text-[13px] text-dim">What people see in the listing.</p>
+            <p className="mt-1 text-[15px] text-dim">What people see in the listing.</p>
           </div>
           <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
           <label className="block">
-            <span className="mb-1.5 block text-[11px] uppercase tracking-wide text-faint">
+            <span className="mb-1.5 block text-[13px] uppercase tracking-wide text-faint">
               Description
             </span>
             <textarea
@@ -443,7 +443,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
               rows={3}
               maxLength={600}
               placeholder="Who it's for, what happens, where."
-              className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[15px] text-fg"
+              className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
           <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
@@ -452,7 +452,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         <section className="space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5">
           <div>
             <Eyebrow>2 · the rules</Eyebrow>
-            <p className="mt-1 text-[13px] text-dim">
+            <p className="mt-1 text-[15px] text-dim">
               Fixed once registration opens — including for you.
             </p>
           </div>
@@ -471,7 +471,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
               onChange={(e) => setWalkIns(e.target.checked)}
               className="mt-0.5 h-4 w-4 accent-accent"
             />
-            <span className="text-[13px] leading-relaxed">
+            <span className="text-[15px] leading-relaxed">
               <span className="font-medium text-fg">Take walk-ins</span>
               <span className="block text-dim">
                 {walkIns
@@ -504,9 +504,9 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel p-3.5">
-      <div className="text-[11px] text-faint">{label}</div>
+      <div className="text-[13px] text-faint">{label}</div>
       <div className="mt-0.5 text-2xl font-medium tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-faint">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[13px] text-faint">{sub}</div>}
     </div>
   );
 }

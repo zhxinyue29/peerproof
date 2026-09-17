@@ -42,7 +42,7 @@ export default function MyEvents() {
         <Skeleton className="h-20" />
       ) : !mine || mine.length === 0 ? (
         <Card className="space-y-1.5">
-          <p className="text-[15px] font-medium">You haven&apos;t hosted anything yet</p>
+          <p className="text-[16px] font-medium">You haven&apos;t hosted anything yet</p>
           <p className="text-sm leading-relaxed text-dim">
             Use the New Event tab. There is no approval step and no listing fee — the deposits go to
             the contract, and you never hold them.
@@ -61,14 +61,14 @@ export default function MyEvents() {
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="truncate text-[15px] font-medium">
+                <p className="truncate text-[16px] font-medium">
                   {e.listing.title || `Event #${e.id.toString()}`}
                 </p>
                 {e.id === current && (
-                  <span className="shrink-0 text-[11px] text-accent-2">showing</span>
+                  <span className="shrink-0 text-[13px] text-accent-2">showing</span>
                 )}
               </div>
-              <p className="mt-1 text-[12px] text-faint">
+              <p className="mt-1 text-[13px] text-faint">
                 {e.registered}/{e.capacity} registered · {both(e.deposit)} each
                 {e.phase === "live" && ` · ends in ${countdown(Number(e.attestClose) - now)}`}
                 {e.phase === "registering" &&

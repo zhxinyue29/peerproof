@@ -57,7 +57,7 @@ export default function EventsPage() {
         title="Events"
         back="/"
         right={
-          <Link href="/organizer" className="text-[13px] text-faint underline decoration-line-2">
+          <Link href="/organizer" className="text-[15px] text-faint underline decoration-line-2">
             host one
           </Link>
         }
@@ -72,7 +72,7 @@ export default function EventsPage() {
         </div>
       ) : events.length === 0 ? (
         <Card className="space-y-2">
-          <p className="text-[15px] font-medium">Nothing scheduled yet</p>
+          <p className="text-[16px] font-medium">Nothing scheduled yet</p>
           <p className="text-sm leading-relaxed text-dim">
             Anyone can host — there is no approval step, and the host never touches the deposits.
           </p>
@@ -89,7 +89,7 @@ export default function EventsPage() {
           />
           {split!.past.length > 0 && (
             <details className="group">
-              <summary className="cursor-pointer list-none py-2 text-[13px] text-faint">
+              <summary className="cursor-pointer list-none py-2 text-[15px] text-faint">
                 <span className="underline decoration-line-2">
                   {split!.past.length} finished {split!.past.length === 1 ? "event" : "events"}
                 </span>
@@ -104,7 +104,7 @@ export default function EventsPage() {
         </>
       )}
 
-      <p className="text-[11px] leading-relaxed text-faint md:max-w-[70ch]">
+      <p className="text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
         Titles come from a contract that holds no money and cannot affect who gets paid. Everything
         that decides a payout — deposits, attestations, settlement — is read from the escrow.
       </p>
@@ -123,7 +123,7 @@ function Section({
 }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-[13px] uppercase tracking-wide text-faint">{title}</h2>
+      <h2 className="text-[20px] font-medium tracking-tight md:text-[22px]">{title}</h2>
       {events.length === 0 ? (
         <p className="text-sm text-dim">{empty}</p>
       ) : (
@@ -173,7 +173,7 @@ function EventRow({ event: e }: { event: EventSummary }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[17px] font-medium">
+          <p className="truncate text-[18px] font-medium leading-tight">
             {e.listing.title || `Event #${e.id.toString()}`}
           </p>
           {e.listing.blurb && (
@@ -181,13 +181,13 @@ function EventRow({ event: e }: { event: EventSummary }) {
           )}
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${PHASE_TONE[e.phase]}`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-medium ${PHASE_TONE[e.phase]}`}
         >
           {PHASE_LABEL[e.phase]}
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-faint">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-faint">
         <span>
           <span className="text-dim">{both(e.deposit)}</span> to join
         </span>
@@ -201,10 +201,10 @@ function EventRow({ event: e }: { event: EventSummary }) {
       {/* An event that is already running but still open is the one thing a list like this can tell
           somebody that they could not guess. Say it plainly where the badge cannot. */}
       {joinable && e.phase === "live" && (
-        <p className="mt-2 text-[11px] text-ok">Check-in has started — you can still join.</p>
+        <p className="mt-2 text-[13px] text-ok">Check-in has started — you can still join.</p>
       )}
       {e.phase === "registering" && e.registered < e.minQuorum && (
-        <p className="mt-2 text-[11px] text-faint">
+        <p className="mt-2 text-[13px] text-faint">
           Needs {e.minQuorum - e.registered} more to run — everyone is refunded otherwise.
         </p>
       )}

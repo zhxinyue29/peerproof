@@ -56,7 +56,7 @@ export default function VouchResult({
         leaving ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <p className="text-[13px] uppercase tracking-[0.09em] text-dim">Landed in</p>
+      <p className="text-[15px] uppercase tracking-[0.09em] text-dim">Landed in</p>
       {/* Tabular so the digits do not reflow while it animates in — this number is the evidence,
           and jitter reads as a graphic rather than a measurement. */}
       <p className="mb-2.5 mt-0.5 text-[48px] font-black leading-none tracking-[-0.05em] tabular-nums">
@@ -67,7 +67,7 @@ export default function VouchResult({
       <Row label={shortAddress(who)} from={theirs} to={theirs + 1} mono />
 
       {present && (
-        <p className="mt-2.5 rounded-xl border border-ok/40 bg-ok/10 px-3 py-2.5 text-[13px] text-ok">
+        <p className="mt-2.5 rounded-xl border border-ok/40 bg-ok/10 px-3 py-2.5 text-[15px] text-ok">
           You now count as present.
         </p>
       )}
@@ -77,7 +77,7 @@ export default function VouchResult({
           href={explorerTxUrl(hash)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2.5 inline-block text-[14px] text-accent-2"
+          className="mt-2.5 inline-block text-[15px] text-accent-2"
         >
           View transaction ↗
         </a>
@@ -101,7 +101,7 @@ function Row({
 }) {
   return (
     <div className="flex items-center justify-between gap-2.5 border-t border-line py-2.5">
-      <span className={`text-dim ${mono ? "font-mono text-[13px]" : "text-[14px]"}`}>{label}</span>
+      <span className={`text-dim ${mono ? "font-mono text-[15px]" : "text-[15px]"}`}>{label}</span>
       <span className="text-[18px] font-medium tabular-nums">
         <span className="text-faint">{from}</span>
         <span className="mx-1.5 text-faint">→</span>

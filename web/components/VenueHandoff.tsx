@@ -39,8 +39,8 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
   return (
     <div className="space-y-3 rounded-xl border border-line-2 bg-ink/40 p-4">
       <div>
-        <p className="text-[15px] font-medium">Set up the display at the door</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-dim">
+        <p className="text-[16px] font-medium">Set up the display at the door</p>
+        <p className="mt-1 text-[15px] leading-relaxed text-dim">
           Scan this from the device that will sit at the entrance — a spare phone, a tablet, a
           laptop. It opens the venue display with this key already loaded.
         </p>
@@ -54,7 +54,7 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
           <div className="h-[164px] w-[164px] shrink-0 rounded-lg bg-raised" />
         )}
         <div className="flex-1 space-y-2">
-          <p className="text-[11px] leading-relaxed text-faint">
+          <p className="text-[13px] leading-relaxed text-faint">
             Already on the right device? Open it here instead — no scanning needed.
           </p>
           <a href={url} target="_blank" rel="noopener noreferrer" className="block">
@@ -62,7 +62,7 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
               Open the venue display
             </Button>
           </a>
-          <p className="text-[11px] leading-relaxed text-faint">
+          <p className="text-[13px] leading-relaxed text-faint">
             The code carries the key. Treat it like the key itself: it signs venue codes for this
             event and nothing else, and it stops meaning anything once check-in closes.
           </p>

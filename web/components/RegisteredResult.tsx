@@ -30,7 +30,7 @@ export default function RegisteredResult({
 }) {
   return (
     <div className="space-y-4 rounded-2xl border border-line-2 bg-raised p-5 md:p-6">
-      <span className="inline-flex rounded-full bg-ok/15 px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wide text-ok">
+      <span className="inline-flex rounded-full bg-ok/15 px-2.5 py-1 text-[13px] font-semibold uppercase tracking-wide text-ok">
         Registered
       </span>
 
@@ -38,13 +38,13 @@ export default function RegisteredResult({
         <h3 className="text-[24px] font-medium leading-[1.2] tracking-tight md:text-[28px]">
           {mon(deposit)} is now in the contract
         </h3>
-        <p className="text-[15px] leading-relaxed text-dim">
+        <p className="text-[16px] leading-relaxed text-dim">
           Not in the organizer&apos;s wallet. Your deposit comes back when the room proves you were
           there — along with a share of what the no-shows leave behind.
         </p>
       </div>
 
-      <p className="rounded-xl border border-ok/30 bg-ok/10 p-3.5 text-[14px] leading-relaxed text-dim">
+      <p className="rounded-xl border border-ok/30 bg-ok/10 p-3.5 text-[15px] leading-relaxed text-dim">
         <span className="font-medium text-fg">Next:</span>{" "}
         {opensIn > 0
           ? `check-in opens in ${countdown(opensIn)}`
@@ -61,7 +61,7 @@ export default function RegisteredResult({
           href={explorerTxUrl(hash)}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-center text-[14px] text-accent-2"
+          className="block text-center text-[15px] text-accent-2"
         >
           View registration transaction ↗
         </a>

@@ -83,8 +83,8 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
   return (
     <section className="space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5">
       <div>
-        <p className="text-[15px] font-medium">What people see in the listing</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-dim">
+        <p className="text-[16px] font-medium">What people see in the listing</p>
+        <p className="mt-1 text-[15px] leading-relaxed text-dim">
           {title
             ? "Change this whenever you like. It is stored separately from the deposits and cannot affect them."
             : "This event has no title yet, so it shows as a number on the events page. Adding one costs a small amount of gas and nothing else."}
@@ -96,7 +96,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
 
       <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
       <label className="block">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-faint">
+        <span className="text-[13px] font-medium uppercase tracking-wider text-faint">
           Description
         </span>
         <textarea
@@ -104,7 +104,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
           onChange={(e) => setBlurb(e.target.value)}
           rows={3}
           placeholder="Who it's for, what happens, where."
-          className="mt-1.5 w-full resize-y rounded-xl border border-line-2 bg-ink px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent"
+          className="mt-1.5 w-full resize-y rounded-xl border border-line-2 bg-ink px-3 py-2.5 text-[16px] outline-none placeholder:text-faint focus:border-accent"
         />
       </label>
       <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />

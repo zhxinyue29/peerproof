@@ -63,7 +63,7 @@ export default function TopUp({ address }: { address: Address }) {
       <Button onClick={() => void start()} disabled={busy} variant="ghost" className="w-full">
         {busy ? "Opening…" : "Top up with a card"}
       </Button>
-      {note && <p className="text-[11px] leading-relaxed text-faint">{note}</p>}
+      {note && <p className="text-[13px] leading-relaxed text-faint">{note}</p>}
 
       {open && (
         <div
@@ -75,12 +75,12 @@ export default function TopUp({ address }: { address: Address }) {
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-[17px] font-medium">Card top-up is coming</p>
-            <p className="text-[13px] leading-relaxed text-dim">
+            <p className="text-[15px] leading-relaxed text-dim">
               This is where paying by card will go. It is not switched on yet, and the reason is not
               on our side: no provider sells MON into a wallet today. MoonPay has built it on Monad
               and has it suspended; Stripe does not list Monad as a destination.
             </p>
-            <p className="text-[13px] leading-relaxed text-dim">
+            <p className="text-[15px] leading-relaxed text-dim">
               Until one of them does, use the address above — from an exchange, another wallet, or
               someone sending it to you. That works right now.
             </p>

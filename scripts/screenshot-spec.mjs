@@ -52,8 +52,8 @@ const SHOTS = [
       { n: 1, text: "Web3 设计工作坊" },
       { n: 2, text: "Put a deposit down" },
       { n: 3, text: "REGISTERED" },
-      { n: 4, text: "DEPOSIT TO HOLD A PLACE" },
-      { n: 5, text: "can't hold a passkey key" },
+      { n: 4, text: "Held by the contract" },
+      { n: 5, text: "How attendance works" },
       { n: 6, text: "Attendance is decided by the people" },
     ],
   },
@@ -214,11 +214,26 @@ for (const size of SIZES) {
       });
 
       if (shot.devKey) {
+        // Sign-in lives in the join sheet now, not on the page: the event screen stopped asking
+        // how somebody wants to identify themselves before they had decided to come. So open the
+        // sheet first, exactly as a person would.
+        const join = page.getByRole("button", { name: /stake .* and register/i });
+        if (await join.count()) {
+          await join.first().click();
+          await page.waitForTimeout(700);
+        }
         const btn = page.getByRole("button", { name: /throwaway local key/i });
         if (await btn.count()) {
           await btn.first().click();
           await page.waitForTimeout(2500);
         }
+        // Close the sheet if it is still up, so the frame shows the page rather than the dialog.
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.evaluate(() => {
+          const back = document.querySelector('[role="dialog"]')?.parentElement;
+          if (back instanceof HTMLElement) back.click();
+        });
+        await page.waitForTimeout(600);
       }
       if (shot.tab) {
         const t = page.getByRole("button", { name: new RegExp(shot.tab, "i") });

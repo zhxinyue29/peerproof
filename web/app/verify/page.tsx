@@ -71,7 +71,7 @@ export default function VerifyPage() {
         <h1 className="text-[24px] font-medium leading-[1.2] tracking-tight md:text-[34px]">
           {meta.title}
         </h1>
-        <p className="text-[13px] leading-relaxed text-dim md:max-w-[60ch] md:text-[15px]">
+        <p className="text-[15px] leading-relaxed text-dim md:max-w-[60ch] md:text-[16px]">
           Who vouched for whom, and where the money went. Nothing here comes from our database — it
           is rebuilt from the contract&apos;s own events every few seconds.
         </p>
@@ -87,7 +87,7 @@ export default function VerifyPage() {
           ) : (
             <div className="flex flex-col items-center gap-3 py-6">
               <Skeleton className="h-40 w-40 rounded-full" />
-              <span className="text-[13px] text-faint">reading chain events…</span>
+              <span className="text-[15px] text-faint">reading chain events…</span>
             </div>
           )}
         </Card>}
@@ -147,7 +147,7 @@ export default function VerifyPage() {
       {history && history.vouches.length > 0 && (
         <Card className="space-y-2">
           <Eyebrow>every vouch · {history.vouches.length} transactions</Eyebrow>
-          <ul className="space-y-1 font-mono text-[11px]">
+          <ul className="space-y-1 font-mono text-[13px]">
             {history.vouches.map((v) => (
               <li key={v.hash} className="flex items-center gap-2 text-dim">
                 <span>{v.from.slice(0, 8)}</span>

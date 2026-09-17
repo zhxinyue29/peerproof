@@ -104,14 +104,14 @@ export function AppHeader({
           </svg>
         </Link>
       ) : (
-        <span className="flex h-11 items-center text-[13px] font-medium tracking-[0.14em] text-faint">
+        <span className="flex h-11 items-center text-[15px] font-medium tracking-[0.14em] text-faint">
           PEERPROOF
         </span>
       )}
       {/* A root screen shows the brand, a sub-screen shows where you came from — but both show
           the title. It used to be dropped on root screens, which left the directory with no
           heading at all and made the prop look optional when it is not. */}
-      <span className="flex-1 truncate text-[15px] font-medium">{title}</span>
+      <span className="flex-1 truncate text-[16px] font-medium">{title}</span>
       {right}
     </header>
   );
@@ -119,7 +119,7 @@ export function AppHeader({
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-faint">{children}</p>
+    <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-accent-2">{children}</p>
   );
 }
 
@@ -131,7 +131,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-line bg-panel/80 p-5 backdrop-blur-sm md:p-6 ${className}`}>
+    <section className={`rounded-2xl border border-line bg-panel p-5 md:p-[22px] ${className}`}>
       {children}
     </section>
   );
@@ -139,7 +139,7 @@ export function Card({
 
 export function Footer({ children }: { children: React.ReactNode }) {
   return (
-    <footer className="mt-auto space-y-3 border-t border-line pt-5 text-[13px] leading-relaxed text-dim">
+    <footer className="mt-auto space-y-3 border-t border-line pt-5 text-[15px] leading-relaxed text-dim">
       {children}
     </footer>
   );
@@ -175,7 +175,7 @@ export function Notice({
     ok: "border-ok/30 bg-ok/10 text-ok",
   } as const;
   return (
-    <p role={tone === "bad" ? "alert" : undefined} className={`rounded-xl border px-4 py-3 text-[13px] leading-relaxed ${tones[tone]}`}>
+    <p role={tone === "bad" ? "alert" : undefined} className={`rounded-xl border px-4 py-3.5 text-[15px] leading-relaxed ${tones[tone]}`}>
       {children}
     </p>
   );
@@ -197,7 +197,7 @@ export function Flash({ message, onDone }: { message: string | null; onDone: () 
       className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-5"
       style={{ bottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="rounded-full border border-ok/40 bg-ok/15 px-4 py-2.5 text-[13px] font-medium text-ok backdrop-blur">
+      <div className="rounded-full border border-ok/40 bg-ok/15 px-4 py-2.5 text-[15px] font-medium text-ok backdrop-blur">
         {message}
       </div>
     </div>
@@ -234,7 +234,7 @@ export function Button({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`min-h-[46px] rounded-xl px-4 text-[15px] font-medium transition-[background-color,transform] duration-100 active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${styles} ${className}`}
+      className={`min-h-[46px] rounded-xl px-4 text-[16px] font-medium transition-[background-color,transform] duration-100 active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${styles} ${className}`}
     >
       {children}
     </button>
@@ -245,7 +245,7 @@ export function LinkButton({ href, children }: { href: string; children: React.R
   return (
     <Link
       href={href}
-      className="flex min-h-[46px] items-center justify-center rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
+      className="flex min-h-[46px] items-center justify-center rounded-xl bg-accent px-4 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
     >
       {children}
     </Link>
@@ -269,7 +269,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-medium uppercase tracking-wider text-faint">{label}</span>
+      <span className="text-[13px] font-medium uppercase tracking-wider text-faint">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -279,7 +279,7 @@ export function Field({
         inputMode={mono ? "text" : "numeric"}
         className={`mt-1.5 min-h-[46px] w-full rounded-xl border border-line-2 bg-ink px-3.5 text-fg outline-none focus:border-accent ${mono ? "font-mono text-xs" : ""}`}
       />
-      {hint && <span className="mt-1 block text-[10px] text-faint">{hint}</span>}
+      {hint && <span className="mt-1 block text-[13px] text-faint">{hint}</span>}
     </label>
   );
 }
@@ -306,7 +306,7 @@ export function BigNumber({
       <p className="mt-2 text-[46px] font-medium leading-none tracking-[-0.03em] tabular-nums md:text-[54px]">
         {loading ? <Skeleton className="h-11 w-40 align-middle" /> : value}
       </p>
-      {sub && <p className="mt-3 text-[13px] leading-relaxed text-dim">{sub}</p>}
+      {sub && <p className="mt-3 text-[15px] leading-relaxed text-dim">{sub}</p>}
     </div>
   );
 }
@@ -320,7 +320,7 @@ export function Display({ children, sub }: { children: React.ReactNode; sub?: Re
         {children}
       </h1>
       {sub && (
-        <p className="text-[14px] leading-relaxed text-dim md:max-w-[52ch] md:text-[17px]">{sub}</p>
+        <p className="text-[15px] leading-relaxed text-dim md:max-w-[52ch] md:text-[17px]">{sub}</p>
       )}
     </div>
   );
@@ -337,17 +337,20 @@ export function Stat({
 }) {
   return (
     <div className="rounded-xl border border-line bg-panel/70 py-4 text-center backdrop-blur-sm">
-      <div className="text-[22px] font-medium leading-none tabular-nums">
-        {loading ? <Skeleton className="h-6 w-12 align-middle" /> : value}
+      <div className="text-[27px] font-semibold leading-none tabular-nums">
+        {loading ? <Skeleton className="h-7 w-14 align-middle" /> : value}
       </div>
-      <div className="mt-1.5 text-[11px] uppercase tracking-wider text-faint">{label}</div>
+      {/* `dim`, not `faint`. These labels say what the number is; the spec's rule is that essential
+          information never sits in low-contrast grey, and a number without its unit is not
+          information. */}
+      <div className="mt-1.5 text-[13px] text-dim">{label}</div>
     </div>
   );
 }
 
 export function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex gap-3 text-[13px] leading-relaxed">
+    <div className="flex gap-3 text-[15px] leading-relaxed">
       <dt className="w-24 shrink-0 text-faint">{label}</dt>
       <dd className="flex-1">{children}</dd>
     </div>
@@ -364,7 +367,7 @@ export function KeyValue({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 text-[13px]">
+    <div className="flex items-baseline justify-between gap-4 text-[15px]">
       <span className="text-faint">{label}</span>
       <span className={strong ? "text-xl font-medium tabular-nums text-fg" : "tabular-nums text-dim"}>
         {value}
@@ -410,12 +413,74 @@ export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg
           setTimeout(() => setCopied(false), 1600);
         });
       }}
-      className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[10px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
+      className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[13px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
     >
       {value}
-      <span className="mt-1.5 block font-sans text-[10px] text-faint">
+      <span className="mt-1.5 block font-sans text-[13px] text-faint">
         {copied ? "copied" : "tap to copy"}
       </span>
     </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                        Progressive disclosure                      */
+/* ------------------------------------------------------------------ */
+
+/// Explanation that is available without being in the way.
+///
+/// The event page used to state its entire case before the deposit: how attendance is decided, why
+/// the codes rotate, what the organizer cannot do. All of it true, all of it load-bearing, and all
+/// of it between somebody and the one decision they came to make. It is the same words, one tap
+/// away.
+export function Accordion({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+  return (
+    <details className="group border-b border-line">
+      <summary className="flex min-h-[58px] cursor-pointer list-none items-center justify-between gap-4 py-3">
+        <span>
+          <span className="block text-[16px] font-medium">{title}</span>
+          {sub && <span className="mt-0.5 block text-[14px] text-dim">{sub}</span>}
+        </span>
+        <span className="shrink-0 text-faint transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <div className="space-y-2.5 pb-4 text-[15px] leading-relaxed text-dim">{children}</div>
+    </details>
+  );
+}
+
+/// A bottom sheet on a phone, a centred dialog on a desktop.
+///
+/// Used where a choice only becomes relevant at the moment it is made — sign-in belongs to pressing
+/// Join, not to reading about an event.
+export function Sheet({
+  title,
+  sub,
+  onClose,
+  children,
+}: {
+  title: string;
+  sub?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 md:items-center md:p-6"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="w-full max-w-[520px] space-y-4 rounded-[22px] border border-line-2 bg-raised p-5 shadow-[0_-24px_70px_rgba(0,0,0,.45)] md:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h2 className="text-[22px] font-medium tracking-tight md:text-[24px]">{title}</h2>
+          {sub && <p className="text-[15px] leading-relaxed text-dim">{sub}</p>}
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }

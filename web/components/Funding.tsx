@@ -98,8 +98,8 @@ export default function Funding({
   return (
     <div className="space-y-4 rounded-xl border border-warn/30 bg-warn/10 p-4">
       <div className="space-y-1.5">
-        <p className="text-[15px] font-medium text-warn">Add MON to {what}</p>
-        <p className="text-[13px] leading-relaxed text-warn/90">
+        <p className="text-[16px] font-medium text-warn">Add MON to {what}</p>
+        <p className="text-[15px] leading-relaxed text-warn/90">
           You have {mon(have)} and need about {mon(need)} — {mon(short)} short. The deposit is your
           own money going into the contract, so it cannot be covered for you; that is the part that
           makes a no-show cost something.
@@ -108,12 +108,12 @@ export default function Funding({
 
       {/* Receiving is the method that works on every network, so it is the one with the space. */}
       <div className="space-y-2.5 rounded-lg border border-warn/25 bg-ink/40 p-3">
-        <p className="text-[13px] font-medium text-fg">Send MON to your address</p>
+        <p className="text-[15px] font-medium text-fg">Send MON to your address</p>
         <div className="flex items-start gap-3">
           <AddressQR address={address} />
           <div className="min-w-0 flex-1 space-y-1.5">
             <CopyableCode value={address} />
-            <p className="text-[11px] leading-relaxed text-faint">
+            <p className="text-[13px] leading-relaxed text-faint">
               Scan this from another wallet, or copy the address. Anything that can send on{" "}
               {chain.name} will do — an exchange withdrawal, a friend, your own other wallet.
             </p>
@@ -125,11 +125,11 @@ export default function Funding({
           browser wallet it is a sentence, because buying MON into somebody's own MetaMask is not
           ours to drive. */}
       <div className="space-y-2 rounded-lg border border-dashed border-warn/25 p-3">
-        <p className="text-[13px] font-medium text-fg">Top up</p>
+        <p className="text-[15px] font-medium text-fg">Top up</p>
         {privyGate.enabled ? (
           <LazyTopUp address={address} />
         ) : (
-          <p className="text-[11px] leading-relaxed text-faint">
+          <p className="text-[13px] leading-relaxed text-faint">
             Card top-up runs through the account you signed in with, and is offered on the email
             path. With a browser wallet, buy MON wherever you normally would and send it to the
             address above.
@@ -138,7 +138,7 @@ export default function Funding({
       </div>
 
       {isLocalChain ? (
-        <p className="text-[11px] text-warn/70">
+        <p className="text-[13px] text-warn/70">
           Local chain — fund this address with <code>cast send</code>.
         </p>
       ) : devMode && faucets.length > 0 ? (
@@ -151,7 +151,7 @@ export default function Funding({
         // product has no other way to obtain MON. That is answered in the README and the submission
         // notes, which is where an instruction to testers belongs.
         <div className="space-y-1.5 border-t border-line pt-2.5">
-          <p className="text-[11px] text-faint">Dev · testnet faucets</p>
+          <p className="text-[13px] text-faint">Dev · testnet faucets</p>
           <div className="flex flex-wrap gap-2">
             {faucets.map((f) => (
               <a
@@ -159,7 +159,7 @@ export default function Funding({
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg border border-line-2 px-2.5 py-1.5 text-[12px] text-dim"
+                className="rounded-lg border border-line-2 px-2.5 py-1.5 text-[13px] text-dim"
               >
                 {f.label} ↗
               </a>
