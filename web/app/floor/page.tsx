@@ -573,7 +573,13 @@ export default function FloorPage() {
           onDone={() => setResult(null)}
         />
       )}
-      {scanning && <Scanner onResult={(t) => void onScan(t)} onClose={() => setScanning(false)} />}
+      {scanning && (
+        <Scanner
+          onResult={(t) => void onScan(t)}
+          onClose={() => setScanning(false)}
+          notice={notice}
+        />
+      )}
     </Shell>
   );
 }

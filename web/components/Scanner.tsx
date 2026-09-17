@@ -6,9 +6,15 @@ import { useEffect, useRef, useState } from "react";
 export default function Scanner({
   onResult,
   onClose,
+  notice,
 }: {
   onResult: (text: string) => void;
   onClose: () => void;
+  /// Shown over the camera. Everything that can go wrong during a scan — a code that is yours, a
+  /// venue code you have not read yet, one that expired between the photograph and the chain — was
+  /// being written to a notice on the page *underneath* this full-screen overlay. So every failure
+  /// looked identical to the camera simply not working, which is what "nothing happens" meant.
+  notice?: string | null;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +86,11 @@ export default function Scanner({
         {error && (
           <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-[15px] text-dim">
             {error}
+          </div>
+        )}
+        {notice && !error && (
+          <div className="absolute inset-x-4 bottom-4 rounded-xl border border-warn/40 bg-warn/15 px-4 py-3 text-center text-[15px] leading-relaxed text-warn backdrop-blur">
+            {notice}
           </div>
         )}
       </div>

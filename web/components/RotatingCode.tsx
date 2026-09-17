@@ -29,7 +29,11 @@ export default function RotatingCode({
     if (!payload) return;
     let live = true;
     QRCode.toDataURL(payload, {
-      errorCorrectionLevel: "L",
+      // M, not L. The payload moved to base64url and got 60 characters shorter, which bought back
+      // exactly enough room to raise error correction without the code getting any denser: 49×49
+      // either way. These are read off one phone screen by another phone's camera, through glare
+      // and moiré, and that redundancy is the difference between a scan and a shrug.
+      errorCorrectionLevel: "M",
       margin: 1,
       width: 640,
       color: { dark: "#0a0713", light: "#ffffff" },
