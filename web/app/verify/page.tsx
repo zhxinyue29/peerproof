@@ -80,6 +80,7 @@ export default function VerifyPage() {
       {error && <Notice tone="bad">{error}</Notice>}
 
       <Split
+        even
         main={      <Card className="space-y-3">
           <Eyebrow>the attestation graph</Eyebrow>
           {history ? (

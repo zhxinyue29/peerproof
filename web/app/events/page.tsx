@@ -127,7 +127,11 @@ function Section({
       {events.length === 0 ? (
         <p className="text-sm text-dim">{empty}</p>
       ) : (
-        events.map((e) => <EventRow key={e.id.toString()} event={e} />)
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {events.map((e) => (
+            <EventRow key={e.id.toString()} event={e} />
+          ))}
+        </div>
       )}
     </section>
   );
@@ -151,6 +155,19 @@ const PHASE_TONE: Record<Phase, string> = {
   settled: "bg-raised text-faint",
 };
 
+/// A band of colour per event, derived from its id.
+///
+/// The design calls for an image on every card, and there is nowhere to get one: the contract
+/// stores a title and a blurb, and inventing stock photography would be putting something on screen
+/// that nothing backs. A deterministic gradient gives the list the rhythm it needs to be scannable
+/// while still being honest about what the chain knows — and the same event is always the same
+/// colour, so the card becomes recognisable on the second visit.
+const HUES = [258, 292, 212, 168, 24, 340];
+function band(id: bigint) {
+  const h = HUES[Number(id % BigInt(HUES.length))];
+  return `linear-gradient(125deg, hsl(${h} 62% 18%), hsl(${h} 72% 44%) 52%, hsl(${(h + 34) % 360} 48% 14%))`;
+}
+
 function EventRow({ event: e }: { event: EventSummary }) {
   const now = Math.floor(chainNowMs() / 1000);
   // A live event can still be taking walk-ins, which is the case worth surfacing here: somebody
@@ -169,8 +186,17 @@ function EventRow({ event: e }: { event: EventSummary }) {
   return (
     <Link
       href={`/event?event=${e.id}`}
-      className="block rounded-2xl border border-line bg-panel p-4 transition-colors hover:border-line-2 md:p-5"
+      className="block overflow-hidden rounded-2xl border border-line bg-panel transition-colors hover:border-line-2"
     >
+      <div className="relative h-[96px] md:h-[110px]" style={{ background: band(e.id) }}>
+        <span
+          className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[13px] font-medium backdrop-blur ${PHASE_TONE[e.phase]}`}
+        >
+          {PHASE_LABEL[e.phase]}
+        </span>
+      </div>
+
+      <div className="p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-[18px] font-medium leading-tight">
@@ -180,11 +206,6 @@ function EventRow({ event: e }: { event: EventSummary }) {
             <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-dim">{e.listing.blurb}</p>
           )}
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-medium ${PHASE_TONE[e.phase]}`}
-        >
-          {PHASE_LABEL[e.phase]}
-        </span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-faint">
@@ -208,6 +229,7 @@ function EventRow({ event: e }: { event: EventSummary }) {
           Needs {e.minQuorum - e.registered} more to run — everyone is refunded otherwise.
         </p>
       )}
+      </div>
     </Link>
   );
 }

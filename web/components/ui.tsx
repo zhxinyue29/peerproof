@@ -63,12 +63,17 @@ export function Shell({
 export function Split({
   main,
   side,
+  even,
 }: {
   main: React.ReactNode;
   side: React.ReactNode;
+  /// Near-equal columns. The public record puts the proof graph and the settlement arithmetic
+  /// beside each other, and neither is the subordinate of the other — the graph is the evidence and
+  /// the arithmetic is what it adds up to.
+  even?: boolean;
 }) {
   return (
-    <div className="grid gap-5 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] md:items-start md:gap-7">
+    <div className={`grid gap-5 md:items-start md:gap-7 ${even ? "md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]" : "md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"}`}>
       <div className="flex flex-col gap-5">{main}</div>
       <div className="flex flex-col gap-5 md:sticky md:top-8">{side}</div>
     </div>

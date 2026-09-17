@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/ui";
+import ProofArt from "@/components/ProofArt";
 import { basePath } from "@/lib/chain";
 
 /// The door.
@@ -38,7 +39,8 @@ export default function HomePage() {
 
   return (
     <Shell>
-      <div className="space-y-3 pt-6 md:pt-14">
+      <div className="grid items-center gap-8 pt-6 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-14">
+      <div className="space-y-3">
         <p className="text-[15px] uppercase tracking-[0.18em] text-faint">PeerProof</p>
         <h1 className="text-[30px] font-medium leading-[1.12] tracking-tight md:text-[46px] md:leading-[1.05]">
           Attendance you don&apos;t have to trust the organizer for.
@@ -52,21 +54,34 @@ export default function HomePage() {
           Whoever created the event has no function that releases, withholds, or receives a single
           wei. That is not a promise — it is the absence of a door.
         </p>
+
+        <div className="grid gap-3 pt-3 sm:grid-cols-2">
+          <Door
+            href="/events"
+            eyebrow="I'm going to something"
+            title="Find an event"
+            body="Browse what's on, put a deposit down, and check in when you get there."
+          />
+          <Door
+            href="/organizer"
+            eyebrow="I'm running something"
+            title="Host an event"
+            body="Set the deposit and the rules, then watch it settle. You never hold the money and you cannot decide who was present."
+          />
+        </div>
+
+        {/* The same claim as the paragraph above, at a glance, for somebody who is scanning. */}
+        <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[15px] text-dim">
+          {["No organizer custody", "Peer proof", "Public record"].map((t) => (
+            <span key={t} className="flex items-center gap-2">
+              <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-ok" />
+              {t}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-3 pt-2 md:grid-cols-2">
-        <Door
-          href="/events"
-          eyebrow="I'm going to something"
-          title="Find an event"
-          body="Browse what's on, put a deposit down, and check in when you get there."
-        />
-        <Door
-          href="/organizer"
-          eyebrow="I'm running something"
-          title="Host an event"
-          body="Set the deposit and the rules, then watch it settle. You never hold the money and you cannot decide who was present."
-        />
+      <ProofArt className="h-[230px] md:h-[340px]" />
       </div>
 
       <p className="pt-2 text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
