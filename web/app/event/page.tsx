@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Hex } from "viem";
 import Link from "next/link";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
 import Funding, { needFor } from "@/components/Funding";
+import RegisteredResult from "@/components/RegisteredResult";
 import {
   AppHeader,
   BigNumber,
@@ -19,7 +22,7 @@ import {
   Split,
   Stat,
 } from "@/components/ui";
-import { eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
+import { chainNowMs, eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
 import { mon, shortenError } from "@/lib/format";
 import { canRegister, phaseOf, projectedPayout, useEvent } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
@@ -33,8 +36,10 @@ import { useEventMeta } from "@/lib/eventMeta";
 export default function EventPage() {
   const { signer } = useIdentity();
   const { ev, me, refresh } = useEvent(signer?.address ?? null);
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
 
   const phase = phaseOf(ev);
   // Not `phase === "registering"`: with walk-ins a room that is already checking people in
@@ -57,6 +62,9 @@ export default function EventPage() {
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") throw new Error("Registration reverted on chain.");
+      // Shown once, here, rather than as a permanent banner: it is an account of a transaction
+      // that just happened, and on the next visit the ordinary "You're in" state is the truth.
+      setJustRegistered(hash);
       await refresh();
     } catch (e) {
       setError(shortenError(e));
@@ -148,7 +156,15 @@ export default function EventPage() {
               </dl>
             </Card>
 
-            {me?.registered ? (
+            {justRegistered && ev ? (
+              <RegisteredResult
+                deposit={ev.deposit}
+                hash={justRegistered}
+                opensIn={Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)}
+                vouchesNeeded={ev.k}
+                onContinue={() => router.push("/floor")}
+              />
+            ) : me?.registered ? (
               <div className="space-y-3">
                 <Notice tone="ok">
                   You&apos;re in. Your deposit is held by the contract, not by the organizer.

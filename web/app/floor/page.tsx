@@ -7,6 +7,7 @@ import type { Address, Hex } from "viem";
 import RotatingCode from "@/components/RotatingCode";
 import Scanner from "@/components/Scanner";
 import PayoutResult from "@/components/PayoutResult";
+import VouchResult from "@/components/VouchResult";
 import IdentityGate from "@/components/IdentityGate";
 import {
   AppHeader,
@@ -48,6 +49,7 @@ import {
   parseBeaconCode,
   parsePeerCode,
 } from "@/lib/codes";
+import { attendanceEscrowAbi } from "@/lib/abi";
 import { countdown, mon, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
 
@@ -69,6 +71,13 @@ export default function FloorPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    who: Address;
+    latencyMs: number;
+    hash: Hex;
+    mine: number;
+    theirs: number;
+  } | null>(null);
   const inFlight = useRef(false);
 
   const phase = phaseOf(ev);
@@ -115,6 +124,20 @@ export default function FloorPage() {
       inFlight.current = true;
       setNotice(null);
       try {
+        // Read before sending: the result card shows both counters moving, and the subject's
+        // count is only knowable from the chain. One extra read, on the one screen where the
+        // number is the point.
+        const theirsBefore = Number(
+          await publicClient
+            .readContract({
+              address: ESCROW_ADDRESS,
+              abi: attendanceEscrowAbi,
+              functionName: "attestCount",
+              args: [eventId(), subject],
+            })
+            .catch(() => 0n),
+        );
+        const minesBefore = me?.received ?? 0;
         const started = performance.now();
         // signer.write simulates first, so a stale code or a repeated pair surfaces as its custom
         // error name instead of costing gas. Monad bills on the limit, so a doomed write is not
@@ -133,7 +156,7 @@ export default function FloorPage() {
         }
         const latencyMs = Math.round(performance.now() - started);
         setLog((l) => [{ who: subject, hash, latencyMs }, ...l]);
-        setFlash(`Vouched · landed in ${(latencyMs / 1000).toFixed(2)}s`);
+        setResult({ who: subject, latencyMs, hash, mine: minesBefore, theirs: theirsBefore });
         await refresh();
       } catch (e) {
         setNotice(shortenError(e));
@@ -141,7 +164,7 @@ export default function FloorPage() {
         inFlight.current = false;
       }
     },
-    [beacon, signer, refresh],
+    [beacon, signer, refresh, me],
   );
 
   const onScan = useCallback(
@@ -539,6 +562,17 @@ export default function FloorPage() {
       </IdentityGate>
 
       <Flash message={flash} onDone={() => setFlash(null)} />
+      {result && ev && (
+        <VouchResult
+          who={result.who}
+          latencyMs={result.latencyMs}
+          hash={result.hash}
+          mine={result.mine}
+          theirs={result.theirs}
+          needed={ev.k}
+          onDone={() => setResult(null)}
+        />
+      )}
       {scanning && <Scanner onResult={(t) => void onScan(t)} onClose={() => setScanning(false)} />}
     </Shell>
   );
