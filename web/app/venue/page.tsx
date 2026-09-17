@@ -17,7 +17,7 @@ import {
 } from "@/lib/chain";
 import { makeBeaconCode } from "@/lib/codes";
 import { useEventMeta } from "@/lib/eventMeta";
-import { Button, Notice, Shell } from "@/components/ui";
+import { Button, Eyebrow, Notice, Shell } from "@/components/ui";
 
 /// The venue display. Put this on a laptop or spare phone at the door: it is what makes an
 /// attestation mean "was in this room". Every attestation must carry a signature from this key,
@@ -142,36 +142,54 @@ export default function VenuePage() {
 
   // `stage`, not `handheld`: this screen gets propped up at the door and scanned from a few metres
   // away, so it has to use whatever display it lands on.
+  //
+  // Side by side rather than stacked, because the code's size is the whole constraint. Stacked
+  // under a heading it can only be as wide as the column; beside the words it takes the height of
+  // the viewport, and height is what decides whether somebody three metres back can scan it. On a
+  // phone it falls back to one column, where width is the limit anyway.
   return (
     <Shell stage center>
-      <div className="text-center">
-        <h1 className="text-[30px] font-medium tracking-tight md:text-[42px]">
-          Scan me to check in
-        </h1>
-        <p className="mt-1.5 text-[16px] text-dim md:mt-2.5 md:text-[19px]">
-          Then scan the people around you. Both are required.
-        </p>
+      <div className="grid w-full items-center gap-8 md:grid-cols-[minmax(0,58vh)_minmax(260px,400px)] md:gap-14">
+        <div className="mx-auto w-full max-w-[min(74vw,58vh)]">
+          <RotatingCode
+            payload={payload}
+            secondsLeft={secondsLeft}
+            totalSeconds={Number(BEACON_EPOCH)}
+            size="xl"
+          />
+        </div>
+
+        <div className="text-center md:text-left">
+          <Eyebrow>Venue beacon</Eyebrow>
+          <h1 className="mt-2 text-[34px] font-medium leading-[1.06] tracking-[-0.04em] md:text-[52px]">
+            Scan to prove you&apos;re here.
+          </h1>
+          <p className="mt-3 text-[17px] leading-relaxed text-dim md:text-[20px]">
+            Everyone in the room reads the same rotating beacon. Then scan the people around you —
+            both are required.
+          </p>
+
+          <div className="mt-6 rounded-[18px] border border-line-2 bg-panel/70 p-5 md:mt-7 md:p-[22px]">
+            <p className="text-[15px] text-dim">Refreshes in</p>
+            <p className="mt-1 text-[42px] font-medium leading-none tabular-nums md:text-[52px]">
+              {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
+            </p>
+            <p className="mt-2 text-[15px] text-dim">
+              {meta.title} · event {eventId().toString()}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <RotatingCode
-        payload={payload}
-        secondsLeft={secondsLeft}
-        totalSeconds={Number(BEACON_EPOCH)}
-        size="xl"
-      />
-
-      <div className="text-center text-xs text-faint">
-        <p>
-          {meta.title} · event {eventId().toString()}
-        </p>
-        <p className="mt-1 font-mono">beacon {account.address.slice(0, 10)}…</p>
+      <div className="flex w-full items-center justify-between gap-4 text-[15px] text-faint">
+        <span className="font-mono">beacon {account.address.slice(0, 10)}…</span>
         <button
           onClick={() => {
             localStorage.removeItem(STORAGE_KEY);
             setAccount(null);
             setInput("");
           }}
-          className="mt-3 underline decoration-line-2"
+          className="underline decoration-line-2"
         >
           forget this key
         </button>

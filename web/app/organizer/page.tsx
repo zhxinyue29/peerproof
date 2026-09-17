@@ -24,6 +24,7 @@ import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
 import MyEvents from "@/components/MyEvents";
+import EventTimeline from "@/components/EventTimeline";
 import VenueHandoff from "@/components/VenueHandoff";
 
 export default function OrganizerPage() {
@@ -304,6 +305,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [doorsMins, setDoorsMins] = useState("30");
   const [runsMins, setRunsMins] = useState("180");
   const [walkIns, setWalkIns] = useState(true);
+  const [step, setStep] = useState<"about" | "rules">("about");
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
@@ -423,13 +425,35 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 
   return (
     <div className="space-y-3">
+      {/* Two steps rather than two stacked panels. Everything was visible at once, so the financial
+          rules — the part that locks forever — competed for attention with the title field. One
+          question at a time, and the irreversible one on its own screen. */}
+      <div className="flex gap-2">
+        {(["about", "rules"] as const).map((sName, i) => (
+          <div key={sName} className="flex flex-1 items-center gap-2.5">
+            <span
+              className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[13px] ${
+                step === sName
+                  ? "border-accent-2 bg-accent text-white"
+                  : "border-line-2 bg-raised text-faint"
+              }`}
+            >
+              {i + 1}
+            </span>
+            <span className={`text-[15px] ${step === sName ? "text-fg" : "text-faint"}`}>
+              {sName === "about" ? "About" : "Rules"}
+            </span>
+          </div>
+        ))}
+      </div>
+
       <div className="space-y-4">
         {/* Description first. Somebody creating an event thinks about what it is before they think
             about deposit mechanics, and a form that opens with six numbers reads as a config screen
             rather than a way to invite people. */}
-        <section className="space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5">
+        <section className={`space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
           <div>
-            <Eyebrow>1 · about the event</Eyebrow>
+            <p className="text-[22px] font-medium tracking-tight">About the event</p>
             <p className="mt-1 text-[15px] text-dim">What people see in the listing.</p>
           </div>
           <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
@@ -449,10 +473,16 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
           <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
         </section>
 
-        <section className="space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5">
+        {step === "about" && (
+          <Button onClick={() => setStep("rules")} className="w-full">
+            Next · the rules →
+          </Button>
+        )}
+
+        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "rules" ? "" : "hidden"}`}>
           <div>
-            <Eyebrow>2 · the rules</Eyebrow>
-            <p className="mt-1 text-[15px] text-dim">
+            <p className="text-[22px] font-medium tracking-tight">The rules</p>
+            <p className="mt-1 text-[15px] font-medium text-dim">
               Fixed once registration opens — including for you.
             </p>
           </div>
@@ -481,7 +511,13 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
             </span>
           </label>
 
-          <p className="text-xs leading-relaxed text-faint">
+          <EventTimeline
+            doorsMins={Number(doorsMins) || 0}
+            runsMins={Number(runsMins) || 0}
+            walkIns={walkIns}
+          />
+
+          <p className="text-[13px] leading-relaxed text-faint">
             You send no funds and gain no spending power. Deposits go to the contract; the split is
             decided by who vouches for whom.
           </p>
@@ -489,9 +525,16 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 
         {notice && <Notice tone="bad">{notice}</Notice>}
 
-        <Button onClick={() => void submit()} disabled={busy} className="w-full">
-          {busy ? busyLabel : "Create event"}
-        </Button>
+        {step === "rules" && (
+          <div className="flex gap-2.5">
+            <Button onClick={() => setStep("about")} variant="ghost" disabled={busy}>
+              ← Back
+            </Button>
+            <Button onClick={() => void submit()} disabled={busy} className="flex-1">
+              {busy ? busyLabel : "Create event"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

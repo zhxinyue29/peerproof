@@ -90,14 +90,26 @@ const SHOTS = [
     devKey: true,
     tab: "new event",
     marks: [
-      { n: 1, text: "1 · ABOUT THE EVENT" },
+      { n: 1, text: "About the event" },
       { n: 2, text: "TITLE" },
-      { n: 3, text: "2 · THE RULES" },
-      { n: 4, text: "DEPOSIT (MON)" },
-      { n: 5, text: "DOORS OPEN IN (MINS)" },
-      { n: 6, text: "RUNS FOR (MINS)" },
-      { n: 7, text: "Take walk-ins" },
-      { n: 8, text: "Create event" },
+      { n: 3, text: "Next · the rules" },
+    ],
+  },
+  {
+    // Step two on its own frame. The rules lock at creation and never move again, which is a
+    // different kind of decision from a title, and it now gets a screen rather than a panel.
+    id: "05b-organizer-rules",
+    path: "/organizer/?dev=1",
+    devKey: true,
+    tab: "new event",
+    next: true,
+    marks: [
+      { n: 1, text: "The rules" },
+      { n: 2, text: "DEPOSIT (MON)" },
+      { n: 3, text: "DOORS OPEN IN (MINS)" },
+      { n: 4, text: "Take walk-ins" },
+      { n: 5, text: "What participants will experience" },
+      { n: 6, text: "Create event" },
     ],
   },
   {
@@ -131,8 +143,8 @@ const SHOTS = [
     // The fixture supplies a beacon key through the environment, so this is the running display —
     // which is the state that matters anyway: it is what gets projected at the door.
     marks: [
-      { n: 1, text: "Scan me to check in" },
-      { n: 2, text: "refreshes in" },
+      { n: 1, text: "Scan to prove you" },
+      { n: 2, text: "Refreshes in" },
       { n: 3, text: "beacon 0x" },
       { n: 4, text: "forget this key" },
     ],
@@ -240,6 +252,13 @@ for (const size of SIZES) {
         if (await t.count()) {
           await t.first().click();
           await page.waitForTimeout(800);
+        }
+      }
+      if (shot.next) {
+        const n = page.getByRole("button", { name: /next · the rules/i });
+        if (await n.count()) {
+          await n.first().click();
+          await page.waitForTimeout(600);
         }
       }
       await page.waitForTimeout(3000);
