@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import EventCard from "@/components/EventCard";
-import EventCover from "@/components/EventCover";
 import Hero from "@/components/Hero";
+import GateIntro from "@/components/GateIntro";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
-import { LinkButton, Notice, Skeleton } from "@/components/ui";
+import { Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
@@ -200,31 +200,15 @@ export default function EventsPage() {
             ))}
           </Grid>
         ) : events.length === 0 ? (
-          /* Quiet on purpose. A deployment with nothing on it yet shows this to the first person
-             who ever opens it, so it has to look designed rather than broken — but the banner
-             above is already the loud thing, and a second full-width purple slab under it reads as
-             a page that could not decide. Dark card, the figure small and off to one side. */
-          <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-9">
-            <EventCover
-              id={0n}
-              nodes={9}
-              bare
-              className="pointer-events-none absolute -right-20 -top-10 hidden h-[280px] w-[400px] opacity-[0.2] md:block"
-            />
-            <div className="relative max-w-[52ch] space-y-3">
-              <h2 className="text-[20px] font-semibold md:text-[24px]">{t("events.empty")}</h2>
-              <p className="text-[16px] leading-relaxed text-dim">{t("events.emptyBody")}</p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <LinkButton href="/organizer">{t("events.createFirst")}</LinkButton>
-                <Link
-                  href="/#how-it-works"
-                  className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
-                >
-                  {t("home.howItWorks")}
-                </Link>
-              </div>
-            </div>
-          </section>
+          /* What attending actually involves, for the first person who ever opens this.
+             This used to be a second card restating the banner: `events.heroBodyQuiet` contains
+             `events.emptyBody` word for word, and both rendered on the same screen, each under its
+             own identical "create the first event" button. One sentence twice is padding, and
+             padding is its own way of looking unfinished — so the slot now carries something the
+             banner does not say. Nothing here is new copy; it is the same three steps the floor
+             screen shows to a signed-out visitor, which is exactly the question somebody looking at
+             an empty list has next. */
+          <GateIntro kind="floor" />
         ) : visible.length === 0 ? (
           <Empty title={t("events.noMatchTitle")}>
             <p className="text-[15px] leading-relaxed text-dim">{t("events.noMatchBody")}</p>

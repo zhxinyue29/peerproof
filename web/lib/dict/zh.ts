@@ -41,7 +41,6 @@ export const zh: Dict = {
   "events.upcoming": "即将开始",
   "events.thisWeek": "本周",
   "events.myRegistrations": "我的报名",
-  "events.empty": "还没有活动。",
   // Sits after a count: 「12 人已报名」.
   "events.registered": "人已报名",
   "events.search": "搜索活动",
@@ -119,7 +118,6 @@ export const zh: Dict = {
   "events.cancelled": "已取消",
   "events.settled": "已结算",
   "events.vouchesNeeded": "需要 {k} 个人作证才算到场",
-  "events.emptyBody": "谁都可以办活动——没有审批这一步，而且主办方永远碰不到押金。",
   "events.createFirst": "创建第一个活动",
   "events.noMatchTitle": "这里还没有",
   "events.noMatchBody": "现在没有活动符合这个筛选。",

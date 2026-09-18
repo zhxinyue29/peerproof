@@ -40,7 +40,6 @@ export const en = {
   "events.upcoming": "Upcoming",
   "events.thisWeek": "This week",
   "events.myRegistrations": "My registrations",
-  "events.empty": "No events yet.",
   "events.registered": "registered",
   "events.search": "Search events",
 
@@ -118,7 +117,6 @@ export const en = {
   "events.cancelled": "Cancelled",
   "events.settled": "Settled",
   "events.vouchesNeeded": "{k} vouches to count as present",
-  "events.emptyBody": "Anyone can host — there is no approval step, and the host never touches the deposits.",
   "events.createFirst": "Create the first event",
   "events.noMatchTitle": "Nothing here yet",
   "events.noMatchBody": "No event matches that filter right now.",

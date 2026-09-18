@@ -51,11 +51,28 @@ export default function Hero({
             "linear-gradient(112deg, #241a63 0%, #4c37c9 44%, #6d55ff 72%, #2a1f7a 100%)",
         }}
       />
+      {/* The fade lives in element space, not in the viewBox.
+          It used to be an SVG <mask> spanning the first 34% of a 640-unit viewBox — which
+          `preserveAspectRatio="xMaxYMid slice"` then cropped away entirely. `slice` scales to cover
+          and this box is far taller than 640×200, so the scale comes from the height and the
+          overflow is cut off the *left*: on this banner about 259 viewBox units, and the mask
+          occupied the first 218 of them. The strands therefore began at full opacity, in a hard
+          vertical line exactly at the svg's left edge.
+          Worse, it got worse the taller the banner grew — more height, more scale, more cropped —
+          so Chinese, which wraps the title and the body onto more lines than English does, never
+          saw the fade at all. The English mock-ups it was designed against were short enough to
+          keep it.
+          A CSS mask is measured against the rendered element, so nothing preserveAspectRatio does
+          can move it off screen. */}
       <svg
         aria-hidden
         viewBox="0 0 640 200"
         preserveAspectRatio="xMaxYMid slice"
         className="absolute inset-y-0 right-0 h-full w-[68%] opacity-90"
+        style={{
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 40%)",
+          maskImage: "linear-gradient(to right, transparent 0%, #000 40%)",
+        }}
       >
         <defs>
           <linearGradient id="hero-strand" x1="0" y1="0" x2="1" y2="0">
@@ -68,18 +85,9 @@ export default function Hero({
             <stop offset="35%" stopColor="#ffffff" stopOpacity="0.28" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
-          {/* Fades the artwork out where the words are, so the two never compete. */}
-          <linearGradient id="hero-mask" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#000000" stopOpacity="1" />
-            <stop offset="34%" stopColor="#000000" stopOpacity="0" />
-          </linearGradient>
-          <mask id="hero-clip">
-            <rect width="640" height="200" fill="#ffffff" />
-            <rect width="640" height="200" fill="url(#hero-mask)" />
-          </mask>
         </defs>
 
-        <g mask="url(#hero-clip)">
+        <g>
           {Array.from({ length: STRANDS }, (_, i) => (
             <path
               key={i}
