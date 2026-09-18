@@ -9,8 +9,13 @@ import {AttendanceEscrow} from "../src/AttendanceEscrow.sol";
 /// Monad charges gas on the gas *limit*, not gas used, so the limit is pinned explicitly rather
 /// than left to estimation-plus-padding.
 ///
+/// Measured at 2,370,395 gas; 2,800,000 is that plus headroom, because a deployment that runs out
+/// of gas is billed the limit as well and then has to be paid for twice.
+///
 ///   forge script script/Deploy.s.sol:Deploy --account monad-deployer \
-///     --rpc-url monad --broadcast --gas-limit 2800000
+///     --rpc-url monad_testnet --broadcast --gas-limit 2800000
+///
+/// `monad` instead of `monad_testnet` for mainnet.
 contract Deploy is Script {
     function run() external returns (AttendanceEscrow esc) {
         vm.startBroadcast();

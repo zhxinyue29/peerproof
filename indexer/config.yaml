@@ -16,6 +16,7 @@ contracts:
     events:
       - event: "EventCreated(uint256 indexed eventId, address indexed organizer, uint96 deposit, uint32 capacity, uint32 minQuorum, uint8 k, uint64 registerDeadline, uint64 attestOpen, uint64 attestClose)"
       - event: "Registered(uint256 indexed eventId, address indexed attendee, address attestKey)"
+      - event: "CheckedIn(uint256 indexed eventId, address indexed attendee, uint64 beaconEpoch)"
       - event: "Attested(uint256 indexed eventId, address indexed attester, address indexed subject, uint64 epoch)"
       - event: "Confirmed(uint256 indexed eventId, address indexed attendee, bool viaOrganizer)"
       - event: "EventCancelled(uint256 indexed eventId, uint32 registered, uint32 minQuorum)"

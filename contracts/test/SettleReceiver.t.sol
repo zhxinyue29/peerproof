@@ -177,20 +177,25 @@ contract SettleReceiverTest is Test {
     }
 
     function _attest(uint256 attesterIdx, uint256 subjectIdx) internal {
+        if (esc.checkedInAt(eid, _wallet(attesterIdx)) == 0) {
+            uint64 bEpoch = esc.currentBeaconEpoch();
+            bytes memory bSig = _sign(BEACON_PK, esc.beaconDigest(eid, bEpoch));
+            vm.prank(_wallet(attesterIdx));
+            esc.checkIn(eid, bEpoch, bSig);
+        }
+
         address subject = _wallet(subjectIdx);
         uint64 epoch = esc.currentEpoch();
         bytes memory code = _sign(_attestPk(subjectIdx), esc.codeDigest(eid, subject, epoch));
-        uint64 bEpoch = esc.currentBeaconEpoch();
-        bytes memory bSig = _sign(BEACON_PK, esc.beaconDigest(eid, bEpoch));
 
         vm.prank(_wallet(attesterIdx));
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     /// Three attendees, every pair scanning once, alternating who holds the phone. Three is the
     /// smallest room that settles at K = 2, because N mutual vouchers leave everyone with N - 1
     /// vouches. Alternating also gives each of them a scan of their own, which is what the escrow
-    /// requires as proof they held a live venue beacon.
+    /// requires as proof they came through the door.
     function _fillRoom() internal {
         for (uint256 i; i < 3; ++i) {
             address w = _wallet(i);

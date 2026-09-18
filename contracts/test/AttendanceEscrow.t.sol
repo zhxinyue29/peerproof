@@ -78,24 +78,36 @@ contract AttendanceEscrowTest is Test {
         bSig = _sign(BEACON_PK, esc.beaconDigest(eid, bEpoch));
     }
 
-    /// @dev prepare a peer code plus a venue beacon without submitting, so a test can wrap only
-    ///      the `attest` call in `vm.expectRevert`
+    function _checkIn(uint256 i) internal {
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        vm.prank(_wallet(i));
+        esc.checkIn(eid, bEpoch, bSig);
+    }
+
+    /// @dev Arrival is its own act now, and every test below that attests is testing something
+    ///      other than arrival, so walking through the door is done for them.
+    function _ensureCheckedIn(uint256 i) internal {
+        if (esc.checkedInAt(eid, _wallet(i)) == 0) _checkIn(i);
+    }
+
+    /// @dev prepare a peer code without submitting, so a test can wrap only the `attest` call in
+    ///      `vm.expectRevert`
     function _prep(uint256 subjectIdx)
         internal
         view
-        returns (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig)
+        returns (address subject, uint64 epoch, bytes memory code)
     {
         subject = _wallet(subjectIdx);
         epoch = esc.currentEpoch();
         code = _sign(_attestPk(subjectIdx), esc.codeDigest(eid, subject, epoch));
-        (bEpoch, bSig) = _beacon();
     }
 
     /// @dev `attesterIdx` submits the code that `subjectIdx` is currently displaying
     function _attest(uint256 attesterIdx, uint256 subjectIdx) internal {
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(subjectIdx);
+        _ensureCheckedIn(attesterIdx);
+        (address subject, uint64 epoch, bytes memory code) = _prep(subjectIdx);
         vm.prank(_wallet(attesterIdx));
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     /// @dev Every unordered pair among the first `n` attendees attests once, alternating who
@@ -212,40 +224,127 @@ contract AttendanceEscrowTest is Test {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch,) = _prep(1);
+        uint64 bEpoch = esc.currentBeaconEpoch();
         bytes memory forged = _sign(uint256(0xBAD), esc.beaconDigest(eid, bEpoch));
 
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.BadBeacon.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, forged);
+        esc.checkIn(eid, bEpoch, forged);
     }
 
     function test_staleBeaconRejected() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (,,, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
 
         // three beacon epochs later the venue code is worthless
         vm.warp(block.timestamp + 3 * esc.BEACON_EPOCH());
 
-        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.StaleBeacon.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.checkIn(eid, bEpoch, bSig);
     }
 
     function test_previousBeaconEpochStillAccepted() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (,,, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
         vm.warp(block.timestamp + esc.BEACON_EPOCH());
 
-        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        // one epoch of slack, so reading the display and getting the transaction mined are not
+        // required to happen in the same instant
         vm.prank(_wallet(0));
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
-        assertEq(esc.attestCount(eid, subject), 1);
+        esc.checkIn(eid, bEpoch, bSig);
+        assertGt(esc.checkedInAt(eid, _wallet(0)), 0);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                          Arrival vs vouching                       */
+    /* ------------------------------------------------------------------ */
+
+    /// The venue clock and the social clock are independent. Somebody who has checked in should
+    /// be able to spend the rest of the evening meeting people — greeting a stranger, waiting for
+    /// them to unlock their phone, finding the next one — without the venue display expiring
+    /// underneath them. An earlier version tied both to the beacon, which in a real room meant a
+    /// two-minute deadline on making a friend.
+    function test_checkInLastsTheWholeWindow() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _checkIn(0);
+
+        // check in at the door, scan somebody in the last second of the evening: every beacon
+        // epoch in between expires unused, and none of them matters
+        vm.warp(attestClose - 1);
+        assertGt((attestClose - attestOpen) / esc.BEACON_EPOCH(), 10, "many beacon epochs elapsed");
+
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
+        vm.prank(_wallet(0));
+        esc.attest(eid, subject, epoch, code);
+        assertEq(esc.attestCount(eid, subject), 1, "arrival does not expire");
+    }
+
+    function test_attestRequiresCheckIn() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.NotCheckedIn.selector);
+        esc.attest(eid, subject, epoch, code);
+    }
+
+    /// Being scanned is not arriving. A code can be shown from anywhere — a screenshot texted to
+    /// the room — so receiving attestations must not silently make somebody present.
+    function test_beingAttestedDoesNotCheckYouIn() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _attest(0, 1);
+
+        assertGt(esc.checkedInAt(eid, _wallet(0)), 0, "the scanner arrived");
+        assertEq(esc.checkedInAt(eid, _wallet(1)), 0, "the scanned party did not");
+    }
+
+    function test_cannotCheckInTwice() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _checkIn(0);
+
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.AlreadyCheckedIn.selector);
+        esc.checkIn(eid, bEpoch, bSig);
+    }
+
+    function test_unregisteredCannotCheckIn() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(AttendanceEscrow.NotRegistered.selector);
+        esc.checkIn(eid, bEpoch, bSig);
+    }
+
+    function test_checkInBeforeWindowRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen - 10);
+
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.WindowOpen.selector);
+        esc.checkIn(eid, bEpoch, bSig);
+    }
+
+    function test_checkInAfterWindowRejected() public {
+        _registerMany(10);
+        vm.warp(attestClose + 1);
+
+        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.WindowClosed.selector);
+        esc.checkIn(eid, bEpoch, bSig);
     }
 
     function test_beaconKeyLockedOnceWindowOpens() public {
@@ -264,16 +363,16 @@ contract AttendanceEscrowTest is Test {
         vm.warp(attestOpen + 1);
 
         // the old beacon key no longer works
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory oldSig) = _prep(1);
+        (uint64 bEpoch, bytes memory oldSig) = _beacon();
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.BadBeacon.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, oldSig);
+        esc.checkIn(eid, bEpoch, oldSig);
 
         // the new one does
         bytes memory newSig = _sign(0xF00D5, esc.beaconDigest(eid, bEpoch));
         vm.prank(_wallet(0));
-        esc.attest(eid, subject, epoch, code, bEpoch, newSig);
-        assertEq(esc.attestCount(eid, subject), 1);
+        esc.checkIn(eid, bEpoch, newSig);
+        assertGt(esc.checkedInAt(eid, _wallet(0)), 0);
     }
 
     function test_onlyOrganizerSetsBeaconKey() public {
@@ -291,10 +390,10 @@ contract AttendanceEscrowTest is Test {
         vm.warp(attestOpen + 1);
         _attest(0, 1);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.PairAlreadyUsed.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     function test_reversedPairAlsoBlocked() public {
@@ -303,47 +402,81 @@ contract AttendanceEscrowTest is Test {
         _attest(0, 1);
 
         // now 1 tries to attest 0 — the same unordered pair
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(0);
+        _ensureCheckedIn(1);
+        (address subject, uint64 epoch, bytes memory code) = _prep(0);
         vm.prank(_wallet(1));
         vm.expectRevert(AttendanceEscrow.PairAlreadyUsed.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     function test_selfAttestationBlocked() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(0);
+        (address subject, uint64 epoch, bytes memory code) = _prep(0);
         vm.prank(subject);
         vm.expectRevert(AttendanceEscrow.SelfAttestation.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     function test_staleCodeRejected() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        _ensureCheckedIn(0);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
 
-        // more than two code epochs later the screenshot is worthless
-        vm.warp(block.timestamp + 3 * esc.EPOCH());
-        (uint64 bEpoch, bytes memory bSig) = _beacon();
+        // past the acceptance window the screenshot is worthless
+        vm.warp(block.timestamp + esc.CODE_EPOCHS() * esc.EPOCH());
 
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.StaleCode.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
+    }
+
+    /// The window exists for the seconds a person spends reading a wallet dialog. A vouch that
+    /// simulates cleanly and then reverts *after* the user has confirmed it is the worst shape of
+    /// failure available: it has already been paid for.
+    function test_codeStillGoodWhileAWalletDialogIsOpen() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _ensureCheckedIn(0);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
+
+        // Read the code, then take 45 seconds over the confirmation.
+        vm.warp(block.timestamp + (esc.CODE_EPOCHS() - 1) * esc.EPOCH());
+
+        vm.prank(_wallet(0));
+        esc.attest(eid, subject, epoch, code);
+        assertEq(esc.attestCount(eid, subject), 1, "a slow confirmation still counts");
+    }
+
+    /// A code for an epoch that has not arrived yet is not a slow submission, it is a forgery
+    /// attempt or a clock that cannot be trusted. Either way it is not evidence of presence.
+    function test_futureCodeRejected() public {
+        _registerMany(10);
+        vm.warp(attestOpen + 1);
+        _ensureCheckedIn(0);
+
+        address subject = _wallet(1);
+        uint64 future = esc.currentEpoch() + 1;
+        bytes memory code = _sign(_attestPk(1), esc.codeDigest(eid, subject, future));
+
+        vm.prank(_wallet(0));
+        vm.expectRevert(AttendanceEscrow.StaleCode.selector);
+        esc.attest(eid, subject, future, code);
     }
 
     function test_previousCodeEpochStillAccepted() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (address subject, uint64 epoch, bytes memory code,,) = _prep(1);
+        _ensureCheckedIn(0);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
         vm.warp(block.timestamp + esc.EPOCH());
-        (uint64 bEpoch, bytes memory bSig) = _beacon();
 
         vm.prank(_wallet(0));
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
         assertEq(esc.attestCount(eid, subject), 1);
     }
 
@@ -351,44 +484,44 @@ contract AttendanceEscrowTest is Test {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
+        _ensureCheckedIn(0);
         address subject = _wallet(1);
         uint64 epoch = esc.currentEpoch();
         bytes memory forged = _sign(uint256(9999), esc.codeDigest(eid, subject, epoch));
-        (uint64 bEpoch, bytes memory bSig) = _beacon();
 
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.BadCode.selector);
-        esc.attest(eid, subject, epoch, forged, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, forged);
     }
 
     function test_unregisteredCannotAttest() public {
         _registerMany(10);
         vm.warp(attestOpen + 1);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
         vm.prank(address(0xBEEF));
         vm.expectRevert(AttendanceEscrow.NotRegistered.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     function test_attestBeforeWindowRejected() public {
         _registerMany(10);
         vm.warp(attestOpen - 10);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.WindowOpen.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     function test_attestAfterWindowRejected() public {
         _registerMany(10);
         vm.warp(attestClose + 1);
 
-        (address subject, uint64 epoch, bytes memory code, uint64 bEpoch, bytes memory bSig) = _prep(1);
+        (address subject, uint64 epoch, bytes memory code) = _prep(1);
         vm.prank(_wallet(0));
         vm.expectRevert(AttendanceEscrow.WindowClosed.selector);
-        esc.attest(eid, subject, epoch, code, bEpoch, bSig);
+        esc.attest(eid, subject, epoch, code);
     }
 
     /* ------------------------------------------------------------------ */

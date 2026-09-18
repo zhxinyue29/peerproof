@@ -49,6 +49,20 @@ indexer.onEvent({ contract: "AttendanceEscrow", event: "Registered" }, async ({ 
     claimedAmount: undefined,
     registeredAt: BigInt(event.block.timestamp),
     registeredTxHash: event.transaction.hash,
+    checkedInAt: undefined,
+    checkedInTxHash: undefined,
+  });
+});
+
+indexer.onEvent({ contract: "AttendanceEscrow", event: "CheckedIn" }, async ({ event, context }) => {
+  const p = await context.Participant.get(pid(event.params.eventId, event.params.attendee));
+  // The contract refuses check-in from an unregistered address, so a missing participant here
+  // would mean the index had fallen behind its own ordering rather than a real gap.
+  if (!p) return;
+  context.Participant.set({
+    ...p,
+    checkedInAt: BigInt(event.block.timestamp),
+    checkedInTxHash: event.transaction.hash,
   });
 });
 

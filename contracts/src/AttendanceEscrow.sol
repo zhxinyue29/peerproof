@@ -9,10 +9,18 @@ pragma solidity ^0.8.24;
 /// a key the attendee derived from their passkey's WebAuthn PRF output. A single scan credits
 /// both parties, so a room of N people reaches quorum in O(N) transactions.
 ///
-/// Every attestation must also carry a fresh signature from the venue beacon — a display at the
-/// venue holding an ephemeral key. That forces the submitter to have been in the room. And since
-/// being confirmed requires having submitted at least one attestation yourself, everyone who
-/// settles as present was physically there, not just relayed in by a friend.
+/// Arriving is a separate act from attesting. Before an attendee can vouch for anyone they must
+/// check in once, by submitting a fresh signature from the venue beacon — a display at the venue
+/// holding an ephemeral key. The chain timestamps that transaction, so the beacon has to be live
+/// at the moment of arrival, and relaying one to somebody across town means relaying it inside a
+/// single beacon epoch. Since being confirmed requires having submitted at least one attestation
+/// yourself, everyone who settles as present walked through the door.
+///
+/// Attesting deliberately carries no beacon of its own. Presence is a fact about arrival, not
+/// something to be re-proved every two minutes: an earlier design demanded a live beacon on every
+/// attestation, which meant you had to find, greet, and scan another person inside the beacon's
+/// window or start over. The two clocks are independent, and only the arrival one is a security
+/// boundary.
 ///
 /// Once the window closes, attendees confirmed present reclaim their deposit and split the
 /// deposits forfeited by no-shows. The organizer can never release, withhold, or receive
@@ -62,9 +70,13 @@ contract AttendanceEscrow {
     mapping(uint256 => mapping(address => address)) public attestKeyOf;
     /// @dev eventId => attendee => attestations received
     mapping(uint256 => mapping(address => uint32)) public attestCount;
-    /// @dev eventId => attendee => attestations they submitted themselves. Non-zero is proof they
-    ///      held a fresh venue beacon, i.e. that they were in the room.
+    /// @dev eventId => attendee => attestations they submitted themselves. Non-zero means they had
+    ///      checked in, i.e. that they were in the room.
     mapping(uint256 => mapping(address => uint32)) public gaveCount;
+    /// @dev eventId => attendee => block timestamp at which they proved they were at the venue.
+    ///      Zero means not checked in. Stored rather than a bool because the public record is
+    ///      more use if it says when somebody arrived, and it costs the same slot either way.
+    mapping(uint256 => mapping(address => uint64)) public checkedInAt;
     /// @dev eventId => attendee => confirmed present
     mapping(uint256 => mapping(address => bool)) public isConfirmed;
     /// @dev eventId => attendee => payout already withdrawn
@@ -72,12 +84,35 @@ contract AttendanceEscrow {
     /// @dev eventId => keccak(low, high) => that unordered pair has already attested once
     mapping(uint256 => mapping(bytes32 => bool)) public pairUsed;
 
-    /// @notice Attendee rotating codes are valid for this many seconds.
+    /// @notice Attendee rotating codes change this often.
     uint256 public constant EPOCH = 15;
 
-    /// @notice Venue beacon codes rotate on this slower cadence, so an attendee does not have to
-    ///         re-read the venue display every few seconds.
-    uint256 public constant BEACON_EPOCH = 120;
+    /// @notice How many epochs of attendee code a submission may carry: the current one and the
+    ///         three before it, so a code is worth something for 45 to 60 seconds after it appears.
+    ///
+    /// @dev Rotation and acceptance are separate numbers, and conflating them cost a working scan.
+    ///      Acceptance used to be two epochs, which is 15 to 30 seconds — fine for the passkey
+    ///      path, where an end-to-end vouch measures about a second, and a race for anyone on a
+    ///      wallet, who has to read a confirmation dialog and press a button in the middle of it.
+    ///      Worse, the simulation passes before that dialog and the real transaction reverts after
+    ///      it, so the failure arrives having already been paid for.
+    ///
+    ///      Widening acceptance is close to free here. A forwarded code only ever helps somebody
+    ///      vouch *for* an absent friend, and being vouched for is not what makes an account
+    ///      present: that requires having vouched for somebody yourself, which requires having
+    ///      checked in against a live venue beacon. The screen still changes every fifteen seconds,
+    ///      so a screenshot still ages out — it just no longer ages out mid-transaction.
+    uint256 public constant CODE_EPOCHS = 4;
+
+    /// @notice Venue beacon codes rotate on this cadence, and a code is accepted for its own epoch
+    ///         or the next — so 30 to 60 seconds separate reading the display from the check-in
+    ///         landing on chain. That is slack for a wallet confirmation tap, and nothing more.
+    ///
+    /// @dev This used to be 120, because the beacon had to survive long enough for an attendee to
+    ///      also find somebody and scan them. Now it only has to survive one transaction, so it
+    ///      can be short — and short is what makes forwarding the venue code to somebody who is
+    ///      not in the building expensive, since the accomplice has to be relaying it live.
+    uint256 public constant BEACON_EPOCH = 30;
 
     /// @notice Grace period after the attestation window during which the organizer fallback may
     ///         still run. Settlement is blocked until it elapses, but only for rooms that
@@ -102,6 +137,7 @@ contract AttendanceEscrow {
     );
     event BeaconKeySet(uint256 indexed eventId, address beaconKey);
     event Registered(uint256 indexed eventId, address indexed attendee, address attestKey);
+    event CheckedIn(uint256 indexed eventId, address indexed attendee, uint64 beaconEpoch);
     event Attested(uint256 indexed eventId, address indexed attester, address indexed subject, uint64 epoch);
     event Confirmed(uint256 indexed eventId, address indexed attendee, bool viaOrganizer);
     event EventCancelled(uint256 indexed eventId, uint32 registered, uint32 minQuorum);
@@ -127,6 +163,8 @@ contract AttendanceEscrow {
     error BadCode();
     error StaleBeacon();
     error BadBeacon();
+    error NotCheckedIn();
+    error AlreadyCheckedIn();
     error NotOrganizer();
     error FallbackLocked();
     error FallbackPending();
@@ -224,18 +262,35 @@ contract AttendanceEscrow {
     /*                              Attestation                               */
     /* ---------------------------------------------------------------------- */
 
-    /// @notice Attest that `subject` is physically present, by submitting a rotating code they
-    ///         displayed together with a fresh code from the venue beacon. Credits both parties.
-    /// @param code ECDSA signature by the subject's attest key over `codeDigest(...)`.
+    /// @notice Prove you are at the venue, by submitting a live signature from the venue beacon.
+    ///         Required once per event before you can attest to anybody.
     /// @param beaconSig ECDSA signature by the venue beacon key over `beaconDigest(...)`.
-    function attest(
-        uint256 eventId,
-        address subject,
-        uint64 epoch,
-        bytes calldata code,
-        uint64 beaconEpoch,
-        bytes calldata beaconSig
-    ) external {
+    ///
+    /// @dev The security of the whole scheme rests on this one transaction rather than on every
+    ///      attestation, and it rests there because the chain — not the submitter — decides when
+    ///      it happened. A beacon signature carries no timestamp of its own capture, so there is
+    ///      no way to accept a stored one and still know when it was read; the only honest way to
+    ///      date a beacon read is to make the read itself a transaction.
+    function checkIn(uint256 eventId, uint64 beaconEpoch, bytes calldata beaconSig) external {
+        Event storage e = _load(eventId);
+        if (e.status != Status.Open) revert WrongStatus();
+        if (block.timestamp < e.attestOpen) revert WindowOpen();
+        if (block.timestamp >= e.attestClose) revert WindowClosed();
+        if (!isRegistered[eventId][msg.sender]) revert NotRegistered();
+        if (checkedInAt[eventId][msg.sender] != 0) revert AlreadyCheckedIn();
+
+        uint64 nowBeacon = uint64(block.timestamp / BEACON_EPOCH);
+        if (beaconEpoch != nowBeacon && beaconEpoch + 1 != nowBeacon) revert StaleBeacon();
+        if (_recoverSig(beaconDigest(eventId, beaconEpoch), beaconSig) != e.beaconKey) revert BadBeacon();
+
+        checkedInAt[eventId][msg.sender] = uint64(block.timestamp);
+        emit CheckedIn(eventId, msg.sender, beaconEpoch);
+    }
+
+    /// @notice Attest that `subject` is physically present, by submitting a rotating code they
+    ///         displayed. Credits both parties. Requires the caller to have checked in.
+    /// @param code ECDSA signature by the subject's attest key over `codeDigest(...)`.
+    function attest(uint256 eventId, address subject, uint64 epoch, bytes calldata code) external {
         Event storage e = _load(eventId);
         if (e.status != Status.Open) revert WrongStatus();
         if (block.timestamp < e.attestOpen) revert WindowOpen();
@@ -244,16 +299,16 @@ contract AttendanceEscrow {
         if (!isRegistered[eventId][msg.sender]) revert NotRegistered();
         if (!isRegistered[eventId][subject]) revert NotRegistered();
 
-        // The venue code proves the submitter was in the room. Without this an attendee could
-        // simply be texted a peer's signature and attest from anywhere.
-        uint64 nowBeacon = uint64(block.timestamp / BEACON_EPOCH);
-        if (beaconEpoch != nowBeacon && beaconEpoch + 1 != nowBeacon) revert StaleBeacon();
-        if (_recoverSig(beaconDigest(eventId, beaconEpoch), beaconSig) != e.beaconKey) revert BadBeacon();
+        // Arrival was proved once, on its own transaction. Nothing here re-checks the venue: the
+        // subject's code is what binds this attestation to a person, and it is short-lived enough
+        // that it cannot be a screenshot passed around.
+        if (checkedInAt[eventId][msg.sender] == 0) revert NotCheckedIn();
 
-        // The subject's code must belong to the current or immediately previous epoch, so a
-        // screenshot taken more than ~30s ago is useless.
+        // The subject's code must be recent, so a screenshot taken a minute ago is useless — and a
+        // code read a moment ago is still good when the transaction lands, however long its sender
+        // spent looking at a wallet dialog.
         uint64 nowEpoch = uint64(block.timestamp / EPOCH);
-        if (epoch != nowEpoch && epoch + 1 != nowEpoch) revert StaleCode();
+        if (epoch > nowEpoch || nowEpoch - epoch >= CODE_EPOCHS) revert StaleCode();
         if (_recoverSig(codeDigest(eventId, subject, epoch), code) != attestKeyOf[eventId][subject]) {
             revert BadCode();
         }
@@ -273,7 +328,8 @@ contract AttendanceEscrow {
     }
 
     /// @dev Presence requires both being vouched for `k` times AND having vouched for someone
-    ///      else at least once — the latter is what proves this account held a venue beacon.
+    ///      else at least once — and vouching requires having checked in, so the second condition
+    ///      is what ties a confirmed attendee to the room.
     function _maybeConfirm(uint256 eventId, Event storage e, address who) private {
         if (isConfirmed[eventId][who]) return;
         if (attestCount[eventId][who] < e.k) return;

@@ -38,6 +38,11 @@ type Participant {
   claimedAmount: BigInt
   registeredAt: BigInt!
   registeredTxHash: String!
+  """When this account proved it was at the venue. Null until they check in — and a participant
+  who never checks in can never be confirmed present, so this is the field that separates
+  "bought a ticket" from "walked through the door"."""
+  checkedInAt: BigInt
+  checkedInTxHash: String
 }
 
 type Vouch {
