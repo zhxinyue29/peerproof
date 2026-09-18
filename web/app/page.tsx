@@ -117,14 +117,19 @@ export default function HomePage() {
                   depends entirely on who is reading, and a product that guesses puts the other half
                   of its audience through a screen built for somebody else. */}
               <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                <Door href="/events" eyebrow={t("home.goingLabel")} cta={t("home.goingCta")} />
-                <Door href="/organizer" eyebrow={t("home.hostingLabel")} cta={t("home.hostingCta")} />
+                <Door href="/events" eyebrow={t("home.goingLabel")} cta={t("home.goingCta")} tone="join" />
+                <Door href="/organizer" eyebrow={t("home.hostingLabel")} cta={t("home.hostingCta")} tone="host" />
               </div>
 
-              {/* The claim in three words each, for somebody who is scanning rather than reading. */}
-              <ul className="flex flex-wrap gap-x-6 gap-y-2.5 pt-1">
+              {/* The claim in three words each, for somebody scanning rather than reading. Chips
+                  rather than a row of bullets: three loose dots under two large cards read as
+                  leftovers, and these are the three things the product is actually promising. */}
+              <ul className="flex flex-wrap gap-2 pt-1">
                 {[t("home.pillCustody"), t("home.pillPeer"), t("home.pillRecord")].map((label) => (
-                  <li key={label} className="flex items-center gap-2 text-[15px] text-dim">
+                  <li
+                    key={label}
+                    className="flex items-center gap-2 rounded-full border border-ok/25 bg-ok/[0.07] px-3.5 py-2 text-[15px] text-dim"
+                  >
                     <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-ok" />
                     {label}
                   </li>
@@ -215,16 +220,64 @@ function IdentityToken() {
 /* ------------------------------------------------------------------ */
 
 /// One of the two ways in. The label above says who you are; the line below says where that goes.
-function Door({ href, eyebrow, cta }: { href: string; eyebrow: string; cta: string }) {
+///
+/// These are the page's only real controls, and they were two grey rectangles the same colour as
+/// every card beneath them — a primary action has to look like one. Each now carries its own light:
+/// a tint that sits under the panel colour, a glow that lifts on hover, and a figure in the corner
+/// that says which door this is before the words are read.
+function Door({
+  href,
+  eyebrow,
+  cta,
+  tone,
+}: {
+  href: string;
+  eyebrow: string;
+  cta: string;
+  tone: "join" | "host";
+}) {
+  const join = tone === "join";
   return (
     <Link
       href={href}
-      className="group flex min-h-[132px] flex-col justify-between rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-accent/50 md:min-h-[140px] md:p-6"
+      className="group relative flex min-h-[148px] flex-col justify-between overflow-hidden rounded-2xl border border-line-2 p-5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/70 md:min-h-[164px] md:p-6"
+      style={{
+        background: join
+          ? "linear-gradient(150deg, rgba(118,91,255,0.20) 0%, rgba(22,35,60,0.9) 58%)"
+          : "linear-gradient(150deg, rgba(57,217,138,0.16) 0%, rgba(22,35,60,0.9) 58%)",
+      }}
     >
-      <span className="text-[15px] text-dim">{eyebrow}</span>
-      <span className="flex items-center gap-2.5 text-[22px] font-semibold tracking-[-0.02em] md:text-[24px]">
+      {/* The mark, not an icon set. Two arcs for joining a room, three points for convening one —
+          drawn rather than imported so the page still has no outbound request. */}
+      <svg
+        aria-hidden
+        viewBox="0 0 64 64"
+        className="pointer-events-none absolute -right-3 -top-3 h-[92px] w-[92px] opacity-[0.28] transition-opacity duration-200 group-hover:opacity-50"
+      >
+        {join ? (
+          <g fill="none" stroke={join ? "#9a88ff" : "#39d98a"} strokeWidth="2.2" strokeLinecap="round">
+            <path d="M20 42a14 14 0 1 1 24 0" />
+            <path d="M12 50a22 22 0 0 1 40 0" opacity="0.55" />
+          </g>
+        ) : (
+          <g>
+            <g stroke="#39d98a" strokeWidth="1.8" opacity="0.6">
+              <path d="M22 24 L42 24 M22 24 L32 44 M42 24 L32 44" />
+            </g>
+            {[[22, 24], [42, 24], [32, 44]].map(([cx, cy]) => (
+              <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4.6" fill="#39d98a" />
+            ))}
+          </g>
+        )}
+      </svg>
+
+      <span className="relative text-[15px] text-dim">{eyebrow}</span>
+      <span className="relative flex items-center gap-2.5 text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
         {cta}
-        <span aria-hidden="true" className="text-accent-2 transition-transform group-hover:translate-x-1">
+        <span
+          aria-hidden="true"
+          className={`transition-transform duration-200 group-hover:translate-x-1 ${join ? "text-accent-2" : "text-ok"}`}
+        >
           →
         </span>
       </span>
@@ -258,10 +311,24 @@ function HowItWorks() {
 
       <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
         {steps.map((s, i) => (
-          <li key={s.title} className="min-w-0 rounded-2xl border border-line bg-panel p-5 md:p-6">
-            <span className="text-[14px] font-medium tabular-nums text-accent-2">{i + 1}</span>
-            <h3 className="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
-            <p className="mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
+          /* The numeral is the decoration. Set large and nearly transparent behind the text it
+             belongs to, it gives three identical panels a reading order at a glance — which a
+             14px accent-coloured digit in the corner never did. */
+          <li
+            key={s.title}
+            className="relative min-w-0 overflow-hidden rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-line-2 md:p-6"
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-2 -top-6 select-none text-[112px] font-semibold leading-none text-white/[0.045]"
+            >
+              {i + 1}
+            </span>
+            <span className="relative text-[14px] font-medium tabular-nums text-accent-2">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <h3 className="relative mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
+            <p className="relative mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
           </li>
         ))}
       </ol>
