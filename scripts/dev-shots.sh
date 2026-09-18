@@ -81,18 +81,28 @@ enrol() { # event_id pk...
   done
 }
 
+check_in() { # event_id pk — idempotent, so callers need not track who has already arrived
+  local id=$1 pk=$2
+  local who; who=$(cast wallet address --private-key "$pk")
+  local at; at=$(cast call "$ESCROW" "checkedInAt(uint256,address)(uint64)" "$id" "$who" --rpc-url "$RPC" | awk '{print $1}')
+  [ "$at" != "0" ] && return 0
+  local bep; bep=$(cast call "$ESCROW" "currentBeaconEpoch()(uint64)" --rpc-url "$RPC" | awk '{print $1}')
+  local bdg; bdg=$(cast call "$ESCROW" "beaconDigest(uint256,uint64)(bytes32)" "$id" "$bep" --rpc-url "$RPC")
+  local bsig; bsig=$(cast wallet sign --private-key "$BEACON_PK" --no-hash "$bdg")
+  cast send "$ESCROW" "checkIn(uint256,uint64,bytes)" "$id" "$bep" "$bsig" \
+    --private-key "$pk" --rpc-url "$RPC" >/dev/null
+}
+
 vouch() { # event_id attester_pk subject_pk
   local id=$1 apk=$2 spk=$3
+  check_in "$id" "$apk"
   local subject; subject=$(cast wallet address --private-key "$spk")
   local epoch; epoch=$(cast call "$ESCROW" "currentEpoch()(uint64)" --rpc-url "$RPC" | awk '{print $1}')
   local digest; digest=$(cast call "$ESCROW" "codeDigest(uint256,address,uint64)(bytes32)" \
                           "$id" "$subject" "$epoch" --rpc-url "$RPC")
   local code; code=$(cast wallet sign --private-key "$spk" --no-hash "$digest")
-  local bep; bep=$(cast call "$ESCROW" "currentBeaconEpoch()(uint64)" --rpc-url "$RPC" | awk '{print $1}')
-  local bdg; bdg=$(cast call "$ESCROW" "beaconDigest(uint256,uint64)(bytes32)" "$id" "$bep" --rpc-url "$RPC")
-  local bsig; bsig=$(cast wallet sign --private-key "$BEACON_PK" --no-hash "$bdg")
-  cast send "$ESCROW" "attest(uint256,address,uint64,bytes,uint64,bytes)" \
-    "$id" "$subject" "$epoch" "$code" "$bep" "$bsig" \
+  cast send "$ESCROW" "attest(uint256,address,uint64,bytes)" \
+    "$id" "$subject" "$epoch" "$code" \
     --private-key "$apk" --rpc-url "$RPC" >/dev/null
 }
 

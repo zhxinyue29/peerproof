@@ -43,6 +43,15 @@ beacon_sig() {
   echo "$bep $(cast wallet sign --private-key "$BEACON_PK" --no-hash "$dg")"
 }
 
+# Arrival is its own transaction now, and every attendee below has to have made it. One pass at
+# the door, then the pairs can be walked without touching the beacon again.
+echo "→ checking in $N attendees at the door"
+for ((i=0; i<N; i++)); do
+  read -r bep bsig <<< "$(beacon_sig)"
+  cast send "$ESCROW" "checkIn(uint256,uint64,bytes)" "$EVENT_ID" "$bep" "$bsig" \
+    --private-key "${PKS[$i]}" --rpc-url "$RPC" >/dev/null
+done
+
 echo "→ vouching (every pair among the first $N attendees)"
 for ((i=0; i<N; i++)); do
   for ((j=i+1; j<N; j++)); do
@@ -56,10 +65,9 @@ for ((i=0; i<N; i++)); do
     digest=$(cast call "$ESCROW" "codeDigest(uint256,address,uint64)(bytes32)" \
               "$EVENT_ID" "$subject" "$epoch" --rpc-url "$RPC")
     code=$(cast wallet sign --private-key "$subject_pk" --no-hash "$digest")
-    read -r bep bsig <<< "$(beacon_sig)"
 
-    cast send "$ESCROW" "attest(uint256,address,uint64,bytes,uint64,bytes)" \
-      "$EVENT_ID" "$subject" "$epoch" "$code" "$bep" "$bsig" \
+    cast send "$ESCROW" "attest(uint256,address,uint64,bytes)" \
+      "$EVENT_ID" "$subject" "$epoch" "$code" \
       --private-key "$attester_pk" --rpc-url "$RPC" >/dev/null
     echo "  $(cast wallet address --private-key "$attester_pk") → $subject"
   done

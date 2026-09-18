@@ -17,6 +17,17 @@ FORGE=${FORGE:-$(command -v forge || echo "$HOME/.foundry/bin/forge")}
 
 python3 - <<'PY'
 import json, pathlib
+# The escrow too: it is deployed from the browser for the same reason the directory is.
+esc = json.loads(pathlib.Path("contracts/out/AttendanceEscrow.sol/AttendanceEscrow.json").read_text())
+pathlib.Path("web/lib/escrowArtifact.ts").write_text(
+    "// Generated from contracts/out/AttendanceEscrow.sol/AttendanceEscrow.json — do not edit.\n"
+    "//\n"
+    "// Checked in so the escrow can be deployed from the browser. The alternative was a keystore\n"
+    "// and a password, and that password was forgotten — which is how a contract change ends up\n"
+    "// blocked on something unrelated to the change.\n"
+    'import type { Hex } from "viem";\n\n'
+    f'export const attendanceEscrowBytecode = "{esc["bytecode"]["object"]}" as Hex;\n'
+)
 
 src = pathlib.Path("contracts/out/EventDirectory.sol/EventDirectory.json")
 d = json.loads(src.read_text())
