@@ -200,17 +200,12 @@ export default function EventsPage() {
              above is already the loud thing, and a second full-width purple slab under it reads as
              a page that could not decide. Dark card, the figure small and off to one side. */
           <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-9">
-            {/* Wrapped rather than positioned directly: EventCover sets `relative` on its own
-                root, and two position utilities on one element are settled by stylesheet order
-                rather than by the order they were written — so `absolute` passed in was being
-                ignored and the figure sat in normal flow, padding the card out to twice its
-                height. */}
-            <span
-              aria-hidden
+            <EventCover
+              id={0n}
+              nodes={9}
+              bare
               className="pointer-events-none absolute -right-20 -top-10 hidden h-[280px] w-[400px] opacity-[0.2] md:block"
-            >
-              <EventCover id={0n} nodes={9} bare className="h-full w-full" />
-            </span>
+            />
             <div className="relative max-w-[52ch] space-y-3">
               <h2 className="text-[20px] font-semibold md:text-[24px]">{t("events.empty")}</h2>
               <p className="text-[16px] leading-relaxed text-dim">{t("events.emptyBody")}</p>

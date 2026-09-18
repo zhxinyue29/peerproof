@@ -102,12 +102,20 @@ export default function EventCover({
 
   const gid = `cv${id.toString()}`;
 
+  // The caller owns the outer box, including how it is positioned.
+  //
+  // This element used to set `relative` on the root it shares with the caller's className, and two
+  // position utilities on one element are settled by stylesheet order rather than by the order they
+  // were written. So `absolute inset-0` passed in from a card lost silently: the cover kept
+  // `relative`, `inset-0` did nothing without it, the box had no height, and every event card
+  // rendered its band as empty space. The fix is to stop competing — position lives outside, the
+  // stacking context it needs lives inside.
   return (
-    <div
-      aria-hidden
-      className={`relative overflow-hidden ${className}`}
-      style={bare ? undefined : { background: coverFor(id) }}
-    >
+    <div aria-hidden className={className}>
+      <div
+        className="relative h-full w-full overflow-hidden"
+        style={bare ? undefined : { background: coverFor(id) }}
+      >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid slice"
@@ -155,6 +163,7 @@ export default function EventCover({
 
         {!bare && <rect width={W} height={H} fill={`url(#${gid}-v)`} />}
       </svg>
+      </div>
     </div>
   );
 }
