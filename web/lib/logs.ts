@@ -1,5 +1,6 @@
 import { parseAbiItem, type Address, type Hex } from "viem";
-import { DEPLOY_BLOCK, ESCROW_ADDRESS, logsClient, LOGS_CHUNK } from "@/lib/chain";
+import { DEPLOY_BLOCK, ESCROW_ADDRESS, logsClient, LOGS_CHUNK, publicClient } from "@/lib/chain";
+import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import { hasEnvio, readHistoryFromEnvio } from "@/lib/envio";
 
 /// The direct-RPC reader, and the fallback behind Envio.
@@ -14,27 +15,49 @@ import { hasEnvio, readHistoryFromEnvio } from "@/lib/envio";
 /// judging window outlasts that. A verification page that goes blank is worse than a slower one.
 const CHUNK = LOGS_CHUNK;
 
-/// Chunks are fetched in parallel rather than in sequence — the whole point of the higher-limit
-/// endpoint is that there are only a couple of them, and waiting for each in turn would throw that
-/// away.
-async function chunkedLogs<T>(
-  event: ReturnType<typeof parseAbiItem>,
-  fromBlock: bigint,
-  toBlock: bigint,
-): Promise<T[]> {
-  const ranges: Array<[bigint, bigint]> = [];
+/// The endpoint allows fifteen requests a second. This starts at most twelve.
+///
+/// A rate, not a concurrency cap — the distinction cost a round. `Promise.all` over every chunk was
+/// fine when the deployment block was minutes old and there were two of them; nine hours later the
+/// span was 108,045 blocks, which at a hundred blocks a request is 1,080 chunks per event type and
+/// 4,320 requests fired at once. Every one came back 429, so the page whose entire purpose is
+/// letting a sceptic check the numbers showed none.
+///
+/// Capping in-flight requests at eight does not fix that: eight that each return in 100ms is eighty
+/// a second. What has to be bounded is how often a request *starts*.
+const MIN_GAP_MS = 80;
+
+let nextSlot = 0;
+async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const at = Math.max(now, nextSlot);
+  nextSlot = at + MIN_GAP_MS;
+  if (at > now) await new Promise((r) => setTimeout(r, at - now));
+  return fn();
+}
+
+function ranges(fromBlock: bigint, toBlock: bigint): Array<[bigint, bigint]> {
+  const out: Array<[bigint, bigint]> = [];
   for (let start = fromBlock; start <= toBlock; start += CHUNK) {
-    const end = start + CHUNK - 1n > toBlock ? toBlock : start + CHUNK - 1n;
-    ranges.push([start, end]);
+    out.push([start, start + CHUNK - 1n > toBlock ? toBlock : start + CHUNK - 1n]);
   }
+  return out;
+}
+
+async function logsIn<T>(
+  event: ReturnType<typeof parseAbiItem>,
+  rs: Array<[bigint, bigint]>,
+): Promise<T[]> {
   const batches = await Promise.all(
-    ranges.map(([start, end]) =>
-      logsClient.getLogs({
-        address: ESCROW_ADDRESS,
-        event: event as never,
-        fromBlock: start,
-        toBlock: end,
-      }),
+    rs.map(([start, end]) =>
+      rateLimited(() =>
+        logsClient.getLogs({
+          address: ESCROW_ADDRESS,
+          event: event as never,
+          fromBlock: start,
+          toBlock: end,
+        }),
+      ),
     ),
   );
   return batches.flat() as unknown as T[];
@@ -75,19 +98,62 @@ export async function readHistoryFromRpc(
   maxBlocks = 20_000n,
 ): Promise<EventHistory> {
   const tip = await logsClient.getBlockNumber();
-  const fromBlock =
-    DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : tip > maxBlocks ? tip - maxBlocks : 0n;
+  const floor = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : tip > maxBlocks ? tip - maxBlocks : 0n;
 
   type RegLog = { args: { eventId: bigint; attendee: Address } };
   type AttLog = { args: { eventId: bigint; attester: Address; subject: Address }; transactionHash: Hex; blockNumber: bigint };
   type ConfLog = { args: { eventId: bigint; attendee: Address; viaOrganizer: boolean } };
   type SetLog = { args: { eventId: bigint; confirmed: number; noShows: number; sharePerAttendee: bigint }; transactionHash: Hex };
 
-  const [regs, atts, confs, settles] = await Promise.all([
-    chunkedLogs<RegLog>(registeredEvent, fromBlock, tip),
-    chunkedLogs<AttLog>(attestedEvent, fromBlock, tip),
-    chunkedLogs<ConfLog>(confirmedEvent, fromBlock, tip),
-    chunkedLogs<SetLog>(settledEvent, fromBlock, tip),
+  // Backwards from the tip, a window at a time, stopping as soon as every registration this event
+  // has is accounted for.
+  //
+  // An event's logs all sit in the stretch of chain it was alive for, and that stretch is near the
+  // tip while it matters. Scanning from the deployment block instead meant the work grew with the
+  // age of the contract rather than with the size of the event: the same ten-minute meetup costs
+  // four requests on its opening day and twenty thousand a month later, for identical output. The
+  // escrow already knows how many people registered, so there is a cheap, exact place to stop.
+  //
+  // An event whose window has long passed still falls through to the full span — correctly, since
+  // its logs really are back there. That case is what the indexer is for; this is the fallback,
+  // and a slow correct answer beats a fast wrong one.
+  const registeredCount = await publicClient
+    .readContract({ address: ESCROW_ADDRESS, abi, functionName: "getEvent", args: [eventId] })
+    .then((e) => Number((e as { registered: number }).registered))
+    .catch(() => -1);
+
+  // Nobody registered, so there is nothing to find — and `getEvent` answers for an event that does
+  // not exist with a zero struct rather than a revert, so this covers a fresh contract and a stale
+  // link as well. Reading the whole chain to establish that there is nothing is how this page came
+  // to spend 4,320 requests on an empty answer.
+  if (registeredCount <= 0) {
+    return { participants: [], vouches: [], settlement: null, fromBlock: tip, toBlock: tip, source: "rpc" };
+  }
+
+  // Sixteen chunks a pass, not sixty-four. The window is how much work a read costs when it
+  // succeeds immediately, and at a hundred blocks a chunk this is roughly eight minutes of chain —
+  // wide enough that a live event's registrations are usually all inside the first pass, narrow
+  // enough that a pass is a few seconds rather than twenty. It walks further back when it has to.
+  const WINDOW = CHUNK * 16n;
+  let fromBlock = tip;
+  let regs: RegLog[] = [];
+  let scanned: Array<[bigint, bigint]> = [];
+  for (let end = tip; end >= floor; ) {
+    const start = end - WINDOW + 1n > floor ? end - WINDOW + 1n : floor;
+    const rs = ranges(start, end);
+    scanned = rs.concat(scanned);
+    regs = (await logsIn<RegLog>(registeredEvent, rs)).concat(regs);
+    fromBlock = start;
+    const found = regs.filter((r) => r.args.eventId === eventId).length;
+    if (registeredCount >= 0 && found >= registeredCount) break;
+    if (start === floor) break;
+    end = start - 1n;
+  }
+
+  const [atts, confs, settles] = await Promise.all([
+    logsIn<AttLog>(attestedEvent, scanned),
+    logsIn<ConfLog>(confirmedEvent, scanned),
+    logsIn<SetLog>(settledEvent, scanned),
   ]);
 
   const mine = <T extends { args: { eventId: bigint } }>(xs: T[]) =>

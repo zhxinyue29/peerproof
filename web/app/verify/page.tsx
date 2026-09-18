@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -95,9 +95,21 @@ export default function VerifyPage() {
   }, []);
 
   // 15s, and only while somebody is looking. The public record is an archive, not a ticker.
+  //
+  // The in-flight guard is not belt and braces. Rebuilding the graph from logs is rate-limited and
+  // can outlast the interval, and without this the ticks queue up behind each other: each one
+  // starts another full read, the reads overlap, and the page never stops loading — which is what
+  // it did, for exactly as long as anyone left it open.
+  const reading = useRef(false);
   useVisiblePoll(() => {
-    if (!hasDeployment) return;
-    void readHistory(eventId()).then(setHistory).catch(() => {});
+    if (!hasDeployment || reading.current) return;
+    reading.current = true;
+    void readHistory(eventId())
+      .then(setHistory)
+      .catch(() => {})
+      .finally(() => {
+        reading.current = false;
+      });
   }, 15000);
 
   if (!hasDeployment) {
