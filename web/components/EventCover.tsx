@@ -71,9 +71,14 @@ export default function EventCover({
   id,
   className = "",
   nodes: nodeCount,
+  bare = false,
 }: {
   id: bigint;
   className?: string;
+  /// Line art only, no plate behind it. For decorative use inside a card that already has a
+  /// surface — the gradient at low opacity is a grey rectangle with hard edges, which is a box
+  /// somebody has to explain rather than a figure they read past.
+  bare?: boolean;
   /// Larger surfaces carry a denser figure. The event page banner is eight times the area of a
   /// card's band, and the same six points on it read as an accident.
   nodes?: number;
@@ -101,7 +106,7 @@ export default function EventCover({
     <div
       aria-hidden
       className={`relative overflow-hidden ${className}`}
-      style={{ background: coverFor(id) }}
+      style={bare ? undefined : { background: coverFor(id) }}
     >
       <svg
         viewBox={`0 0 ${W} ${H}`}
@@ -148,7 +153,7 @@ export default function EventCover({
           </g>
         ))}
 
-        <rect width={W} height={H} fill={`url(#${gid}-v)`} />
+        {!bare && <rect width={W} height={H} fill={`url(#${gid}-v)`} />}
       </svg>
     </div>
   );

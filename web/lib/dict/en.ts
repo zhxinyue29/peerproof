@@ -495,6 +495,9 @@ export const en = {
   "floor.alreadyCheckedIn": "You're already checked in — keep looking for a person's code.",
   "floor.checkedInFlash": "Checked in. Now go and scan people — no rush, this lasts all event.",
   "deploy.dirBody": "Events can only show a number until this is deployed — titles and descriptions live in a second contract, so the one holding deposits never has to change to store text. Whoever deploys it, everyone uses it: its address is derived from the escrow, not from the deployer. Organizers never see this step.",
+  "events.heroEyebrow": "PEER-VERIFIED ATTENDANCE",
+  "events.heroTitle": "Find your next on-chain event",
+  "events.heroBodyQuiet": "Nothing is running right now. Anyone can host one — there is no approval step, and the host never touches the deposits.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import EventCard from "@/components/EventCard";
+import EventCover from "@/components/EventCover";
+import Hero from "@/components/Hero";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
-import { Notice, Skeleton } from "@/components/ui";
+import { LinkButton, Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
@@ -141,7 +143,32 @@ export default function EventsPage() {
 
         {/* The band only appears when the claim on it is true. "Walk in, join" over a list where
             the next event is on Thursday is the kind of small lie this product cannot afford. */}
-        {anyOpen && <OpenNowBand onView={() => setChoice("open")} label={t("events.openNow")} />}
+        {/* Always present, because it is this page's face — but its words follow the truth.
+            "Walk in, join" over a list whose next event is Thursday is the kind of small lie this
+            product cannot afford, so when nothing is live it says what is actually on offer. An
+            empty listing under no header at all is how a working deployment looks broken. */}
+        <Hero
+          eyebrow={t("events.heroEyebrow")}
+          title={anyOpen ? t("events.openNow") : t("events.heroTitle")}
+          body={anyOpen ? t("events.heroBody") : t("events.heroBodyQuiet")}
+          action={
+            anyOpen ? (
+              <button
+                onClick={() => setChoice("open")}
+                className="min-h-[44px] rounded-xl bg-white px-5 text-[16px] font-medium text-[#2a1f7a] transition-transform duration-100 active:scale-[0.985]"
+              >
+                {t("events.viewLive")}
+              </button>
+            ) : (
+              <Link
+                href="/organizer"
+                className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-5 text-[16px] font-medium text-[#2a1f7a] transition-transform duration-100 active:scale-[0.985]"
+              >
+                {t("events.createFirst")}
+              </Link>
+            )
+          }
+        />
 
         <Chips
           active={active}
@@ -168,12 +195,36 @@ export default function EventsPage() {
             ))}
           </Grid>
         ) : events.length === 0 ? (
-          <Empty title={t("events.empty")}>
-            <p className="text-[15px] leading-relaxed text-dim">{t("events.emptyBody")}</p>
-            <Link href="/organizer" className="text-[15px] text-accent-2 underline">
-              {t("events.createFirst")}
-            </Link>
-          </Empty>
+          /* Quiet on purpose. A deployment with nothing on it yet shows this to the first person
+             who ever opens it, so it has to look designed rather than broken — but the banner
+             above is already the loud thing, and a second full-width purple slab under it reads as
+             a page that could not decide. Dark card, the figure small and off to one side. */
+          <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-9">
+            {/* Wrapped rather than positioned directly: EventCover sets `relative` on its own
+                root, and two position utilities on one element are settled by stylesheet order
+                rather than by the order they were written — so `absolute` passed in was being
+                ignored and the figure sat in normal flow, padding the card out to twice its
+                height. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-20 -top-10 hidden h-[280px] w-[400px] opacity-[0.2] md:block"
+            >
+              <EventCover id={0n} nodes={9} bare className="h-full w-full" />
+            </span>
+            <div className="relative max-w-[52ch] space-y-3">
+              <h2 className="text-[20px] font-semibold md:text-[24px]">{t("events.empty")}</h2>
+              <p className="text-[16px] leading-relaxed text-dim">{t("events.emptyBody")}</p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <LinkButton href="/organizer">{t("events.createFirst")}</LinkButton>
+                <Link
+                  href="/#how-it-works"
+                  className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+                >
+                  {t("home.howItWorks")}
+                </Link>
+              </div>
+            </div>
+          </section>
         ) : visible.length === 0 ? (
           <Empty title={t("events.noMatchTitle")}>
             <p className="text-[15px] leading-relaxed text-dim">{t("events.noMatchBody")}</p>
@@ -215,38 +266,6 @@ function Grid({ children }: { children: React.ReactNode }) {
     <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 md:gap-5">
       {children}
     </div>
-  );
-}
-
-function OpenNowBand({ label, onView }: { label: string; onView: () => void }) {
-  const t = useT();
-  return (
-    <section
-      className="relative overflow-hidden rounded-2xl border border-line-2 px-5 py-6 md:px-7"
-      // Not from the token palette: this is one band on one screen, and the tokens are flat
-      // surfaces by design.
-      style={{ background: "linear-gradient(105deg,#241a54 0%,#3f2d90 52%,#1a1540 100%)" }}
-    >
-      {/* The ring motif from the render — a network, drawn faintly enough that it never competes
-          with the button. Purely decorative, so it is hidden from assistive tech. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-[-60%] right-[-80px] hidden w-[420px] md:block">
-        <div className="absolute inset-0 rounded-full border border-white/10" />
-        <div className="absolute inset-[18%] rounded-full border border-white/10" />
-      </div>
-
-      <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
-        <div className="min-w-0 space-y-1.5">
-          <h2 className="text-[24px] font-semibold tracking-[-0.02em] md:text-[28px]">{label}</h2>
-          <p className="text-[16px] leading-relaxed text-dim">{t("events.heroBody")}</p>
-        </div>
-        <button
-          onClick={onView}
-          className="flex min-h-[46px] w-full shrink-0 items-center justify-center rounded-xl bg-accent px-5 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985] md:w-auto md:min-w-[200px]"
-        >
-          {t("events.viewLive")}
-        </button>
-      </div>
-    </section>
   );
 }
 

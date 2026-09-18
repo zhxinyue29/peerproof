@@ -473,4 +473,7 @@ export const zh: Dict = {
   "floor.alreadyCheckedIn": "你已经签到过了——继续找人的二维码就行。",
   "floor.checkedInFlash": "签到完成。现在去扫人吧，不用急，这个整晚有效。",
   "deploy.dirBody": "在这个部署之前，活动只能显示编号。标题和简介存在第二个合约里，这样保管押金的那个合约永远不必为了存文字而改动。谁部署都一样，之后所有人共用同一个——它的地址是从押金合约算出来的，和部署者是谁无关。主办方不会看到这一步。",
+  "events.heroEyebrow": "同伴互证的出席",
+  "events.heroTitle": "找到你的下一场链上活动",
+  "events.heroBodyQuiet": "现在没有正在进行的活动。谁都可以办一场——没有审批这一步，而且主办方永远碰不到押金。",
 };
