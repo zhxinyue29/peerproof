@@ -154,6 +154,17 @@ function looksEnglish(s) {
   return words.some((w) => /^[a-z]{3,}/.test(w));
 }
 
+/// The English behind a key, for the stranded check below.
+function enValue(key) {
+  const src = readFileSync(join(WEB, "lib/dict/en.ts"), "utf8");
+  const m = src.match(new RegExp('"' + key.replace(/\./g, "\\.") + '":\\s*\\n?\\s*"((?:[^"\\\\]|\\\\.)*)"'));
+  return m ? m[1] : null;
+}
+
+/// Comment-stripped sources, kept so the stranded check can search the same text the hardcoded
+/// check did — a key whose English only appears inside a comment is not a bug.
+const sources = [];
+
 const hardcoded = [];
 for (const f of walk(join(WEB, "app")).concat(walk(join(WEB, "components")), walk(join(WEB, "lib")))) {
   const rel = f.replace(WEB + "/", "");
@@ -161,6 +172,7 @@ for (const f of walk(join(WEB, "app")).concat(walk(join(WEB, "components")), wal
   const raw = readFileSync(f, "utf8");
   if (raw.includes(EXEMPT_MARKER)) continue;
   const src = stripComments(raw);
+  sources.push([rel, src]);
   const lines = src.split("\n");
 
   lines.forEach((line, n) => {
@@ -214,9 +226,39 @@ if (hardcoded.length) {
   }
   console.log();
 }
+/// An unused key whose English is sitting in the source as a literal.
+///
+/// The strongest signal there is, and it was in this report all along as two separate lines nobody
+/// joined up: `floor.refreshesIn` sat in the unused list while "refreshes in {n}s" was hardcoded
+/// under the venue QR — translated, ready, and never reached, on the one screen a whole room looks
+/// at. The prose check missed it too ("refreshes", "in", "9s" is two words by its reckoning), which
+/// is why this cross-check is worth having on its own.
+const stranded = [];
+for (const k of unused) {
+  const value = enValue(k);
+  if (!value || value.length < 8) continue;
+  // Compare on the fixed part, so a key with a placeholder still matches its literal.
+  const stem = value.split(/\{\w+\}/)[0].trim();
+  // Multi-word only. A single word is indistinguishable from part of an identifier: "Organizer"
+  // matched inside the key `event.notByOrganizer` and reported a bug that was not there. A phrase
+  // with a space in it cannot hide in camelCase.
+  if (stem.length < 10 || !stem.includes(" ")) continue;
+  for (const [f, src] of sources) {
+    if (src.includes(stem)) {
+      stranded.push({ k, f, stem });
+      break;
+    }
+  }
+}
+if (stranded.length) {
+  console.log(`STRANDED — translated, and hardcoded anyway (${stranded.length}):`);
+  for (const s of stranded) console.log(`  ${s.k}  ← literal in ${s.f}: ${s.stem.slice(0, 50)}`);
+  console.log();
+}
+
 if (unused.length) console.log(`unused (${unused.length}): ${unused.join(", ")}\n`);
 
-if (missing.length || untranslated.length || hardcoded.length) {
+if (missing.length || untranslated.length || hardcoded.length || stranded.length) {
   console.log("FAIL");
   process.exit(1);
 }

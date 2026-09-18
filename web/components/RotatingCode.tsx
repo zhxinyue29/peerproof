@@ -14,11 +14,18 @@ export default function RotatingCode({
   secondsLeft,
   totalSeconds,
   size = "lg",
+  caption = true,
 }: {
   payload: string | null;
   secondsLeft: number;
   totalSeconds: number;
   size?: "lg" | "xl";
+  /// The little ring-and-countdown under the code.
+  ///
+  /// Right on the attendee's own screen, wrong on the venue display — that page renders its own
+  /// countdown, large enough to read from across a room, so the pair sat on one screen saying the
+  /// same number twice about forty centimetres apart.
+  caption?: boolean;
 }) {
   const t = useT();
   /// The rendered code is stored together with the payload it was rendered from, and the render
@@ -72,11 +79,12 @@ export default function RotatingCode({
           />
         ) : (
           <div className="flex aspect-square items-center justify-center text-sm text-faint">
-            generating…
+            {t("floor.codeGenerating")}
           </div>
         )}
       </div>
 
+      {caption && (
       <div className="flex items-center justify-center gap-2 text-[15px] text-dim">
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="3" opacity="0.25" />
@@ -94,8 +102,9 @@ export default function RotatingCode({
             className="text-accent"
           />
         </svg>
-        <span className="tabular-nums">refreshes in {secondsLeft}s</span>
+        <span className="tabular-nums">{t("floor.refreshesIn", { n: secondsLeft })}</span>
       </div>
+      )}
     </div>
   );
 }

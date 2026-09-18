@@ -73,6 +73,7 @@ export const en = {
   "floor.checkedIn": "Checked in",
   "floor.vouchedForYou": "vouched for you",
   "floor.doorsOpenIn": "Doors open in",
+  "floor.codeGenerating": "generating…",
   "floor.refreshesIn": "refreshes in {n}s",
   "floor.scanVenueFirst": "Scan the venue display first — you only have to do it once.",
   "floor.codeAlt": "Your attendance code",

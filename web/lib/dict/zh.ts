@@ -74,6 +74,7 @@ export const zh: Dict = {
   // Sits after a count: 「3 人为你作证」.
   "floor.vouchedForYou": "人为你作证",
   "floor.doorsOpenIn": "距开场还有",
+  "floor.codeGenerating": "生成中…",
   "floor.refreshesIn": "{n} 秒后刷新",
   "floor.scanVenueFirst": "先扫门口的屏幕，只需要一次。",
   "floor.codeAlt": "你的到场码",

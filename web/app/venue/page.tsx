@@ -175,6 +175,8 @@ export default function VenuePage() {
             secondsLeft={secondsLeft}
             totalSeconds={Number(BEACON_EPOCH)}
             size="xl"
+            // This page has its own countdown, set large enough to read from the back of a room.
+            caption={false}
           />
         </div>
 
