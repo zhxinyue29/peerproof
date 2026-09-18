@@ -56,7 +56,7 @@ jobs:
           # together. They are one decision: a chunk above the endpoint's cap is rejected outright,
           # not merely slow, so splitting them across two files is how they drift apart.
           NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || '' }}
-          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0xf0c53014079acc58912621caa434b01029355a6f' }}
+          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x6Dcaa43a0b6eBB82A4117b2c0eF28f246f345E2b' }}
           # Deliberately not `vars.EVENT_ID`. A number here switches off resolve-to-newest, so the
           # site serves one fixed event forever — and a repository variable is invisible from the
           # code, from the build log, and from the page itself. One left over from an afternoon's
@@ -76,7 +76,7 @@ jobs:
           # Without this the reader falls back to scanning the last 20,000 blocks. The contract was
           # deployed ~274,000 blocks ago, so the graph would come back empty and look like nothing
           # ever happened.
-          NEXT_PUBLIC_DEPLOY_BLOCK: ${{ vars.DEPLOY_BLOCK || '62472020' }}
+          NEXT_PUBLIC_DEPLOY_BLOCK: ${{ vars.DEPLOY_BLOCK || '63365596' }}
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 

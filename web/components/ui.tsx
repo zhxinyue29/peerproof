@@ -398,9 +398,12 @@ export function Dots({ filled, total }: { filled: number; total: number }) {
 export function Progress({ value, max }: { value: number; max: number }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-line">
+    // Violet into green, left to right. The gradient is not decoration: these bars fill as a room
+    // proves itself, and ending on the colour this app uses for "confirmed" makes a bar that is
+    // nearly full look like what it is.
+    <div className="h-2 overflow-hidden rounded-full bg-line">
       <div
-        className="h-full rounded-full bg-accent transition-[width] duration-500"
+        className="h-full rounded-full bg-gradient-to-r from-accent to-ok transition-[width] duration-500"
         style={{ width: `${pct}%` }}
       />
     </div>

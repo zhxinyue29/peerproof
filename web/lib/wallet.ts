@@ -4,7 +4,7 @@ import type { LocalAccount } from "viem";
 import { createSecp256k1SigningSession } from "@category-labs/mera";
 import { toViemAccount } from "@category-labs/mera/viem";
 // chain.ts does not import this file, so this cannot close a cycle.
-import { publicClient } from "@/lib/chain";
+import { chain, publicClient } from "@/lib/chain";
 
 /// Fallback for devices whose passkeys can't do PRF — desktop Chrome's built-in authenticator
 /// being the common case. The shape deliberately mirrors the passkey path:
@@ -93,6 +93,53 @@ export async function deriveFromWallet(
   return { account: toViemAccount(session), owner, attestPk };
 }
 
+/// Refuses to send anything while the wallet is pointed at a different chain, and offers to move
+/// it first.
+///
+/// A transaction with no `chainId` goes wherever the wallet happens to be, and the wallet does not
+/// consult the page. This app reads from Monad through its own client, so nothing on screen ever
+/// reflects the wallet's network — and the deploy button put a contract creation in front of
+/// somebody whose MetaMask was on Ethereum mainnet, quoting **US$13.72 of real ETH** for it. Worse,
+/// had it been confirmed, `waitForTransactionReceipt` would have gone on polling Monad for a hash
+/// that only exists on Ethereum: the money spent, the screen still saying "Deploying…".
+///
+/// `wallet_switchEthereumChain` returns 4902 when the chain is unknown to the wallet, which is the
+/// documented signal to offer to add it.
+async function requireCorrectChain(eth: Eip1193): Promise<void> {
+  const current = Number(BigInt((await eth.request({ method: "eth_chainId" })) as Hex));
+  if (current === chain.id) return;
+
+  const hexId = `0x${chain.id.toString(16)}`;
+  try {
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexId }] });
+  } catch (e) {
+    if ((e as { code?: number })?.code !== 4902) throw e;
+    await eth.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: hexId,
+          chainName: chain.name,
+          nativeCurrency: chain.nativeCurrency,
+          rpcUrls: [...chain.rpcUrls.default.http],
+          ...(chain.blockExplorers?.default?.url
+            ? { blockExplorerUrls: [chain.blockExplorers.default.url] }
+            : {}),
+        },
+      ],
+    });
+  }
+
+  // Do not take the switch on trust: a wallet may resolve the request without having moved, and
+  // the whole point here is that the page cannot see where the wallet is pointing.
+  const after = Number(BigInt((await eth.request({ method: "eth_chainId" })) as Hex));
+  if (after !== chain.id) {
+    throw new Error(
+      `Your wallet is on chain ${after}, and this app is on ${chain.name} (${chain.id}). Switch networks in your wallet and try again.`,
+    );
+  }
+}
+
 /// Sends a transaction from the connected wallet itself. Used for the deposit and the payout
 /// claim: those are the user's money moving, so they should see a wallet prompt for them.
 /// `to` is optional: omitting it is how a transaction deploys a contract rather than calling one.
@@ -110,6 +157,7 @@ export async function walletSendTransaction(
 ): Promise<Hex> {
   const eth = provider ?? injected();
   if (!eth) throw new NoWalletError();
+  await requireCorrectChain(eth);
   return (await eth.request({
     method: "eth_sendTransaction",
     params: [

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { parseEther } from "viem";
+import AppShell from "@/components/AppShell";
 import IdentityGate from "@/components/IdentityGate";
-import { AppHeader, Button, Card, CopyableCode, Eyebrow, Field, Notice, Shell } from "@/components/ui";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button, Card, CopyableCode, Field, Notice, Skeleton } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
@@ -15,165 +17,387 @@ import {
   hasDeployment,
   isLocalChain,
   publicClient,
+  resolveEventId,
 } from "@/lib/chain";
-import { both, countdown, fiat, shortAddress, shortenError } from "@/lib/format";
-import { canRegister, phaseOf, useEvent } from "@/lib/useEvent";
+import { both, countdown, fiat, fiatAvailable, shortAddress, shortenError } from "@/lib/format";
+import { useT, type TFn } from "@/lib/i18n";
+import { canRegister, phaseOf, useEvent, type EventInfo } from "@/lib/useEvent";
+import { readAllEvents, type EventSummary } from "@/lib/events";
 import { useVisiblePoll } from "@/lib/poll";
 import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
+import DeployEscrow from "@/components/DeployEscrow";
 import EditListing from "@/components/EditListing";
-import MyEvents from "@/components/MyEvents";
+import EventsTable from "@/components/EventsTable";
 import EventTimeline from "@/components/EventTimeline";
+import LivePulse from "@/components/LivePulse";
 import VenueHandoff from "@/components/VenueHandoff";
 
+/// The organizer's screen, rebuilt to `04-organizer-dashboard-*.png`.
+///
+/// Two things about it are load-bearing rather than decorative. It reads *every* event this address
+/// created, not the one the build points at — an organizer who ran three nights had no way to see
+/// the first two. And the payouts panel is still an absence: a dashed note saying the contract
+/// settles itself, sitting where a product with an escape hatch would put the button.
 export default function OrganizerPage() {
+  const t = useT();
   const { signer, devMode } = useIdentity();
   const { ev, refresh } = useEvent(signer?.address ?? null);
-  const [tab, setTab] = useState<"dashboard" | "create">("dashboard");
+  const [tab, goTo] = useUrlTab();
+  const [all, setAll] = useState<EventSummary[] | null>(null);
+
+  const loadAll = useCallback(() => {
+    if (!hasDeployment) return;
+    // Swallowed rather than surfaced: this is the second reader on the page, and a rate-limited
+    // read should leave the last good list on screen, not replace the dashboard with an error.
+    void readAllEvents().then(setAll).catch(() => {});
+  }, []);
+
+  useEffect(loadAll, [loadAll]);
+  useVisiblePoll(loadAll, 15000);
+
+  // Derived, not stored. `eventId()` is module state that useEvent's startup effect resolves once,
+  // so the first moment it can be trusted is the first moment `ev` exists — and past that point it
+  // only changes through `select` below, which re-reads the event and therefore re-renders this.
+  // Mirroring it into state would mean two sources for one fact and an effect to keep them equal.
+  const selectedId = ev ? eventId() : null;
+
+  /// Switching rows without leaving the page.
+  ///
+  /// The event id is resolved from `?event=` exactly once, in an effect that does not depend on the
+  /// query string — so a soft navigation to `/organizer?event=3` would rewrite the address bar and
+  /// change nothing else. Rewriting the URL first and then re-resolving keeps the two in step, and
+  /// leaves a reloadable link behind.
+  const select = useCallback(
+    (id: bigint) => {
+      window.history.replaceState(null, "", `${window.location.pathname}?event=${id}`);
+      void resolveEventId().then(refresh);
+    },
+    [refresh],
+  );
+
+  const mine = useMemo(
+    () =>
+      all && signer
+        ? all.filter((e) => e.organizer.toLowerCase() === signer.address.toLowerCase())
+        : null,
+    [all, signer],
+  );
+
+  const creating = tab === "create";
+  const selected = mine?.find((e) => e.id === selectedId);
 
   if (!hasDeployment) {
     return (
-      <Shell>
-        <Notice>No contract configured.</Notice>
-      </Shell>
+      <AppShell nav="organizer" active="overview" title={t("organizer.title")} langSwitcher={<LanguageSwitcher />}>
+        <Notice>{t("common.noContract")}</Notice>
+      </AppShell>
     );
   }
 
   return (
-    <Shell>
-      {isLocalChain && (
-        <Notice tone="warn">Local chain — real transactions, fake money.</Notice>
-      )}
-
-      <AppHeader
-        title="Organizer"
-        back="/"
-        right={
-          <Link href="/verify" className="text-[15px] text-faint underline decoration-line-2">
-            public record
-          </Link>
-        }
-      />
-
-      <div className="flex gap-1 rounded-xl border border-line bg-panel p-1 text-sm">
-        {(["dashboard", "create"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`min-h-[46px] flex-1 rounded-lg px-3 capitalize transition-colors ${
-              tab === t ? "bg-raised text-fg" : "text-faint"
-            }`}
-          >
-            {t === "create" ? "new event" : t}
-          </button>
-        ))}
-      </div>
+    <AppShell
+      nav="organizer"
+      active={creating ? "create" : "overview"}
+      title={creating ? t("nav.createEvent") : t("organizer.title")}
+      subtitle={creating ? t("create.subtitle") : t("organizer.subtitle")}
+      action={
+        creating ? (
+          <Button onClick={() => goTo("dashboard")} variant="ghost" className="w-full sm:w-auto">
+            ← {t("organizer.yourEvents")}
+          </Button>
+        ) : (
+          <Button onClick={() => goTo("create")} className="w-full sm:w-auto">
+            + {t("nav.createEvent")}
+          </Button>
+        )
+      }
+      langSwitcher={<LanguageSwitcher />}
+    >
+      {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
       <IdentityGate>
-        {tab === "dashboard" ? (
-          <div className="space-y-5">
-            <MyEvents />
-            <Dashboard />
-          </div>
+        {creating ? (
+          <CreateForm
+            onCreated={async () => {
+              await refresh();
+              loadAll();
+            }}
+            onDone={() => goTo("dashboard")}
+          />
         ) : (
-          <CreateForm onCreated={refresh} />
+          <div className="space-y-6">
+            <Kpis events={mine} t={t} />
+
+            {/* The split is composed here rather than handed to AppShell's `aside`, which spans the
+                whole of `children` — that would push the KPI band into the narrow column and leave
+                each card about 140px wide at the width the renders were drawn at. The band is
+                full-bleed in `04-organizer-dashboard-desktop.png`, above both columns. */}
+            <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6">
+              <div className="min-w-0 space-y-5">
+                <EventsTable events={mine} selectedId={selectedId} onSelect={select} />
+                <SelectedEvent
+                  ev={ev}
+                  refresh={refresh}
+                  selectedId={selectedId}
+                  title={selected?.listing.title}
+                />
+              </div>
+              <div className="min-w-0 lg:sticky lg:top-9">
+                <LivePulse eventId={selectedId} live={selected?.phase === "live"} />
+              </div>
+            </div>
+          </div>
         )}
+
         {/* Dev only. Creating an event deploys this on demand, so an organizer never meets it —
             "deploy a contract" is our infrastructure problem, not something to put in front of
             somebody who wanted to invite people to a reading group. */}
         {devMode && <DeployDirectory />}
+        {devMode && <DeployEscrow />}
       </IdentityGate>
 
-      {tab === "dashboard" && ev && <PayoutControls />}
-
-      <p className="text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
-        Everything on this screen is read from the contract. The organizer role exists to describe
-        an event, not to decide its outcome.
+      <p className="text-[14px] leading-relaxed text-faint md:max-w-[70ch]">
+        {t("organizer.footNote")}
       </p>
-    </Shell>
+    </AppShell>
   );
 }
 
 /* ------------------------------------------------------------------ */
+/*                          Which half is showing                     */
+/* ------------------------------------------------------------------ */
 
-function Dashboard() {
+/// `?tab=create`, both ways.
+///
+/// The sidebar hands the create flow over through the query string — see the NAV table in
+/// AppShell — and by the time somebody clicks it this page is already mounted, so the soft
+/// navigation changes the URL and nothing re-reads it. `useSearchParams` would notice, but under
+/// `output: export` it forces a Suspense boundary around the page, which trades a working nav item
+/// for a skeleton in the prerendered HTML on every load. Watching the string directly is cheaper
+/// than one render and costs the build nothing.
+///
+/// Starts as `null` so the first client render matches the export, which has no query string at
+/// all; the caller treats that as the dashboard.
+function useUrlTab(): ["dashboard" | "create", (to: "dashboard" | "create") => void] {
+  const [tab, setTab] = useState<"dashboard" | "create" | null>(null);
+
+  useEffect(() => {
+    const read = () =>
+      setTab(
+        new URLSearchParams(window.location.search).get("tab") === "create" ? "create" : "dashboard",
+      );
+    // Mount is the earliest point `window.location` is knowable.
+    read();
+    // Covers the browser's own back button. The interval covers next/link, which pushes state
+    // without firing an event anybody outside the router can hear.
+    window.addEventListener("popstate", read);
+    const id = setInterval(read, 300);
+    return () => {
+      window.removeEventListener("popstate", read);
+      clearInterval(id);
+    };
+  }, []);
+
+  const goTo = useCallback((to: "dashboard" | "create") => {
+    // `push`, not `replace`: leaving the create form should be one Back press, not a trip off the
+    // page — somebody halfway through the rules step who taps back means "show me the list again".
+    // Edited rather than rebuilt, so `?event=` survives a trip through the create form and back.
+    const params = new URLSearchParams(window.location.search);
+    if (to === "create") params.set("tab", "create");
+    else params.delete("tab");
+    const qs = params.toString();
+    window.history.pushState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    setTab(to);
+  }, []);
+
+  return [tab ?? "dashboard", goTo];
+}
+
+/* ------------------------------------------------------------------ */
+/*                                KPIs                                */
+/* ------------------------------------------------------------------ */
+
+/// The four numbers across the top, aggregated over every event this address created.
+///
+/// The V3 render fills them with 482 registrations and 4,820 MON. The testnet has one event and a
+/// couple of people in it, so the cards are built to look composed at single digits: one column
+/// width, one type size, and a caption line that is always there — a card whose caption vanishes
+/// when the count is zero is what makes a quiet dashboard look broken rather than early.
+function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
+  const totals = useMemo(() => {
+    if (!events) return null;
+    return {
+      count: events.length,
+      live: events.filter((e) => e.phase === "live").length,
+      registered: events.reduce((n, e) => n + e.registered, 0),
+      confirmed: events.reduce((n, e) => n + e.confirmed, 0),
+      // Deposits taken on events the contract still holds money for. Settled and cancelled events
+      // are excluded because their balance is being claimed out from under this number as people
+      // withdraw, and a figure that drifts down for reasons nobody can see is worse than one that
+      // only counts what is unambiguously still committed.
+      escrowed: events
+        .filter((e) => e.status === 0)
+        .reduce((sum, e) => sum + e.deposit * BigInt(e.registered), 0n),
+    };
+  }, [events]);
+
+  return (
+    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+      <Kpi
+        label={t("organizer.yourEvents")}
+        value={totals && `${totals.count}`}
+        sub={totals ? t("organizer.liveNow", { n: totals.live }) : ""}
+      />
+      <Kpi
+        label={t("organizer.registered")}
+        value={totals && `${totals.registered}`}
+        sub={t("organizer.acrossAllEvents")}
+      />
+      <Kpi
+        label={t("organizer.heldInEscrow")}
+        // `mon()` prints sub-unit amounts to four places, which is right for a gas figure and
+        // wrong for a card that will read "0.0000 MON" on an evening where nobody has registered
+        // yet. Zero is zero. On mainnet `fiat()` already formats it as currency.
+        value={totals && (totals.escrowed === 0n && !fiatAvailable ? "0 MON" : fiat(totals.escrowed))}
+        sub={t("organizer.notInYourWallet")}
+      />
+      <Kpi
+        label={t("organizer.confirmedPresent")}
+        value={totals && `${totals.confirmed}`}
+        sub={t("organizer.peerVerified")}
+      />
+    </div>
+  );
+}
+
+function Kpi({ label, value, sub }: { label: string; value: string | null; sub: string }) {
+  return (
+    <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
+      <p className="text-[14px] text-dim">{label}</p>
+      {/* `break-words` on the value, not truncation: "4,820 MON" wrapping onto two lines is legible
+          and an ellipsis in the middle of an amount is not. */}
+      <p className="mt-1.5 break-words text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] tabular-nums md:text-[32px]">
+        {value ?? <Skeleton className="h-7 w-16 align-middle" />}
+      </p>
+      {/* Green, per the render — and it is the right green by the spec's own rule: every one of
+          these captions is a fact read off the chain rather than a hopeful label. */}
+      <p className="mt-1 text-[14px] text-ok">{sub}</p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                       The event being operated                     */
+/* ------------------------------------------------------------------ */
+
+/// The rules, the clock, and the two controls that exist — description, and the fallback branch.
+///
+/// This is the half of the old dashboard that the table does not replace. The table says which
+/// events exist; this says what the selected one is doing right now, which is what somebody
+/// standing at the door needs.
+function SelectedEvent({
+  ev,
+  refresh,
+  selectedId,
+  title,
+}: {
+  ev: EventInfo | null;
+  refresh: () => Promise<void>;
+  selectedId: bigint | null;
+  /// From the directory, if the organizer ever wrote one. Absent is normal, not an error.
+  title?: string;
+}) {
   const { signer } = useIdentity();
-  const { ev, refresh } = useEvent(signer?.address ?? null);
-  const [escrowed, setEscrowed] = useState<bigint | null>(null);
+  const t = useT();
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [fallbackOpen, setFallbackOpen] = useState(false);
 
-  const phase = phaseOf(ev);
-
-  useEffect(() => {
-    const poll = async () => {
-      setEscrowed(await publicClient.getBalance({ address: ESCROW_ADDRESS }));
-      setFallbackOpen(
-        await publicClient.readContract({
-          address: ESCROW_ADDRESS,
-          abi,
-          functionName: "fallbackAvailable",
-          args: [eventId()],
-        }),
-      );
-    };
-    void poll();
-  }, []);
-
-  useVisiblePoll(() => {
-    void publicClient.getBalance({ address: ESCROW_ADDRESS }).then(setEscrowed);
+  const readFallback = useCallback(() => {
+    if (!hasDeployment) return;
     void publicClient
       .readContract({ address: ESCROW_ADDRESS, abi, functionName: "fallbackAvailable", args: [eventId()] })
-      .then(setFallbackOpen);
-  }, 8000);
+      .then(setFallbackOpen)
+      .catch(() => {});
+  }, []);
 
-  if (!ev) return <p className="text-sm text-dim">Loading event…</p>;
+  useEffect(readFallback, [readFallback, selectedId]);
+  useVisiblePoll(readFallback, 8000);
 
+  if (!ev) return <Card><p className="text-[15px] text-dim">{t("organizer.loadingEvent")}</p></Card>;
+
+  const phase = phaseOf(ev);
   const isMine = signer?.address.toLowerCase() === ev.organizer.toLowerCase();
+  const endsIn = Number(ev.attestClose) - Math.floor(chainNowMs() / 1000);
 
   return (
     <div className="space-y-4">
       {!isMine && (
         <Notice tone="warn">
-          This event was created by {shortAddress(ev.organizer)}. You&apos;re viewing it read-only.
+          {t("organizer.readOnly", { who: shortAddress(ev.organizer) })}
         </Notice>
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Registered" value={`${ev.registered}`} sub={`of ${ev.capacity} places`} />
-        <Stat label="Confirmed present" value={`${ev.confirmed}`} sub={`needs ${ev.k} vouches each`} />
-        <Stat label="Held in escrow" value={escrowed !== null ? fiat(escrowed) : "—"} sub="not in your wallet" />
-        <Stat
-          label="Phase"
-          value={
-            { loading: "…", registering: "Registering", waiting: "Pre-event", open: "Live", closed: "Closed" }[
-              phase
-            ]
-          }
-          sub={
-            phase === "open"
-              ? // Walk-ins make these two separate facts, and an organizer watching the room wants
-                // both: how long is left, and whether the door is still letting people in.
-                `ends in ${countdown(Number(ev.attestClose) - Math.floor(chainNowMs() / 1000))}${
-                  canRegister(ev) ? " · still taking walk-ins" : ""
-                }`
+      <Card className="space-y-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 className="min-w-0 text-[22px] font-medium tracking-[-0.01em]">
+            {title || t("common.eventNumber", { id: selectedId?.toString() ?? "…" })}
+          </h2>
+          {/* Walk-ins make these two separate facts, and an organizer watching the room wants both:
+              how long is left, and whether the door is still letting people in. */}
+          <p className="text-[15px] text-dim">
+            {phase === "open"
+              ? `${t("organizer.checkingInEndsIn", { t: countdown(endsIn) })}${canRegister(ev) ? t("organizer.stillWalkIns") : ""}`
               : phase === "registering"
-                ? `until ${new Date(Number(ev.registerDeadline) * 1000).toLocaleTimeString()}`
-                : ""
-          }
-        />
-      </div>
+                ? t("organizer.registeringUntil", {
+                    time: new Date(Number(ev.registerDeadline) * 1000).toLocaleTimeString(),
+                  })
+                : phase === "waiting"
+                  ? t("organizer.waitingDoors")
+                  : phase === "closed"
+                    ? t("organizer.checkInClosed")
+                    : t("common.loading")}
+          </p>
+        </div>
 
-      <Card className="space-y-2 text-sm">
-        <Row label="Deposit per attendee" value={both(ev.deposit)} />
-        <Row label="Runs if at least" value={`${ev.minQuorum} register`} />
-        <Row label="Vouches to be present" value={`${ev.k}`} />
-        <Row
-          label="Status"
-          value={["Open", "Cancelled — everyone refunded", "Settled"][ev.status] ?? "?"}
-        />
+        <dl className="space-y-2 text-[15px]">
+          <Row label={t("organizer.depositPer")} value={both(ev.deposit)} />
+          <Row
+            label={t("organizer.registered")}
+            value={t("organizer.ofPlaces", { n: ev.registered, cap: ev.capacity })}
+          />
+          <Row
+            label={t("organizer.confirmedPresent")}
+            value={t("organizer.vouchesEach", { n: ev.confirmed, k: ev.k })}
+          />
+          <Row
+            label={t("organizer.runsIfAtLeast")}
+            value={t("organizer.nRegister", { n: ev.minQuorum })}
+          />
+          <Row
+            label={t("organizer.status")}
+            value={
+              [t("organizer.statusOpen"), t("organizer.statusCancelled"), t("organizer.settled")][
+                ev.status
+              ] ?? "?"
+            }
+          />
+        </dl>
+
+        {/* The display has to be reachable from here. It used to be a URL you typed from memory, on
+            the one screen where the organizer is already standing. */}
+        <p className="text-[14px] leading-relaxed text-faint">
+          <Link href="/venue" className="underline decoration-line-2 underline-offset-4">
+            {t("venue.openDisplay")}
+          </Link>{" "}
+          {t("organizer.venueNote")}{" "}
+          <Link href="/verify" className="underline decoration-line-2 underline-offset-4">
+            {t("organizer.publicRecord")}
+          </Link>
+          {t("organizer.venueNoteEnd")}
+        </p>
       </Card>
 
       {notice && <Notice tone="bad">{notice}</Notice>}
@@ -182,27 +406,11 @@ function Dashboard() {
           anyone else would be offering a button that reverts. */}
       {isMine && <EditListing />}
 
-      {/* The display has to be reachable from here. It used to be a URL you typed from memory, on
-          the one screen where the organizer is already standing. */}
-      <p className="text-[13px] text-faint">
-        <Link href="/venue" className="underline decoration-line-2">
-          Open the venue display
-        </Link>{" "}
-        — the screen at the door. It remembers its key in that browser.
-      </p>
-
       {fallbackOpen && isMine && (
         <div className="space-y-2 rounded-2xl border border-warn/30 bg-warn/10 p-4">
-          <h3 className="text-sm font-medium text-warn">Fallback check-in is unlocked</h3>
-          <p className="text-xs leading-relaxed text-warn/90">
-            Peers couldn&apos;t establish quorum — too few people showed up to vouch for each
-            other. You may confirm who was actually there. This is the only branch where your word
-            counts for anything, and it still gives you no way to receive the money.
-          </p>
-          <p className="text-xs leading-relaxed text-warn/70">
-            Paste addresses to confirm, one per line. (In a healthy room this whole section is
-            absent, because the contract refuses the call.)
-          </p>
+          <h3 className="text-[16px] font-medium text-warn">{t("organizer.fallbackTitle")}</h3>
+          <p className="text-[14px] leading-relaxed text-warn/90">{t("organizer.fallbackBody")}</p>
+          <p className="text-[13px] leading-relaxed text-warn/70">{t("organizer.fallbackHint")}</p>
           <FallbackForm
             onDone={async () => {
               await refresh();
@@ -230,6 +438,7 @@ function FallbackForm({
   busy: string | null;
 }) {
   const { signer } = useIdentity();
+  const t = useT();
   const [text, setText] = useState("");
 
   async function submit() {
@@ -237,8 +446,8 @@ function FallbackForm({
       .split(/\s+/)
       .map((s) => s.trim())
       .filter((s) => /^0x[0-9a-fA-F]{40}$/.test(s));
-    if (!list.length) return setNotice("No valid addresses.");
-    setBusy("Confirming…");
+    if (!list.length) return setNotice(t("organizer.noValidAddresses"));
+    setBusy(t("organizer.confirming"));
     setNotice(null);
     try {
       const hash = await signer!.write({
@@ -249,7 +458,7 @@ function FallbackForm({
       setText("");
       await onDone();
     } catch (e) {
-      setNotice(shortenError(e));
+      setNotice(shortenError(e, t));
     } finally {
       setBusy(null);
     }
@@ -267,35 +476,21 @@ function FallbackForm({
       <button
         onClick={() => void submit()}
         disabled={!!busy}
-        className="rounded-lg bg-warn px-3 py-2 text-xs font-medium text-ink disabled:opacity-40"
+        className="min-h-[44px] rounded-lg bg-warn px-3 text-[14px] font-medium text-ink disabled:opacity-40"
       >
-        {busy ?? "Confirm these attendees"}
+        {busy ?? t("organizer.confirmAttendees")}
       </button>
     </>
   );
 }
 
-/// The point of the whole product, rendered as an absence. Judges look for this button.
-function PayoutControls() {
-  return (
-    <section className="rounded-2xl border border-dashed border-line-2 p-5">
-      <Eyebrow>payouts</Eyebrow>
-      <p className="mt-2.5 text-[16px] leading-relaxed text-dim">
-        Settlement is automatic. You cannot release or withhold funds.
-      </p>
-      <p className="mt-3 text-xs leading-relaxed text-faint">
-        There is no function on this contract that pays the organizer, and no parameter you can
-        change after registration opens. When the window closes, anyone — or a scheduled job — can
-        trigger the split, and the split is already determined.
-      </p>
-    </section>
-  );
-}
-
+/* ------------------------------------------------------------------ */
+/*                             Create event                           */
 /* ------------------------------------------------------------------ */
 
-function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
+function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onDone: () => void }) {
   const { signer } = useIdentity();
+  const t = useT();
   const [deposit, setDeposit] = useState("30");
   const [capacity, setCapacity] = useState("40");
   const [minQuorum, setMinQuorum] = useState("10");
@@ -310,7 +505,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
-  const [busyLabel, setBusyLabel] = useState("Creating…");
+  const [busyLabel, setBusyLabel] = useState(() => t("create.creating"));
   const [notice, setNotice] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: bigint; beacon: string } | null>(null);
 
@@ -324,10 +519,10 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       // "deploy a contract" button in front of somebody who wanted to create an event.
       const wantsWords = !!(title || blurb || url);
       if (wantsWords && !(await checkDirectory())) {
-        setBusyLabel("Setting up descriptions…");
+        setBusyLabel(t("listing.settingUp"));
         await deployDirectory(signer.address);
       }
-      setBusyLabel("Creating…");
+      setBusyLabel(t("create.creating"));
       // The venue display's key. Generated fresh per event and handed to the device at the door;
       // it signs beacons and nothing else, so it never needs funding.
       const beaconPk = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
@@ -358,7 +553,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         gas: GAS_LIMITS.createEvent,
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") throw new Error("createEvent reverted");
+      if (receipt.status !== "success") throw new Error(t("create.reverted"));
 
       const next = (await publicClient.readContract({
         address: ESCROW_ADDRESS,
@@ -374,7 +569,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
       // not look like the event failed.
       if (wantsWords) {
         try {
-          setBusyLabel("Saving the description…");
+          setBusyLabel(t("create.savingDescription"));
           await signer.write({
             functionName: "describe",
             args: [id, title, blurb, url],
@@ -384,12 +579,12 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
           });
           setNotice(null);
         } catch (e) {
-          setNotice(`Event created, but the description didn't save: ${shortenError(e)}`);
+          setNotice(t("create.descriptionFailed", { why: shortenError(e, t) }));
         }
       }
       await onCreated();
     } catch (e) {
-      setNotice(shortenError(e));
+      setNotice(shortenError(e, t));
     } finally {
       setBusy(false);
     }
@@ -398,27 +593,25 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
   if (created) {
     return (
       <Card className="space-y-3">
-        <h3 className="text-[18px] font-medium">Event #{created.id.toString()} created</h3>
-        <p className="text-sm leading-relaxed text-dim">
-          Save the venue beacon key below and load it on the device at the door. It signs the
-          rotating venue code — without it, nobody can prove they were in the room.
-        </p>
+        <h3 className="text-[18px] font-medium">
+          {t("create.createdTitle", { id: created.id.toString() })}
+        </h3>
+        <p className="text-[15px] leading-relaxed text-dim">{t("create.beaconBody")}</p>
         <CopyableCode value={created.beacon} tone="ok" />
-        <p className="text-xs text-faint">
-          Shown once. It holds no funds, but losing it means the venue display can&apos;t sign — and
-          the contract only lets the key be replaced before the doors open.
-        </p>
+        <p className="text-[13px] text-faint">{t("create.beaconWarning")}</p>
         <VenueHandoff beaconPk={created.beacon} />
         {/* The description is a second transaction and it can fail on its own. This card used to
             not render `notice` at all, so when it did fail the message was written to state nobody
             displayed: an event appeared with no title and no explanation, and no way to fix it. */}
         {notice && <Notice tone="warn">{notice}</Notice>}
         {notice && (
-          <p className="text-xs leading-relaxed text-faint">
-            The event itself is fine — deposits, check-in and settlement do not depend on it. Add
-            the words from the Dashboard tab whenever you like.
+          <p className="text-[13px] leading-relaxed text-faint">
+            {t("create.descriptionFailedNote")}
           </p>
         )}
+        <Button onClick={onDone} variant="ghost">
+          ← {t("create.backToEvents")}
+        </Button>
       </Card>
     );
   }
@@ -441,7 +634,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
               {i + 1}
             </span>
             <span className={`text-[15px] ${step === sName ? "text-fg" : "text-faint"}`}>
-              {sName === "about" ? "About" : "Rules"}
+              {sName === "about" ? t("create.stepAbout") : t("create.stepRules")}
             </span>
           </div>
         ))}
@@ -453,46 +646,54 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
             rather than a way to invite people. */}
         <section className={`space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
           <div>
-            <p className="text-[22px] font-medium tracking-tight">About the event</p>
-            <p className="mt-1 text-[15px] text-dim">What people see in the listing.</p>
+            <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")}</p>
+            <p className="mt-1 text-[15px] text-dim">{t("create.aboutSub")}</p>
           </div>
-          <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
+          <Field
+            label={t("listing.title")}
+            value={title}
+            onChange={setTitle}
+            hint={t("listing.titleHint")}
+          />
           <label className="block">
             <span className="mb-1.5 block text-[13px] uppercase tracking-wide text-faint">
-              Description
+              {t("listing.description")}
             </span>
             <textarea
               value={blurb}
               onChange={(e) => setBlurb(e.target.value)}
               rows={3}
               maxLength={600}
-              placeholder="Who it's for, what happens, where."
+              placeholder={t("listing.blurbPlaceholder")}
               className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
-          <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
+          <Field
+            label={t("listing.link")}
+            value={url}
+            onChange={setUrl}
+            hint={t("listing.linkHint")}
+          />
         </section>
 
         {step === "about" && (
           <Button onClick={() => setStep("rules")} className="w-full">
-            Next · the rules →
+            {t("create.next")}
           </Button>
         )}
 
         <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "rules" ? "" : "hidden"}`}>
           <div>
-            <p className="text-[22px] font-medium tracking-tight">The rules</p>
-            <p className="mt-1 text-[15px] font-medium text-dim">
-              Fixed once registration opens — including for you.
-            </p>
+            <p className="text-[22px] font-medium tracking-tight">{t("create.rulesTitle")}</p>
+            <p className="mt-1 text-[15px] font-medium text-dim">{t("create.rulesSub")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Field label="Deposit (MON)" value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
-            <Field label="Capacity" value={capacity} onChange={setCapacity} />
-            <Field label="Runs if at least" value={minQuorum} onChange={setMinQuorum} hint="must exceed vouches" />
-            <Field label="Vouches needed" value={k} onChange={setK} hint="3 is a good default" />
-            <Field label="Doors open in (mins)" value={doorsMins} onChange={setDoorsMins} hint="when check-in starts" />
-            <Field label="Runs for (mins)" value={runsMins} onChange={setRunsMins} hint="how long check-in stays open" />
+            <Field label={t("create.deposit")} value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
+            <Field label={t("create.capacity")} value={capacity} onChange={setCapacity} />
+            <Field label={t("organizer.runsIfAtLeast")} value={minQuorum} onChange={setMinQuorum} hint={t("create.quorumHint")} />
+            <Field label={t("create.vouchesNeeded")} value={k} onChange={setK} hint={t("create.kHint")} />
+            <Field label={t("create.doorsMins")} value={doorsMins} onChange={setDoorsMins} hint={t("create.doorsHint")} />
+            <Field label={t("create.runsMins")} value={runsMins} onChange={setRunsMins} hint={t("create.runsHint")} />
           </div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-2 bg-ink p-3.5">
             <input
@@ -502,11 +703,9 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
               className="mt-0.5 h-4 w-4 accent-accent"
             />
             <span className="text-[15px] leading-relaxed">
-              <span className="font-medium text-fg">Take walk-ins</span>
+              <span className="font-medium text-fg">{t("create.walkIns")}</span>
               <span className="block text-dim">
-                {walkIns
-                  ? "People can still join after the doors open — the ones a room attracts on the night are often the ones worth keeping."
-                  : "Registration closes when the doors open. Classic RSVP: decide in advance, or not at all."}
+                {walkIns ? t("create.walkInsOnBody") : t("create.walkInsOffBody")}
               </span>
             </span>
           </label>
@@ -517,10 +716,7 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
             walkIns={walkIns}
           />
 
-          <p className="text-[13px] leading-relaxed text-faint">
-            You send no funds and gain no spending power. Deposits go to the contract; the split is
-            decided by who vouches for whom.
-          </p>
+          <p className="text-[13px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
         </section>
 
         {notice && <Notice tone="bad">{notice}</Notice>}
@@ -528,10 +724,10 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
         {step === "rules" && (
           <div className="flex gap-2.5">
             <Button onClick={() => setStep("about")} variant="ghost" disabled={busy}>
-              ← Back
+              ← {t("common.back")}
             </Button>
             <Button onClick={() => void submit()} disabled={busy} className="flex-1">
-              {busy ? busyLabel : "Create event"}
+              {busy ? busyLabel : t("nav.createEvent")}
             </Button>
           </div>
         )}
@@ -542,23 +738,11 @@ function CreateForm({ onCreated }: { onCreated: () => Promise<void> }) {
 
 /* ------------------------------------------------------------------ */
 
-
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-xl border border-line bg-panel p-3.5">
-      <div className="text-[13px] text-faint">{label}</div>
-      <div className="mt-0.5 text-2xl font-medium tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-[13px] text-faint">{sub}</div>}
-    </div>
-  );
-}
-
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-faint">{label}</span>
-      <span className="text-right text-dim">{value}</span>
+      <dt className="text-faint">{label}</dt>
+      <dd className="text-right text-dim">{value}</dd>
     </div>
   );
 }

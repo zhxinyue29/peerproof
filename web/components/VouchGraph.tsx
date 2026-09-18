@@ -2,6 +2,7 @@
 
 import type { Participant, Vouch } from "@/lib/logs";
 import { shortAddress } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// Every line is one transaction: somebody stood in a room and vouched for somebody else.
 /// Filled nodes reached quorum; hollow ones registered and were never confirmed present.
@@ -14,6 +15,7 @@ export default function VouchGraph({
   vouches: Vouch[];
   size?: number;
 }) {
+  const t = useT();
   if (participants.length === 0) {
     return <p className="text-sm text-dim">Nobody has registered yet.</p>;
   }
@@ -87,13 +89,13 @@ export default function VouchGraph({
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-faint">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-full bg-ok" /> confirmed present
+          <span className="inline-block h-3 w-3 rounded-full bg-ok" /> {t("graph.confirmed")}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded-full border-2 border-faint bg-ink" />{" "}
-          registered, never confirmed
+          {t("graph.neverConfirmed")}
         </span>
-        <span>number = vouches received</span>
+        <span>{t("graph.numberMeans")}</span>
       </div>
 
       <ul className="space-y-0.5 font-mono text-[13px] text-faint">
@@ -103,9 +105,9 @@ export default function VouchGraph({
             <span className="text-faint">
               {p.confirmed
                 ? p.viaOrganizer
-                  ? "present (organizer fallback)"
-                  : "present"
-                : "forfeited"}
+                  ? t("graph.presentFallback")
+                  : t("graph.present")
+                : t("graph.forfeited")}
             </span>
           </li>
         ))}

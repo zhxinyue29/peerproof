@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useIdentity } from "@/components/IdentityProvider";
 import { relyingPartyId } from "@/lib/passkey";
 import { shortAddress } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { Button, Notice } from "@/components/ui";
 
 /// Renders key setup, or `children` once a signer exists.
@@ -15,6 +16,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
   // Tapping the truncated address copies it in full. Needed before it is possible to
   // send anything to a wallet the app just created for somebody.
   const [copied, setCopied] = useState(false);
+  const t = useT();
   const {
     signer,
     prf,
@@ -41,7 +43,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
             behalf — and the whole point of that route is that they never had to think about
             wallets. The address stays underneath, because it is what you send MON to. */}
         <p className="text-center text-[13px] text-faint">
-          signed in as{" "}
+          {t("identity.signedInAs")}{" "}
           {signer.label ? (
             <span className="text-dim">{signer.label}</span>
           ) : (
@@ -54,17 +56,17 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
               className="font-mono underline decoration-line-2"
               title={signer.address}
             >
-              {copied ? "copied" : shortAddress(signer.address)}
+              {copied ? t("common.copied") : shortAddress(signer.address)}
             </button>
           )}
           {" · "}
           <button onClick={signOut} className="underline decoration-line-2">
-            use a different account
+            {t("event.useDifferentAccount")}
           </button>
         </p>
         {signer.label && (
           <p className="text-center text-[13px] text-faint">
-            wallet{" "}
+            {t("identity.wallet")}{" "}
             <button
               onClick={() => {
                 void navigator.clipboard?.writeText(signer.address);
@@ -74,25 +76,25 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
               className="font-mono underline decoration-line-2"
               title={signer.address}
             >
-              {copied ? "copied" : shortAddress(signer.address)}
+              {copied ? t("common.copied") : shortAddress(signer.address)}
             </button>
           </p>
         )}
       </>
     );
   }
-  if (prf === null) return <p className="text-sm text-dim">Checking this device…</p>;
+  if (prf === null) return <p className="text-sm text-dim">{t("identity.checking")}</p>;
 
   if (!prf.available) {
     return (
       <div className="space-y-3">
         <Notice tone="warn">
-          This device can&apos;t hold a passkey key.{" "}
+          {t("identity.noPrf")}{" "}
           {privyAvailable
-            ? "Sign in with your email instead — nothing to install."
+            ? t("identity.noPrfEmail")
             : walletAvailable
-              ? "You can take part with a browser wallet instead."
-              : "Open this on a phone, or install a browser wallet."}
+              ? t("identity.noPrfWallet")
+              : t("identity.noPrfNeither")}
         </Notice>
 
         {error && <Notice tone="bad">{error}</Notice>}
@@ -103,7 +105,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
               and a dead end for everyone else. */}
           {privyAvailable && (
             <Button onClick={setUpPrivy} disabled={!!busy} className="w-full">
-              {busy ?? "Continue with email"}
+              {busy ?? t("identity.continueEmail")}
             </Button>
           )}
           {walletAvailable && (
@@ -113,7 +115,9 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
               variant={privyAvailable ? "ghost" : undefined}
               className="w-full"
             >
-              {privyAvailable ? "Use a browser wallet" : (busy ?? "Continue with my wallet")}
+              {privyAvailable
+                ? t("identity.useBrowserWallet")
+                : (busy ?? t("identity.continueWallet"))}
             </Button>
           )}
           {devMode && (
@@ -124,17 +128,9 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         </div>
 
         <details className="text-xs text-faint">
-          <summary className="cursor-pointer">why?</summary>
-          <p className="mt-2 leading-relaxed">
-            Your passkey provider doesn&apos;t support the WebAuthn PRF extension, which is what
-            lets this app sign attendance codes without asking for your fingerprint every fifteen
-            seconds. Chrome&apos;s built-in desktop passkeys are the usual culprit; iPhone with
-            iCloud Keychain and Android with Google Password Manager both work.
-          </p>
-          <p className="mt-2 leading-relaxed">
-            The wallet path derives the same kind of key from one signature — but then asks you to
-            confirm every attestation, which is exactly the friction the passkey path removes.
-          </p>
+          <summary className="cursor-pointer">{t("identity.why")}</summary>
+          <p className="mt-2 leading-relaxed">{t("identity.whyBody1")}</p>
+          <p className="mt-2 leading-relaxed">{t("identity.whyBody2")}</p>
         </details>
       </div>
     );
@@ -143,17 +139,14 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-[16px] font-medium">Set up your attendance key</p>
-        <p className="mt-1 text-sm leading-relaxed text-dim">
-          One prompt, once. After that the app signs your codes silently — no fingerprint every
-          fifteen seconds, no seed phrase, nothing to install.
-        </p>
+        <p className="text-[16px] font-medium">{t("identity.setUpTitle")}</p>
+        <p className="mt-1 text-sm leading-relaxed text-dim">{t("identity.setUpBody")}</p>
       </div>
 
       {error && <Notice tone="bad">{error}</Notice>}
 
       <Button onClick={() => void setUpPasskey("create")} disabled={!!busy} className="w-full">
-        {busy ?? "Create my key"}
+        {busy ?? t("identity.createKey")}
       </Button>
 
       <div className="flex gap-2">
@@ -163,21 +156,21 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
           variant="ghost"
           className="flex-1"
         >
-          I already have one
+          {t("identity.haveOne")}
         </Button>
         {walletAvailable ? (
           <Button onClick={() => void setUpWallet()} disabled={!!busy} variant="ghost" className="flex-1">
-            Use a wallet
+            {t("identity.useWallet")}
           </Button>
         ) : privyAvailable ? (
           <Button onClick={setUpPrivy} disabled={!!busy} variant="ghost" className="flex-1">
-            Use email
+            {t("identity.useEmail")}
           </Button>
         ) : null}
       </div>
 
       <p className="text-center text-[13px] text-faint">
-        bound to <code>{relyingPartyId()}</code>
+        {t("identity.boundTo")} <code>{relyingPartyId()}</code>
       </p>
     </div>
   );

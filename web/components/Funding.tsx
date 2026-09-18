@@ -9,6 +9,7 @@ import { usePrivyGate } from "@/components/PrivyClientProvider";
 import type { Address } from "viem";
 import { chain, isLocalChain } from "@/lib/chain";
 import { mon } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { monadTestnet } from "viem/chains";
 
 /// Shown when somebody has signed in and cannot afford what the screen is asking of them.
@@ -42,6 +43,7 @@ const FAUCETS: Record<number, { label: string; url: string }[]> = {
 const LazyTopUp = dynamic(() => import("./TopUp"), { ssr: false });
 
 function AddressQR({ address }: { address: Address }) {
+  const t = useT();
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ function AddressQR({ address }: { address: Address }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url}
-      alt="Your address as a QR code"
+      alt={t("funding.qrAlt")}
       className="h-[132px] w-[132px] shrink-0 rounded-lg"
     />
   );
@@ -89,6 +91,7 @@ export default function Funding({
 }) {
   const { devMode } = useIdentity();
   const privyGate = usePrivyGate();
+  const t = useT();
 
   if (have >= need) return null;
 
@@ -98,24 +101,21 @@ export default function Funding({
   return (
     <div className="space-y-4 rounded-xl border border-warn/30 bg-warn/10 p-4">
       <div className="space-y-1.5">
-        <p className="text-[16px] font-medium text-warn">Add MON to {what}</p>
+        <p className="text-[16px] font-medium text-warn">{t("funding.addMon", { what })}</p>
         <p className="text-[15px] leading-relaxed text-warn/90">
-          You have {mon(have)} and need about {mon(need)} — {mon(short)} short. The deposit is your
-          own money going into the contract, so it cannot be covered for you; that is the part that
-          makes a no-show cost something.
+          {t("funding.short", { have: mon(have), need: mon(need), short: mon(short) })}
         </p>
       </div>
 
       {/* Receiving is the method that works on every network, so it is the one with the space. */}
       <div className="space-y-2.5 rounded-lg border border-warn/25 bg-ink/40 p-3">
-        <p className="text-[15px] font-medium text-fg">Send MON to your address</p>
+        <p className="text-[15px] font-medium text-fg">{t("funding.sendTitle")}</p>
         <div className="flex items-start gap-3">
           <AddressQR address={address} />
           <div className="min-w-0 flex-1 space-y-1.5">
             <CopyableCode value={address} />
             <p className="text-[13px] leading-relaxed text-faint">
-              Scan this from another wallet, or copy the address. Anything that can send on{" "}
-              {chain.name} will do — an exchange withdrawal, a friend, your own other wallet.
+              {t("funding.sendBody", { chain: chain.name })}
             </p>
           </div>
         </div>
@@ -125,21 +125,18 @@ export default function Funding({
           browser wallet it is a sentence, because buying MON into somebody's own MetaMask is not
           ours to drive. */}
       <div className="space-y-2 rounded-lg border border-dashed border-warn/25 p-3">
-        <p className="text-[15px] font-medium text-fg">Top up</p>
+        <p className="text-[15px] font-medium text-fg">{t("funding.topUp")}</p>
         {privyGate.enabled ? (
           <LazyTopUp address={address} />
         ) : (
-          <p className="text-[13px] leading-relaxed text-faint">
-            Card top-up runs through the account you signed in with, and is offered on the email
-            path. With a browser wallet, buy MON wherever you normally would and send it to the
-            address above.
-          </p>
+          <p className="text-[13px] leading-relaxed text-faint">{t("funding.topUpWalletNote")}</p>
         )}
       </div>
 
       {isLocalChain ? (
         <p className="text-[13px] text-warn/70">
-          Local chain — fund this address with <code>cast send</code>.
+          {t("funding.localFund")} <code>cast send</code>
+          {t("funding.localFundEnd")}
         </p>
       ) : devMode && faucets.length > 0 ? (
         // Behind ?dev=1, like every other affordance that exists for us rather than for the person

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex, LocalAccount } from "viem";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import RotatingCode from "@/components/RotatingCode";
+import { PeerProofMark } from "@/components/NavIcons";
 import {
   BEACON_EPOCH,
   ESCROW_ADDRESS,
@@ -17,7 +19,43 @@ import {
 } from "@/lib/chain";
 import { makeBeaconCode } from "@/lib/codes";
 import { useEventMeta } from "@/lib/eventMeta";
-import { Button, Eyebrow, Notice, Shell } from "@/components/ui";
+import { Button, Notice } from "@/components/ui";
+import { useT, type TFn } from "@/lib/i18n";
+
+/// The copy this screen introduced, in the language it was written in.
+///
+/// `t()` answers with the key itself when a dictionary has not caught up. On a screen that is
+/// propped up at a door for an evening, "venue.setupHeadline" in 44px is the worst possible failure
+/// mode. Falling back to English costs a Chinese reader their Chinese until these land in lib/dict;
+/// falling back to the key costs every reader the sentence. This map is the list of what is owed.
+const EN: Record<string, string> = {
+  "venue.eyebrow": "Venue beacon",
+  "venue.setupEyebrow": "One-time setup",
+  "venue.setupHeadline": "Load the venue beacon",
+  "venue.credentialNote":
+    "The beacon key is a credential. It stays on this device and is removed from the address bar after setup.",
+  "venue.keyHoldsNoFunds":
+    "It holds no funds and can never move money — it only signs. Stored in this browser only; it is never sent anywhere.",
+  "venue.notAKey": "That doesn't look like a private key (64 hex characters).",
+  "venue.invalidKey": "That key isn't valid.",
+};
+
+function useCopy(): TFn {
+  const t = useT();
+  return (key, vars) => {
+    const hit = t(key, vars);
+    // `lookup` returns the key verbatim when nothing matched, and no key contains a placeholder,
+    // so equality here is an exact test for "this string does not exist yet".
+    if (hit !== key) return hit;
+    const en = EN[key as string];
+    if (!en) return hit;
+    return vars
+      ? en.replace(/\{(\w+)\}/g, (whole, name: string) =>
+          name in vars ? String(vars[name]) : whole,
+        )
+      : en;
+  };
+}
 
 /// The venue display. Put this on a laptop or spare phone at the door: it is what makes an
 /// attestation mean "was in this room". Every attestation must carry a signature from this key,
@@ -29,26 +67,31 @@ import { Button, Eyebrow, Notice, Shell } from "@/components/ui";
 const STORAGE_KEY = "peerproof.beacon.pk";
 
 export default function VenuePage() {
+  const t = useCopy();
   const [account, setAccount] = useState<LocalAccount | null>(null);
   const [payload, setPayload] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(Number(BEACON_EPOCH));
   const [input, setInput] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  /// A dictionary key, not a sentence. `load` is the one callback the mount effect below depends
+  /// on, so it must not close over `t` — a new `t` on every language switch would give `load` a new
+  /// identity, re-run that effect, and re-do the URL-fragment pickup mid-event. The message is
+  /// resolved at render instead, where changing language is free.
+  const [errorKey, setErrorKey] = useState<string | null>(null);
   const meta = useEventMeta(eventId());
 
   const load = useCallback((pk: string): boolean => {
     const trimmed = pk.trim();
     const hex = (trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`) as Hex;
     if (!/^0x[0-9a-fA-F]{64}$/.test(hex)) {
-      setError("That doesn't look like a private key (64 hex characters).");
+      setErrorKey("venue.notAKey");
       return false;
     }
     try {
       setAccount(privateKeyToAccount(hex));
-      setError(null);
+      setErrorKey(null);
       return true;
     } catch {
-      setError("That key isn't valid.");
+      setErrorKey("venue.invalidKey");
       return false;
     }
   }, []);
@@ -99,58 +142,69 @@ export default function VenuePage() {
 
   if (!hasDeployment) {
     return (
-      <Shell handheld center>
-        <Notice>No contract configured for this build.</Notice>
-      </Shell>
+      <Stage right={t("venue.setupTitle")}>
+        <div className="flex flex-1 items-center py-10">
+          <Notice>{t("common.noContract")}</Notice>
+        </div>
+      </Stage>
     );
   }
 
   if (!account) {
     return (
-      <Shell handheld center>
-        <div className="w-full max-w-md space-y-4">
-          <h1 className="text-[26px] font-medium tracking-tight">Venue display</h1>
-          <p className="text-sm leading-relaxed text-dim">
-            Paste the beacon key you were given when the event was created. It signs the rotating
-            code that proves an attestation happened in this room.
+      <Stage right={t("venue.setupTitle")}>
+        {/* Measure, not a centred card. This is a form somebody fills in once, on whatever machine
+            is at the door, and a 440px column stranded in the middle of a projector reads as a
+            page that failed to load. */}
+        <div className="w-full max-w-[680px] space-y-5 py-10 md:py-14">
+          <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
+            {t("venue.setupEyebrow")}
           </p>
-          <p className="text-xs leading-relaxed text-faint">
-            It holds no funds and can never move money — it only signs. Stored in this browser
-            only; it is never sent anywhere.
+          <h1 className="text-[28px] font-semibold leading-[1.06] tracking-[-0.03em] md:text-[44px]">
+            {t("venue.setupHeadline")}
+          </h1>
+          <p className="text-[16px] leading-relaxed text-dim md:text-[17px]">
+            {t("venue.setupBody")}
           </p>
+
+          {/* Amber, not red: pasting a key here is the correct next step, and the warning is about
+              what the key *is*, not about anything having gone wrong. */}
+          <Notice tone="warn">{t("venue.credentialNote")}</Notice>
+
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="0x…"
             spellCheck={false}
             autoComplete="off"
-            className="w-full rounded-xl border border-line-2 bg-panel px-3.5 py-3.5 font-mono text-xs text-fg"
+            aria-label={t("venue.setupHeadline")}
+            className="min-h-[52px] w-full rounded-xl border border-line-2 bg-panel px-4 font-mono text-[14px] text-fg outline-none focus:border-accent"
           />
-          {error && <Notice tone="bad">{error}</Notice>}
+          {errorKey && <Notice tone="bad">{t(errorKey)}</Notice>}
+
           <Button
             onClick={() => {
               if (load(input)) localStorage.setItem(STORAGE_KEY, input.trim());
             }}
-            className="w-full"
+            className="w-full sm:w-auto sm:min-w-[260px]"
           >
-            Start the display
+            {t("venue.start")}
           </Button>
+
+          <p className="text-[14px] leading-relaxed text-faint">{t("venue.keyHoldsNoFunds")}</p>
         </div>
-      </Shell>
+      </Stage>
     );
   }
 
-  // `stage`, not `handheld`: this screen gets propped up at the door and scanned from a few metres
-  // away, so it has to use whatever display it lands on.
-  //
   // Side by side rather than stacked, because the code's size is the whole constraint. Stacked
   // under a heading it can only be as wide as the column; beside the words it takes the height of
   // the viewport, and height is what decides whether somebody three metres back can scan it. On a
   // phone it falls back to one column, where width is the limit anyway.
   return (
-    <Shell stage center>
-      <div className="grid w-full items-center gap-8 md:grid-cols-[minmax(0,58vh)_minmax(260px,400px)] md:gap-14">
-        <div className="mx-auto w-full max-w-[min(74vw,58vh)]">
+    <Stage right={meta.title}>
+      <div className="grid w-full flex-1 items-center gap-8 py-6 md:grid-cols-[minmax(0,58vh)_minmax(300px,1fr)] md:gap-14">
+        <div className="mx-auto w-full max-w-[min(74vw,58vh)] min-w-0">
           <RotatingCode
             payload={payload}
             secondsLeft={secondsLeft}
@@ -159,43 +213,84 @@ export default function VenuePage() {
           />
         </div>
 
-        <div className="text-center md:text-left">
-          <Eyebrow>Venue beacon</Eyebrow>
-          <h1 className="mt-2 text-[34px] font-medium leading-[1.06] tracking-[-0.04em] md:text-[52px]">
-            Scan to prove you&apos;re here.
+        <div className="min-w-0 text-center md:text-left">
+          <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
+            {t("venue.eyebrow")}
+          </p>
+          <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.035em] md:text-[52px]">
+            {t("venue.title")}
           </h1>
           <p className="mt-3 text-[17px] leading-relaxed text-dim md:text-[20px]">
-            Everyone in the room reads the same rotating beacon. Then scan the people around you —
-            both are required.
+            {t("venue.subtitle")}
           </p>
 
           <div className="mt-6 rounded-[18px] border border-line-2 bg-panel/70 p-5 md:mt-7 md:p-[22px]">
-            <p className="text-[15px] text-dim">Refreshes in</p>
-            <p className="mt-1 text-[42px] font-medium leading-none tabular-nums md:text-[52px]">
-              {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
+            <p className="text-[16px] text-dim">{t("venue.refreshesIn")}</p>
+            {/* Seconds, not m:ss. The beacon rotates every 30s now, and "0:27" on a timer that
+                never reaches a minute reads as a clock that is broken. */}
+            <p className="mt-1.5 text-[46px] font-semibold leading-none tracking-[-0.03em] tabular-nums md:text-[56px]">
+              {secondsLeft}s
             </p>
-            <p className="mt-2 text-[15px] text-dim">
-              {meta.title} · event {eventId().toString()}
+            <p className="mt-2.5 text-[15px] text-dim">
+              {t("common.eventNumber", { id: eventId().toString() })}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex w-full items-center justify-between gap-4 text-[15px] text-faint">
-        <span className="font-mono">beacon {account.address.slice(0, 10)}…</span>
+      <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line py-4 text-[14px] text-faint">
+        <span className="min-w-0 truncate font-mono">
+          {t("venue.beacon", { address: `${account.address.slice(0, 10)}…` })}
+        </span>
         <button
           onClick={() => {
             localStorage.removeItem(STORAGE_KEY);
             setAccount(null);
             setInput("");
           }}
-          className="underline decoration-line-2"
+          className="shrink-0 underline decoration-line-2"
         >
-          forget this key
+          {t("venue.forgetKey")}
         </button>
-      </div>
-    </Shell>
+      </footer>
+    </Stage>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*                              Chrome                                */
+/* ------------------------------------------------------------------ */
 
+/// No sidebar, no nav, no identity — this screen is furniture in a room, not a page somebody is
+/// browsing. It grows from a phone propped against a laptop to a projector rather than sitting in a
+/// fixed card, because how far back the QR can be scanned from is the only thing that matters here.
+///
+/// The language control is in the bar rather than anywhere prominent: the organizer setting this up
+/// may not read English, and after that nobody touches this screen again all evening.
+function Stage({ right, children }: { right: string; children: React.ReactNode }) {
+  return (
+    <div className="min-h-dvh overflow-x-hidden">
+      <div
+        className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col px-4 sm:px-8"
+        style={{
+          paddingTop: "max(0.75rem, env(safe-area-inset-top))",
+          paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        <header className="flex items-center gap-3 py-3">
+          <span className="flex min-h-[44px] shrink-0 items-center gap-2.5">
+            <PeerProofMark />
+            <span className="hidden text-[17px] font-semibold tracking-[-0.01em] sm:inline">
+              PeerProof
+            </span>
+          </span>
+          <span className="flex-1" />
+          <LanguageSwitcher />
+          <span className="min-w-0 truncate text-[16px] text-dim md:text-[18px]">{right}</span>
+        </header>
+
+        {children}
+      </div>
+    </div>
+  );
+}

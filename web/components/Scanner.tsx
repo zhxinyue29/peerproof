@@ -7,9 +7,15 @@ export default function Scanner({
   onResult,
   onClose,
   notice,
+  title = "Point at someone's code",
+  hint,
 }: {
   onResult: (text: string) => void;
   onClose: () => void;
+  /// The same camera reads two different things at two different moments in the evening, and the
+  /// header is the only place that says which one is wanted now.
+  title?: string;
+  hint?: string;
   /// Shown over the camera. Everything that can go wrong during a scan — a code that is yours, a
   /// venue code you have not read yet, one that expired between the photograph and the chain — was
   /// being written to a notice on the page *underneath* this full-screen overlay. So every failure
@@ -92,7 +98,7 @@ export default function Scanner({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center justify-between px-5 py-4 text-fg">
-        <span className="text-[15px]">Point at someone&apos;s code</span>
+        <span className="text-[15px]">{title}</span>
         <button
           onClick={onClose}
           className="min-h-[44px] rounded-lg border border-line-2 px-4 text-[15px] text-dim"
@@ -118,8 +124,8 @@ export default function Scanner({
         )}
       </div>
       <p className="px-5 pb-6 pt-3 text-center text-[14px] text-faint">
-        Hold the other phone close, so the code fills most of the picture. Codes change every 15
-        seconds — if one expires mid-scan, the next is already on screen.
+        {hint ??
+          "Hold the other phone close, so the code fills most of the picture. Codes change every 15 seconds — if one expires mid-scan, the next is already on screen."}
       </p>
     </div>
   );

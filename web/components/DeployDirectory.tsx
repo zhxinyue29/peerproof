@@ -6,6 +6,7 @@ import { Button, CopyableCode, Notice } from "@/components/ui";
 import { checkDirectory, deployDirectory } from "@/lib/directory";
 import { explorerTxUrl } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// One-time setup, shown only while the directory is unconfigured.
 ///
@@ -15,6 +16,7 @@ import { shortenError } from "@/lib/format";
 /// the key ever leaving the wallet.
 export default function DeployDirectory() {
   const { signer } = useIdentity();
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ hash: string; address: string } | null>(null);
@@ -31,11 +33,10 @@ export default function DeployDirectory() {
   return (
     <div className="space-y-3 rounded-xl border border-dashed border-line-2 p-4">
       <div>
-        <p className="text-[15px] font-medium text-dim">Optional · one-time setup</p>
+        <p className="text-[15px] font-medium text-dim">{t("deploy.dirTitle")}</p>
         <p className="mt-1.5 text-sm leading-relaxed text-dim">
-          Events currently show as <span className="font-mono">Event #5</span> rather than a name.
-          Titles live in a second contract, so the one holding deposits never has to change to
-          store text — deploy it once and every event after this can describe itself.
+          {t("deploy.dirBodyPre")} <span className="font-mono">Event #5</span>{" "}
+          {t("deploy.dirBodyPost")}
         </p>
       </div>
 
@@ -43,17 +44,14 @@ export default function DeployDirectory() {
 
       {result ? (
         <div className="space-y-2">
-          <Notice tone="ok">
-            Deployed. Nothing to configure — the address is derived from the bytecode, so every
-            build finds it.
-          </Notice>
+          <Notice tone="ok">{t("deploy.dirDone")}</Notice>
           <CopyableCode value={result.address} tone="ok" />
           {explorerTxUrl(result.hash) && (
             <a
               href={explorerTxUrl(result.hash)}
               className="inline-block text-[15px] text-dim underline decoration-line-2"
             >
-              deployment transaction
+              {t("deploy.dirTx")}
             </a>
           )}
         </div>
@@ -66,18 +64,15 @@ export default function DeployDirectory() {
               setError(null);
               void deployDirectory(signer.address)
                 .then(setResult)
-                .catch((e) => setError(shortenError(e)))
+                .catch((e) => setError(shortenError(e, t)))
                 .finally(() => setBusy(false));
             }}
             disabled={busy}
             className="w-full"
           >
-            {busy ? "Deploying…" : "Enable event titles"}
+            {busy ? t("deploy.dirBusy") : t("deploy.dirCta")}
           </Button>
-          <p className="text-[13px] leading-relaxed text-faint">
-            About 0.12 MON. The gas limit is pinned at 1,300,000 rather than estimated, because
-            Monad charges the limit and not the amount used.
-          </p>
+          <p className="text-[13px] leading-relaxed text-faint">{t("deploy.dirGas")}</p>
         </>
       )}
     </div>

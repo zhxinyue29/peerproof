@@ -17,6 +17,7 @@ import { ESCROW_ADDRESS, eventId, isLocalChain, resolveEventId } from "@/lib/cha
 import { clearSession, loadSession, saveSession } from "@/lib/session";
 import { privateKeyToAccount } from "viem/accounts";
 import { shortenError } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// Loaded only when someone picks the email path, and only ever imported from here — that is what
 /// keeps 2.1MB of Privy off the four screens that never sign anyone in.
@@ -46,6 +47,7 @@ const IdentityContext = createContext<Ctx | null>(null);
 /// exists only in a signing session in memory, and re-deriving it costs the user another prompt.
 /// Landing page → floor must not ask twice.
 export function IdentityProvider({ children }: { children: React.ReactNode }) {
+  const t = useT();
   const [signer, setSigner] = useState<Signer | null>(null);
   const [prf, setPrf] = useState<PrfSupport | null>(null);
   const [walletAvailable, setWalletAvailable] = useState(false);
@@ -97,7 +99,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setUpPasskey = useCallback(async (mode: "create" | "unlock") => {
-    setBusy(mode === "create" ? "Creating your key…" : "Unlocking…");
+    setBusy(mode === "create" ? t("identity.creatingKey") : t("identity.unlocking"));
     setError(null);
     try {
       const id =
@@ -115,7 +117,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setUpWallet = useCallback(async () => {
-    setBusy("Waiting for your wallet…");
+    setBusy(t("identity.waitingWallet"));
     setError(null);
     try {
       // Same race as the Privy path: the derived key is bound to the event id, so it has
@@ -125,7 +127,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       setSigner(walletSigner(owner, account));
       saveSession(id, "wallet", attestPk, owner);
     } catch (e) {
-      setError(e instanceof NoWalletError ? "No browser wallet found." : shortenError(e));
+      setError(e instanceof NoWalletError ? t("identity.noWallet") : shortenError(e, t));
     } finally {
       setBusy(null);
     }
@@ -146,7 +148,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     // effect is 2.1MB of Privy beginning to download — so on a slow connection, or with an
     // extension blocking privy.io, pressing the button did nothing at all, for as long as you
     // cared to watch. "Nothing happened" is the one outcome a button must never produce.
-    setBusy("Opening sign-in…");
+    setBusy(t("identity.openingSignIn"));
     privyGate.enable();
 
     // The same import the gate performs, requested again so its failure is observable. `next/dynamic`

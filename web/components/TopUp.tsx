@@ -6,6 +6,7 @@ import type { Address } from "viem";
 import { Button } from "@/components/ui";
 import { chain } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// The top-up entry.
 ///
@@ -24,6 +25,7 @@ const LIVE = false;
 
 export default function TopUp({ address }: { address: Address }) {
   const { addFunds } = useAddFunds();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -45,14 +47,12 @@ export default function TopUp({ address }: { address: Address }) {
         },
         fiat: { defaultAmount: "20" },
       });
-      setNote(
-        result.status === "submitted"
-          ? "Submitted. Funds can take a few minutes to arrive — this page updates on its own."
-          : "Topped up. Your balance updates here shortly.",
-      );
+      setNote(result.status === "submitted" ? t("topup.submitted") : t("topup.done"));
     } catch (e) {
+      // Matched against the English, which is what viem and the provider emit whatever the UI
+      // language is — the translated sentence is only ever the thing shown.
       const why = shortenError(e);
-      setNote(/reject|denied|exit|cancel/i.test(why) ? "Closed without topping up." : why);
+      setNote(/reject|denied|exit|cancel/i.test(why) ? t("topup.closed") : shortenError(e, t));
     } finally {
       setBusy(false);
     }
@@ -61,7 +61,7 @@ export default function TopUp({ address }: { address: Address }) {
   return (
     <div className="space-y-2">
       <Button onClick={() => void start()} disabled={busy} variant="ghost" className="w-full">
-        {busy ? "Opening…" : "Top up with a card"}
+        {busy ? t("topup.opening") : t("topup.cta")}
       </Button>
       {note && <p className="text-[13px] leading-relaxed text-faint">{note}</p>}
 
@@ -74,18 +74,11 @@ export default function TopUp({ address }: { address: Address }) {
             className="w-full max-w-sm space-y-3 rounded-2xl border border-line-2 bg-panel p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-[17px] font-medium">Card top-up is coming</p>
-            <p className="text-[15px] leading-relaxed text-dim">
-              This is where paying by card will go. It is not switched on yet, and the reason is not
-              on our side: no provider sells MON into a wallet today. MoonPay has built it on Monad
-              and has it suspended; Stripe does not list Monad as a destination.
-            </p>
-            <p className="text-[15px] leading-relaxed text-dim">
-              Until one of them does, use the address above — from an exchange, another wallet, or
-              someone sending it to you. That works right now.
-            </p>
+            <p className="text-[17px] font-medium">{t("topup.soonTitle")}</p>
+            <p className="text-[15px] leading-relaxed text-dim">{t("topup.soonBody1")}</p>
+            <p className="text-[15px] leading-relaxed text-dim">{t("topup.soonBody2")}</p>
             <Button onClick={() => setOpen(false)} className="w-full">
-              Got it
+              {t("common.gotIt")}
             </Button>
           </div>
         </div>

@@ -52,6 +52,8 @@ import {
 import { attendanceEscrowAbi } from "@/lib/abi";
 import { countdown, mon, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
+import { useT } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type LogEntry = { who: Address; hash: Hex; latencyMs: number };
 
@@ -59,10 +61,10 @@ type LogEntry = { who: Address; hash: Hex; latencyMs: number };
 const FALLBACK_WINDOW_SECONDS = 3600;
 
 export default function FloorPage() {
+  const t = useT();
   const { signer, devMode } = useIdentity();
-  const { ev, me, refresh } = useEvent(signer?.address ?? null);
+  const { ev, me, refresh, error: readError } = useEvent(signer?.address ?? null);
 
-  const [beacon, setBeacon] = useState<{ epoch: bigint; sig: Hex } | null>(null);
   const [scanning, setScanning] = useState(false);
   const [claimHash, setClaimHash] = useState<string | null>(null);
   const [payload, setPayload] = useState<string | null>(null);
@@ -83,12 +85,12 @@ export default function FloorPage() {
   const phase = phaseOf(ev);
   const windowOpen = phase === "open";
 
-  // The venue code is valid for its own two-minute epoch and the next one, and no longer. The badge
-  // used to read "Venue ✓" for the rest of the event, so somebody who scanned the door and then
-  // spent four minutes getting a peer code into frame submitted a transaction the contract had
-  // already decided to reject — and the only feedback was the word "reverted".
-  const beaconFresh =
-    !!beacon && (beacon.epoch === currentBeaconEpoch() || beacon.epoch + 1n === currentBeaconEpoch());
+  // Arriving is now its own transaction, and once it lands it never expires. What was here before
+  // was a venue signature held in memory, good for two minutes, that every attestation had to
+  // carry — so scanning the door bought you 120 seconds in which to spot a stranger, greet them,
+  // wait for them to unlock their phone and open the app, and get their code into frame. Miss it
+  // and you walked back to the door. The window was mine, not the mechanism's, and it was wrong.
+  const checkedIn = !!me && me.checkedInAt > 0;
 
   /* ---------------- rotating code ---------------- */
 
@@ -127,7 +129,7 @@ export default function FloorPage() {
 
   const submitAttest = useCallback(
     async (subject: Address, epoch: bigint, code: Hex) => {
-      if (!signer || !beacon || inFlight.current) return;
+      if (!signer || inFlight.current) return;
       inFlight.current = true;
       setNotice(null);
       try {
@@ -151,7 +153,7 @@ export default function FloorPage() {
         // free either.
         const hash = await signer.write({
           functionName: "attest",
-          args: [eventId(), subject, epoch, code, beacon.epoch, beacon.sig],
+          args: [eventId(), subject, epoch, code],
           gas: GAS_LIMITS.attest,
         });
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -171,21 +173,61 @@ export default function FloorPage() {
         inFlight.current = false;
       }
     },
-    [beacon, signer, refresh, me],
+    [signer, refresh, me],
   );
 
   const onScan = useCallback(
     async (text: string) => {
+      // Before the doors, and after they shut, the contract refuses everything below. Saying so
+      // here is not politeness: reading the venue code used to be a free in-memory operation and
+      // is now a transaction, so an unguarded scan at 18:55 would cost real gas to be told no.
+      const tooEarly = ev && Math.floor(chainNowMs() / 1000) < Number(ev.attestOpen);
+      const outsideWindow = !windowOpen
+        ? tooEarly
+          ? `Code reads fine — check-in opens in ${countdown(Number(ev!.attestOpen) - Math.floor(chainNowMs() / 1000))}.`
+          : "Code reads fine, but check-in has closed for this event."
+        : null;
+
       const b = parseBeaconCode(text);
       if (b) {
+        if (!signer || inFlight.current) return;
         const ok = await recoverAddress({
           hash: beaconDigest(ESCROW_ADDRESS, b.eventId, b.beaconEpoch),
           signature: b.sig,
         }).catch(() => null);
         if (!ok) return setNotice("That venue code is malformed.");
-        setBeacon({ epoch: b.beaconEpoch, sig: b.sig });
-        setScanning(false);
-        setNotice(null);
+        if (outsideWindow) return setNotice(outsideWindow);
+        if (checkedIn) {
+          setScanning(false);
+          setNotice(null);
+          return setFlash("You are already checked in — go and scan people.");
+        }
+        // Straight to chain, while the code on the display is still the current one. This is the
+        // only moment in the evening that is genuinely time-critical, and it is over in a second:
+        // a venue signature carries no proof of when it was read, so the only honest way to date
+        // one is to spend it immediately in a transaction the chain timestamps itself.
+        inFlight.current = true;
+        try {
+          setBusy("Checking in…");
+          const hash = await signer.write({
+            functionName: "checkIn",
+            args: [eventId(), b.beaconEpoch, b.sig],
+            gas: GAS_LIMITS.checkIn,
+          });
+          const receipt = await publicClient.waitForTransactionReceipt({ hash });
+          if (receipt.status !== "success") {
+            return setNotice("Check-in reverted on chain. Scan the venue display again.");
+          }
+          setScanning(false);
+          setNotice(null);
+          setFlash("Checked in. Now go and scan people — no rush, this lasts all event.");
+          await refresh();
+        } catch (e) {
+          setNotice(shortenError(e));
+        } finally {
+          inFlight.current = false;
+          setBusy(null);
+        }
         return;
       }
 
@@ -195,18 +237,6 @@ export default function FloorPage() {
       if (p.subject.toLowerCase() === signer.address.toLowerCase()) {
         return setNotice("That's your own code — you need somebody else's.");
       }
-      if (!beacon) {
-        setScanning(true);
-        return setNotice("Scan the venue display first.");
-      }
-      // Checked here rather than left to the chain: a doomed transaction still costs gas on Monad,
-      // which bills the limit rather than the amount used.
-      if (!beaconFresh) {
-        setScanning(true);
-        return setNotice(
-          "The venue code has expired — it changes every two minutes. Scan the screen at the door again.",
-        );
-      }
       // The same check the contract performs, done locally so a bad scan never costs gas.
       const recovered = await recoverAddress({
         hash: codeDigest(ESCROW_ADDRESS, p.eventId, p.subject, p.epoch),
@@ -214,22 +244,26 @@ export default function FloorPage() {
       }).catch(() => null);
       if (!recovered) return setNotice("That code failed verification.");
 
+      // Everything above is worth exercising whenever somebody wants to: the camera, the
+      // permission prompt, the decode, the signature check. Only submitting is time-bound, so
+      // only submitting is refused — and it says why rather than reverting on chain. The window
+      // comes before the check-in prompt, because "go and scan the door" is bad advice at a venue
+      // whose doors have not opened.
+      if (outsideWindow) {
         setScanning(false);
+        return setNotice(outsideWindow);
+      }
+      // Checked here rather than left to the chain: a doomed transaction still costs gas on Monad,
+      // which bills the limit rather than the amount used.
+      if (!checkedIn) {
+        setScanning(true);
+        return setNotice("Scan the venue display first — you only have to do it once.");
+      }
 
-        // Everything above is worth exercising whenever somebody wants to: the camera, the
-        // permission prompt, the decode, the signature check. Only submitting is time-bound, so
-        // only submitting is refused — and it says why rather than reverting on chain.
-        if (!windowOpen) {
-          return setNotice(
-            ev && Math.floor(chainNowMs() / 1000) < Number(ev.attestOpen)
-              ? `Code reads fine — check-in opens in ${countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000))}.`
-              : "Code reads fine, but check-in has closed for this event.",
-          );
-        }
-
-        await submitAttest(p.subject, p.epoch, p.sig);
-      },
-      [beacon, beaconFresh, signer, submitAttest, windowOpen, ev],
+      setScanning(false);
+      await submitAttest(p.subject, p.epoch, p.sig);
+    },
+      [checkedIn, signer, submitAttest, windowOpen, ev, refresh],
   );
 
   const settle = () =>
@@ -259,12 +293,20 @@ export default function FloorPage() {
 
   /* ---------------- dev helpers ---------------- */
 
-  const devReadBeacon = () =>
-    run("Reading beacon…", async () => {
+  /// Signs a beacon with the fixture's venue key and checks in with it, so a laptop with no second
+  /// screen can still get through the door.
+  const devCheckIn = () =>
+    run("Checking in…", async () => {
       const venue = privateKeyToAccount(process.env.NEXT_PUBLIC_DEV_BEACON_PK as Hex);
       const bEpoch = currentBeaconEpoch();
       const b = parseBeaconCode(await makeBeaconCode(venue, ESCROW_ADDRESS, eventId(), bEpoch))!;
-      setBeacon({ epoch: b.beaconEpoch, sig: b.sig });
+      const hash = await signer!.write({
+        functionName: "checkIn",
+        args: [eventId(), b.beaconEpoch, b.sig],
+        gas: GAS_LIMITS.checkIn,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      await refresh();
     });
 
   /// Cycles through the fixture's attendees so repeated presses build up real credits, rather
@@ -338,34 +380,31 @@ export default function FloorPage() {
   return (
     <Shell handheld>
       <AppHeader
-        title="Attendance floor"
+        title={t("floor.title")}
         back="/event"
         right={
-          windowOpen && ev ? (
-            <span className="font-mono text-lg tabular-nums text-fg">
-              {countdown(Number(ev.attestClose) - Math.floor(chainNowMs() / 1000))}
-            </span>
-          ) : undefined
+          <span className="flex items-center gap-2.5">
+            {windowOpen && ev && (
+              <span className="font-mono text-lg tabular-nums text-fg">
+                {countdown(Number(ev.attestClose) - Math.floor(chainNowMs() / 1000))}
+              </span>
+            )}
+            {/* Reachable from the one screen somebody is standing in a room holding. Anywhere else
+                and a person who opened the app in a language they cannot read has to navigate in
+                it to find the way out. */}
+            <LanguageSwitcher />
+          </span>
         }
       />
 
-      {isLocalChain && (
-        <Notice tone="warn">
-          Local chain — latency here is this node&apos;s block time, not Monad&apos;s.
-        </Notice>
-      )}
+      {isLocalChain && <Notice tone="warn">{t("floor.localChain")}</Notice>}
 
       <IdentityGate>
         {!me?.registered ? (
           <div className="space-y-4">
-            <h1 className="text-[22px] font-medium leading-snug">
-              You&apos;re not registered for this event
-            </h1>
-            <p className="text-[15px] leading-relaxed text-dim">
-              A deposit is what makes an attestation worth anything, so the floor is only open to
-              people who staked one.
-            </p>
-            <LinkButton href="/event">Go back and register</LinkButton>
+            <h1 className="text-[22px] font-medium leading-snug">{t("floor.notRegistered")}</h1>
+            <p className="text-[15px] leading-relaxed text-dim">{t("floor.notRegisteredBody")}</p>
+            <LinkButton href="/event">{t("floor.goRegister")}</LinkButton>
           </div>
         ) : (
           <>
@@ -379,56 +418,77 @@ export default function FloorPage() {
               <div className="space-y-2.5 rounded-xl border border-line-2 bg-raised p-4 text-center">
                 {/* Not "when registration closes" — walk-ins let registration run past the doors,
                     so the two are no longer the same moment. Doors are the one this screen waits on. */}
-                <p className="text-[16px] font-medium">Doors open in</p>
+                <p className="text-[16px] font-medium">{t("floor.doorsOpenIn")}</p>
                 <p className="text-[32px] font-medium leading-none tabular-nums text-accent-2">
                   {ev ? countdown(Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)) : "…"}
                 </p>
-                <p className="text-[15px] leading-relaxed text-dim">
-                  Until then your code above is live and so is everyone else&apos;s — there is just
-                  nothing to submit yet. Keep this page open; it unlocks on its own.
+                <p className="text-[15px] leading-relaxed text-dim">{t("floor.doorsOpenBody")}</p>
+              </div>
+            ) : !checkedIn ? (
+              /* One thing to do, and it is not the thing this screen used to lead with. Two
+                 side-by-side buttons made scanning a person look available before arriving was
+                 done, so people tried it, got refused, and had to work out the order themselves. */
+              <div className="space-y-2.5">
+                <Button onClick={() => setScanning(true)} disabled={!!busy} className="w-full">
+                  {busy ?? t("floor.checkIn")}
+                </Button>
+                <p className="text-center text-[15px] leading-relaxed text-dim">
+                  {t("floor.checkInHint")}
                 </p>
               </div>
             ) : (
-              <div className="flex gap-2.5">
-                <Button onClick={() => setScanning(true)} disabled={!!busy} className="flex-1">
-                  {busy ?? "Scan someone"}
+              <div className="space-y-2.5">
+                <Button onClick={() => setScanning(true)} disabled={!!busy} className="w-full">
+                  {busy ?? t("floor.scanSomeone")}
                 </Button>
-                <button
-                  onClick={() => setScanning(true)}
-                  className={`min-h-[46px] rounded-xl border px-4 text-[16px] font-medium transition-transform duration-100 active:scale-[0.985] ${
-                    beaconFresh ? "border-line-2 text-faint" : "border-warn/50 text-warn"
-                  }`}
-                >
-                  {beaconFresh ? "Venue ✓" : beacon ? "Venue · expired" : "Scan venue"}
-                </button>
+                <p className="text-center text-[15px] text-ok">
+                  {t("floor.checkedIn")}{" "}
+                  {me!.checkedInAt > 0 &&
+                    `· ${new Date(me!.checkedInAt * 1000).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
+                </p>
               </div>
             )}
 
             {notice && <Notice tone="bad">{notice}</Notice>}
+            {/* A read that keeps failing leaves every number on this screen stale, and the
+                numbers are the reason to look at it. Say so rather than letting somebody act
+                on a vouch count from four minutes ago. */}
+            {!notice && readError && (
+              <Notice tone="warn">
+                {t("floor.staleRead")} {readError}
+              </Notice>
+            )}
 
+            {/* Two counters, the same shape, because they answer the same question at two scales:
+                how far am I, and how far is the room. The design puts the shortfall on the right of
+                the number rather than in a sentence underneath — at arm's length in a dark room,
+                "1 more" is read and a paragraph is not. */}
             <Card className="!p-4">
-              <div className="flex items-end justify-between">
-                <div>
-                  <Eyebrow>vouched for you</Eyebrow>
-                  <p className="mt-1 text-[34px] font-medium leading-none tabular-nums">
-                    {me ? received : <Skeleton className="h-8 w-14 align-middle" />}
-                    {me && <span className="text-faint">/{k}</span>}
-                  </p>
-                </div>
-                <span className="pb-1.5">
-                  <Dots filled={received} total={k} />
-                </span>
-              </div>
-              <p className="mt-3.5 border-t border-line pt-3.5 text-[15px] leading-relaxed">
-                {me?.confirmed ? (
-                  <span className="text-ok">You count as present.</span>
-                ) : (me?.given ?? 0) === 0 ? (
-                  <span className="text-warn">
-                    Scan at least one person — being vouched for isn&apos;t enough on its own.
+              <div className="flex items-baseline justify-between gap-3">
+                <Eyebrow>{t("floor.vouchedForYou")}</Eyebrow>
+                {me && !me.confirmed && received < k && (
+                  <span className="text-[15px] text-warn">
+                    {t("floor.needMore", { n: Math.max(0, k - received) })}
                   </span>
-                ) : (
-                  <span className="text-dim">Need {Math.max(0, k - received)} more.</span>
                 )}
+                {me?.confirmed && <span className="text-[15px] text-ok">✓</span>}
+              </div>
+              <p className="mt-1 text-[34px] font-medium leading-none tabular-nums">
+                {me ? received : <Skeleton className="h-8 w-14 align-middle" />}
+                {me && <span className="text-faint">/{k}</span>}
+              </p>
+              <div className="mt-3">
+                <Progress value={received} max={k} />
+              </div>
+              <p className="mt-3 text-[15px] leading-relaxed">
+                {me?.confirmed ? (
+                  <span className="text-ok">{t("floor.countsPresent")}</span>
+                ) : (me?.given ?? 0) === 0 ? (
+                  <span className="text-warn">{t("floor.scanAtLeastOne")}</span>
+                ) : null}
               </p>
             </Card>
 
@@ -446,7 +506,7 @@ export default function FloorPage() {
                       <span className="block font-mono text-xs text-dim">
                         {shortAddress(e.who)}
                       </span>
-                      <span className="block text-[13px] text-faint">vouched by you</span>
+                      <span className="block text-[13px] text-faint">{t("floor.vouchedByYou")}</span>
                     </span>
                     {explorerTxUrl(e.hash) ? (
                       <a
@@ -466,16 +526,29 @@ export default function FloorPage() {
             )}
 
             {ev && (
-              <div className="space-y-2 border-t border-line pt-4">
-                <div className="flex justify-between text-[15px]">
-                  <span className="text-faint">confirmed present</span>
-                  <span className="tabular-nums text-dim">
-                    {ev.confirmed}/{ev.registered}
-                  </span>
+              <Card className="!p-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <Eyebrow>{t("floor.confirmedPresent")}</Eyebrow>
+                  <span className="text-[15px] text-faint">{t("floor.room")}</span>
                 </div>
-                <Progress value={ev.confirmed} max={ev.registered} />
-              </div>
+                <p className="mt-1 text-[34px] font-medium leading-none tabular-nums">
+                  {ev.confirmed}
+                  <span className="text-faint">/{ev.registered}</span>
+                </p>
+                <div className="mt-3">
+                  <Progress value={ev.confirmed} max={ev.registered} />
+                </div>
+              </Card>
             )}
+
+            {/* The question the whole product exists to answer, put where somebody sceptical would
+                look for it — closed by default, because it is not what you need while scanning. */}
+            <details className="rounded-xl border border-line bg-panel px-4 py-3">
+              <summary className="cursor-pointer list-none text-[15px] text-dim">
+                {t("floor.howProve")}
+              </summary>
+              <p className="mt-2.5 text-[15px] leading-relaxed text-dim">{t("floor.howProveBody")}</p>
+            </details>
 
             {phase === "closed" && ev && (
               <Card className="space-y-3.5">
@@ -563,7 +636,7 @@ export default function FloorPage() {
               {ev && (
                 <DevBtn onClick={() => devWarpTo(BigInt(graceEnds), "Warping…")} label="warp past grace" />
               )}
-              <DevBtn onClick={devReadBeacon} label="read beacon" />
+              <DevBtn onClick={devCheckIn} label="check in" />
               <DevBtn onClick={devAttestPeer} label="attest scripted peer" />
             </div>
             <p className="mt-2.5 font-mono text-[13px] leading-relaxed text-faint">
@@ -592,7 +665,13 @@ export default function FloorPage() {
         <Scanner
           onResult={(t) => void onScan(t)}
           onClose={() => setScanning(false)}
-          notice={notice}
+          notice={busy ?? notice}
+          title={checkedIn ? "Point at someone's code" : "Point at the screen at the door"}
+          hint={
+            checkedIn
+              ? undefined
+              : "The venue display is showing a code that changes every 30 seconds. This is sent straight to the chain, so scan it where it is — not from a photograph."
+          }
         />
       )}
     </Shell>

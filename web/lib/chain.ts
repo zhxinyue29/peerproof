@@ -163,14 +163,18 @@ export const logsClient = createPublicClient({
 /// `network = "monad"`; see README.
 export const GAS_LIMITS = {
   register: 110_000n,
-  attest: 240_000n,
+  checkIn: 90_000n, // measured max 78,647
+  attest: 250_000n, // measured max 240,991
   claim: 100_000n,
   settle: 70_000n,
   createEvent: 140_000n,
 } as const;
 
 export const EPOCH = 15n;
-export const BEACON_EPOCH = 120n;
+
+/// Mirrors AttendanceEscrow.BEACON_EPOCH. Only the check-in transaction is bound by it: nothing
+/// an attendee does after walking through the door depends on the venue display at all.
+export const BEACON_EPOCH = 30n;
 
 /// Epochs are derived from chain time, not wall-clock: anvil's clock is warped by the dev
 /// fixture, and on a real chain `block.timestamp` is the only thing the contract will agree with.

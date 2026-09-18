@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useVisiblePoll } from "@/lib/poll";
 import type { Address } from "viem";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
+import { shortenError } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import {
   ESCROW_ADDRESS,
   eventId,
@@ -38,6 +40,10 @@ export type MyState = {
   confirmed: boolean;
   claimed: boolean;
   balance: bigint;
+  /// Unix seconds at which this account proved it was at the venue, or 0. Read from chain rather
+  /// than remembered locally: arrival is a fact the contract owns, and a phone that reloads mid-
+  /// event must not ask somebody to walk back to the door.
+  checkedInAt: number;
 };
 
 /// Projected payout if the current no-show rate holds. Deliberately labelled as an estimate in
@@ -78,10 +84,17 @@ export function canRegister(ev: EventInfo | null): boolean {
 /// per second from a single open tab, before retries, and the app is not a trading screen: a
 /// registration count that is four seconds old has never misled anyone.
 export function useEvent(address: Address | null, pollMs = 4000) {
+  // Held in a ref, not read directly: `refresh` is an effect dependency, and a `t` that changes
+  // identity on every language switch would tear down the poll and re-read the chain for a change
+  // that only affects the wording of an error nobody may be looking at.
+  const t = useT();
+  const tRef = useRef(t);
+  tRef.current = t;
   const [ev, setEv] = useState<EventInfo | null>(null);
   const [me, setMe] = useState<MyState | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
+  const read = useCallback(async () => {
     if (!hasDeployment) return;
     const e = await publicClient.readContract({
       address: ESCROW_ADDRESS,
@@ -111,12 +124,13 @@ export function useEvent(address: Address | null, pollMs = 4000) {
     }
     const base = { address: ESCROW_ADDRESS, abi } as const;
     const args = [eventId(), address] as const;
-    const [registered, received, given, confirmed, claimed, balance] = await Promise.all([
+    const [registered, received, given, confirmed, claimed, checkedInAt, balance] = await Promise.all([
       publicClient.readContract({ ...base, functionName: "isRegistered", args }),
       publicClient.readContract({ ...base, functionName: "attestCount", args }),
       publicClient.readContract({ ...base, functionName: "gaveCount", args }),
       publicClient.readContract({ ...base, functionName: "isConfirmed", args }),
       publicClient.readContract({ ...base, functionName: "hasClaimed", args }),
+      publicClient.readContract({ ...base, functionName: "checkedInAt", args }),
       publicClient.getBalance({ address }),
     ]);
     setMe({
@@ -126,20 +140,41 @@ export function useEvent(address: Address | null, pollMs = 4000) {
       confirmed,
       claimed,
       balance,
+      checkedInAt: Number(checkedInAt),
     });
   }, [address]);
+
+  /// Never rejects. This polls every few seconds, so anything that throws here throws again on the
+  /// next tick and the one after — and an escrow missing a function the app has learned to call
+  /// turned that into an unhandled rejection twice a second, which took the RPC past its 15/sec
+  /// limit and made every *other* read fail too. One broken read should not become an outage.
+  ///
+  /// The last good values are kept rather than cleared: stale numbers on screen beat a page that
+  /// empties itself because one request timed out. The error is returned rather than swallowed,
+  /// because a caller that shows nothing and says nothing is how a misconfigured address looks
+  /// exactly like an event nobody has joined.
+  const refresh = useCallback(async () => {
+    try {
+      await read();
+      setError(null);
+    } catch (e) {
+      setError(shortenError(e, tRef.current));
+    }
+  }, [read]);
 
   useEffect(() => {
     if (!hasDeployment) return;
     // Resolve which event before the first read, or the page renders event 1 for a moment and
     // then swaps — which on a screen showing a deposit is not a flicker anyone should have to
     // interpret.
-    void Promise.all([syncChainClock(), resolveEventId()]).then(refresh);
+    void Promise.all([syncChainClock(), resolveEventId()])
+      .then(refresh)
+      .catch((e) => setError(shortenError(e, tRef.current)));
   }, [refresh]);
 
   useVisiblePoll(() => {
     if (hasDeployment) void refresh();
   }, pollMs);
 
-  return { ev, me, refresh };
+  return { ev, me, refresh, error };
 }

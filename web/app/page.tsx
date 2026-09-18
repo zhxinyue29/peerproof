@@ -2,9 +2,56 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Shell } from "@/components/ui";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ProofArt from "@/components/ProofArt";
+import { PeerProofMark } from "@/components/NavIcons";
+import { useIdentity } from "@/components/IdentityProvider";
+import { shortAddress } from "@/lib/format";
 import { basePath } from "@/lib/chain";
+import { useT, type TFn } from "@/lib/i18n";
+
+/// The copy this screen introduced, in the language it was written in.
+///
+/// `t()` answers with the key itself when a dictionary has not caught up, which puts
+/// "home.step1Title" on the landing page — the first thing anybody sees. Falling back to English
+/// instead costs a Chinese reader their Chinese until these land in lib/dict; falling back to the
+/// key costs every reader the sentence. This map is the list of what is owed.
+const EN: Record<string, string> = {
+  "home.redirecting": "Taking you to the event…",
+  "home.howItWorksSub":
+    "A deposit, a room, and a contract that settles from what the room proves about itself.",
+  "home.step1Title": "Put a deposit down",
+  "home.step1Body":
+    "The deposit is what holds your place. The contract takes it — the organizer never does.",
+  "home.step2Title": "Scan each other in the room",
+  "home.step2Body":
+    "Check in once at the door, then vouch for the people you actually meet. Every vouch is its own transaction.",
+  "home.step3Title": "The contract settles itself",
+  "home.step3Body":
+    "Everyone confirmed present takes their deposit back, plus a share of what the no-shows left behind.",
+  "home.custodyNote":
+    "Whoever created the event has no function that releases, withholds, or receives a single wei. That is not a promise — it is the absence of a door.",
+  "home.bothRoles":
+    "The same account can do both — these are two ways in, not two kinds of person. Anyone can host; there is no approval step.",
+  "home.readPublicRecord": "Read the public record",
+};
+
+function useCopy(): TFn {
+  const t = useT();
+  return (key, vars) => {
+    const hit = t(key, vars);
+    // `lookup` returns the key verbatim when nothing matched, and no key contains a placeholder,
+    // so equality here is an exact test for "this string does not exist yet".
+    if (hit !== key) return hit;
+    const en = EN[key as string];
+    if (!en) return hit;
+    return vars
+      ? en.replace(/\{(\w+)\}/g, (whole, name: string) =>
+          name in vars ? String(vars[name]) : whole,
+        )
+      : en;
+  };
+}
 
 /// The door.
 ///
@@ -15,7 +62,13 @@ import { basePath } from "@/lib/chain";
 /// once, without the screens saying which.
 ///
 /// So: what this is, and then which of the two you are right now.
+///
+/// It keeps its own chrome rather than the app sidebar. `00-home-desktop.png` has no nav rail, and
+/// that is the point of a landing page — somebody arriving from a QR code at a venue has not yet
+/// agreed to be in an application. The two doors are the navigation.
 export default function HomePage() {
+  const t = useCopy();
+
   // Links of the form /?event=12 were handed out before the event page moved, and somebody's phone
   // still has one. Sending them on is cheaper than breaking them, and it happens before paint.
   const [redirecting, setRedirecting] = useState(false);
@@ -31,91 +84,198 @@ export default function HomePage() {
 
   if (redirecting) {
     return (
-      <Shell>
-        <p className="text-sm text-dim">Taking you to the event…</p>
-      </Shell>
+      <main className="flex min-h-dvh items-center justify-center px-5">
+        <p className="text-[16px] text-dim">{t("home.redirecting")}</p>
+      </main>
     );
   }
 
   return (
-    <Shell>
-      <div className="grid items-center gap-8 pt-6 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-14">
-      <div className="space-y-3">
-        <p className="text-[15px] uppercase tracking-[0.18em] text-faint">PeerProof</p>
-        <h1 className="text-[30px] font-medium leading-[1.12] tracking-tight md:text-[46px] md:leading-[1.05]">
-          Attendance you don&apos;t have to trust the organizer for.
-        </h1>
-        <p className="max-w-[54ch] text-[16px] leading-relaxed text-dim md:text-[17px]">
-          People put a deposit down to hold a place. At the venue they scan each other, and the
-          contract settles on its own: everyone confirmed present takes their deposit back, plus a
-          share of what the no-shows left behind.
-        </p>
-        <p className="max-w-[54ch] text-[15px] leading-relaxed text-faint md:text-[16px]">
-          Whoever created the event has no function that releases, withholds, or receives a single
-          wei. That is not a promise — it is the absence of a door.
-        </p>
+    // `overflow-x-hidden` is a floor, not a layout tool — the headline is set large enough that one
+    // long word in a language we have not seen yet must not be able to take the page sideways.
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
+        <TopBar />
 
-        <div className="grid gap-3 pt-3 sm:grid-cols-2">
-          <Door
-            href="/events"
-            eyebrow="I'm going to something"
-            title="Find an event"
-            body="Browse what's on, put a deposit down, and check in when you get there."
-          />
-          <Door
-            href="/organizer"
-            eyebrow="I'm running something"
-            title="Host an event"
-            body="Set the deposit and the rules, then watch it settle. You never hold the money and you cannot decide who was present."
-          />
-        </div>
+        <main
+          className="flex flex-col gap-16 md:gap-24"
+          style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
+        >
+          <section className="grid items-center gap-10 pt-10 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-16">
+            <div className="min-w-0 space-y-5">
+              <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
+                {t("home.eyebrow")}
+              </p>
+              <h1 className="text-[38px] font-semibold leading-[1.04] tracking-[-0.035em] md:text-[54px]">
+                {t("home.headline")}
+              </h1>
+              <p className="max-w-[46ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
+                {t("home.sub")}
+              </p>
 
-        {/* The same claim as the paragraph above, at a glance, for somebody who is scanning. */}
-        <div className="flex flex-wrap gap-x-5 gap-y-2 pt-2 text-[15px] text-dim">
-          {["No organizer custody", "Peer proof", "Public record"].map((t) => (
-            <span key={t} className="flex items-center gap-2">
-              <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-ok" />
-              {t}
-            </span>
-          ))}
-        </div>
+              {/* Equally weighted, side by side. Neither is the primary action: which one is right
+                  depends entirely on who is reading, and a product that guesses puts the other half
+                  of its audience through a screen built for somebody else. */}
+              <div className="grid gap-3 pt-2 sm:grid-cols-2">
+                <Door href="/events" eyebrow={t("home.goingLabel")} cta={t("home.goingCta")} />
+                <Door href="/organizer" eyebrow={t("home.hostingLabel")} cta={t("home.hostingCta")} />
+              </div>
+
+              {/* The claim in three words each, for somebody who is scanning rather than reading. */}
+              <ul className="flex flex-wrap gap-x-6 gap-y-2.5 pt-1">
+                {[t("home.pillCustody"), t("home.pillPeer"), t("home.pillRecord")].map((label) => (
+                  <li key={label} className="flex items-center gap-2 text-[15px] text-dim">
+                    <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-ok" />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <ProofArt className="h-[220px] w-full md:h-[340px]" />
+          </section>
+
+          <HowItWorks />
+        </main>
       </div>
-
-      <ProofArt className="h-[230px] md:h-[340px]" />
-      </div>
-
-      <p className="pt-2 text-[13px] leading-relaxed text-faint md:max-w-[70ch]">
-        The same account can do both — these are two ways in, not two kinds of person. Anyone can
-        host; there is no approval step.{" "}
-        <Link href="/verify" className="underline decoration-line-2">
-          The public record
-        </Link>{" "}
-        is readable by anyone, including people who have never used this.
-      </p>
-    </Shell>
+    </div>
   );
 }
 
-function Door({
-  href,
-  eyebrow,
-  title,
-  body,
-}: {
-  href: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-}) {
+/* ------------------------------------------------------------------ */
+/*                              Chrome                                */
+/* ------------------------------------------------------------------ */
+
+/// Logo left, the two things a returning visitor came back for right.
+///
+/// The text links drop below `sm` — `00-home-mobile.png` carries only the mark and the identity
+/// token — but the language control does not. Somebody who cannot read "Verify" cannot read their
+/// way to a control that is hidden behind a width.
+function TopBar() {
+  const t = useCopy();
+  return (
+    <header className="flex items-center gap-3 border-b border-line py-4 md:py-5">
+      <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
+        <PeerProofMark />
+        <span className="truncate text-[17px] font-semibold tracking-[-0.01em]">PeerProof</span>
+      </Link>
+      {/* A spacer rather than `flex-1` on the wordmark: this page *is* `/`, and a link stretched
+          across the empty half of the bar is 800px of invisible target that reloads the screen. */}
+      <span className="flex-1" />
+
+      <nav className="hidden items-center gap-1 sm:flex" aria-label="Main">
+        <Link
+          href="/verify"
+          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
+        >
+          {t("nav.verify")}
+        </Link>
+        <a
+          href="#how-it-works"
+          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
+        >
+          {t("home.howItWorks")}
+        </a>
+      </nav>
+
+      <LanguageSwitcher />
+      <IdentityToken />
+    </header>
+  );
+}
+
+/// The round token from `00-home-desktop.png`, and the landing page's only sign of a session.
+///
+/// Its colour is derived from the account rather than picked, so it is a weak identity check rather
+/// than decoration: the same account is the same colour on every screen, and a wrong account is
+/// visibly a different one before you read a single character. The app chrome draws the same token
+/// for the same reason — this page has no app chrome, so it draws its own.
+function IdentityToken() {
+  const { signer } = useIdentity();
+  if (!signer) return null;
+
+  const label = signer.label ?? shortAddress(signer.address);
+  const hue = Number.parseInt(signer.address.slice(2, 6), 16) % 360;
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="h-8 w-8 shrink-0 rounded-full border border-line-2"
+      // Generated per account, so it cannot come from the token palette.
+      style={{
+        background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
+      }}
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                              Pieces                                */
+/* ------------------------------------------------------------------ */
+
+/// One of the two ways in. The label above says who you are; the line below says where that goes.
+function Door({ href, eyebrow, cta }: { href: string; eyebrow: string; cta: string }) {
   return (
     <Link
       href={href}
-      className="block rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-accent/50 md:p-6"
+      className="group flex min-h-[132px] flex-col justify-between rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-accent/50 md:min-h-[140px] md:p-6"
     >
-      <p className="text-[13px] uppercase tracking-wider text-faint">{eyebrow}</p>
-      <p className="mt-2 text-[21px] font-medium tracking-tight">{title}</p>
-      <p className="mt-2 text-[15px] leading-relaxed text-dim">{body}</p>
-      <p className="mt-4 text-[15px] text-accent-2">Go →</p>
+      <span className="text-[15px] text-dim">{eyebrow}</span>
+      <span className="flex items-center gap-2.5 text-[22px] font-semibold tracking-[-0.02em] md:text-[24px]">
+        {cta}
+        <span aria-hidden="true" className="text-accent-2 transition-transform group-hover:translate-x-1">
+          →
+        </span>
+      </span>
     </Link>
+  );
+}
+
+/// Everything the first viewport deliberately leaves out.
+///
+/// V3 keeps mechanism off the hero, which is right — but "How it works" in the top bar has to land
+/// somewhere, and a nav link that scrolls to nothing is worse than no nav link. So the explanation
+/// that used to crowd the headline lives here, one anchor down, in the order it actually happens.
+function HowItWorks() {
+  const t = useCopy();
+  const steps = [
+    { title: t("home.step1Title"), body: t("home.step1Body") },
+    { title: t("home.step2Title"), body: t("home.step2Body") },
+    { title: t("home.step3Title"), body: t("home.step3Body") },
+  ];
+
+  return (
+    <section id="how-it-works" className="scroll-mt-8 space-y-6 pb-4">
+      <div className="space-y-2">
+        <h2 className="text-[28px] font-semibold tracking-[-0.025em] md:text-[34px]">
+          {t("home.howItWorks")}
+        </h2>
+        <p className="max-w-[60ch] text-[16px] leading-relaxed text-dim md:text-[17px]">
+          {t("home.howItWorksSub")}
+        </p>
+      </div>
+
+      <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
+        {steps.map((s, i) => (
+          <li key={s.title} className="min-w-0 rounded-2xl border border-line bg-panel p-5 md:p-6">
+            <span className="text-[14px] font-medium tabular-nums text-accent-2">{i + 1}</span>
+            <h3 className="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
+            <p className="mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="space-y-3 border-t border-line pt-6">
+        <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.custodyNote")}</p>
+        <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.bothRoles")}</p>
+        <Link
+          href="/verify"
+          className="inline-flex min-h-[44px] items-center text-[16px] text-accent-2 underline decoration-line-2"
+        >
+          {t("home.readPublicRecord")} →
+        </Link>
+      </div>
+    </section>
   );
 }

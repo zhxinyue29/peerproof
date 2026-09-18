@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Address, Hex } from "viem";
 import { explorerTxUrl } from "@/lib/chain";
 import { shortAddress } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// The moment a vouch lands.
 ///
@@ -35,6 +36,7 @@ export default function VouchResult({
   needed: number;
   onDone: () => void;
 }) {
+  const t = useT();
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
@@ -56,19 +58,19 @@ export default function VouchResult({
         leaving ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <p className="text-[15px] uppercase tracking-[0.09em] text-dim">Landed in</p>
+      <p className="text-[15px] uppercase tracking-[0.09em] text-dim">{t("vouch.landedIn")}</p>
       {/* Tabular so the digits do not reflow while it animates in — this number is the evidence,
           and jitter reads as a graphic rather than a measurement. */}
       <p className="mb-2.5 mt-0.5 text-[48px] font-black leading-none tracking-[-0.05em] tabular-nums">
         {(latencyMs / 1000).toFixed(2)}s
       </p>
 
-      <Row label="You" from={mine} to={nowMine} />
+      <Row label={t("vouch.you")} from={mine} to={nowMine} />
       <Row label={shortAddress(who)} from={theirs} to={theirs + 1} mono />
 
       {present && (
         <p className="mt-2.5 rounded-xl border border-ok/40 bg-ok/10 px-3 py-2.5 text-[15px] text-ok">
-          You now count as present.
+          {t("floor.countsPresent")}
         </p>
       )}
 
@@ -79,7 +81,7 @@ export default function VouchResult({
           rel="noopener noreferrer"
           className="mt-2.5 inline-block text-[15px] text-accent-2"
         >
-          View transaction ↗
+          {t("common.viewTx")}
         </a>
       )}
     </div>

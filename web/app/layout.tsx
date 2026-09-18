@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IdentityProvider } from "@/components/IdentityProvider";
+import { LanguageProvider } from "@/lib/i18n";
 import PrivyClientProvider from "@/components/PrivyClientProvider";
 import "./globals.css";
 
@@ -27,13 +28,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // `en` is baked in because this is a static export with no server to negotiate a language;
+    // LanguageProvider corrects the attribute on the client once it knows which one is wanted.
     <html lang="en">
       <body className="bg-ink text-fg antialiased">
         {/* Privy outside IdentityProvider: IdentityProvider reads Privy's hooks to build a signer,
-            so it has to sit inside the context, not beside it. */}
-        <PrivyClientProvider>
-          <IdentityProvider>{children}</IdentityProvider>
-        </PrivyClientProvider>
+            so it has to sit inside the context, not beside it. Language wraps both, because the
+            sign-in prompts are among the first words anybody reads. */}
+        <LanguageProvider>
+          <PrivyClientProvider>
+            <IdentityProvider>{children}</IdentityProvider>
+          </PrivyClientProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

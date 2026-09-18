@@ -5,6 +5,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import { Button, Field, Notice } from "@/components/ui";
 import { eventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import {
   checkDirectory,
   deployDirectory,
@@ -26,6 +27,7 @@ import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 /// changed after the invitations went out.
 export default function EditListing({ id = eventId() }: { id?: bigint }) {
   const { signer } = useIdentity();
+  const t = useT();
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
@@ -52,17 +54,17 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
 
   async function save() {
     if (!signer) return;
-    setBusy("Saving…");
+    setBusy(t("listing.saving"));
     setError(null);
     setSaved(false);
     try {
       // The directory is deployed on demand. An organizer should never be asked to deploy a
       // contract, so this happens without being announced as anything other than saving.
       if (!(await checkDirectory())) {
-        setBusy("Setting up descriptions…");
+        setBusy(t("listing.settingUp"));
         await deployDirectory(signer.address);
       }
-      setBusy("Saving…");
+      setBusy(t("listing.saving"));
       await signer.write({
         functionName: "describe",
         args: [id, title, blurb, url],
@@ -72,7 +74,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
       });
       setSaved(true);
     } catch (e) {
-      setError(shortenError(e));
+      setError(shortenError(e, t));
     } finally {
       setBusy(null);
     }
@@ -83,34 +85,42 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
   return (
     <section className="space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5">
       <div>
-        <p className="text-[16px] font-medium">What people see in the listing</p>
+        <p className="text-[16px] font-medium">{t("listing.whatPeopleSee")}</p>
         <p className="mt-1 text-[15px] leading-relaxed text-dim">
-          {title
-            ? "Change this whenever you like. It is stored separately from the deposits and cannot affect them."
-            : "This event has no title yet, so it shows as a number on the events page. Adding one costs a small amount of gas and nothing else."}
+          {title ? t("listing.editHint") : t("listing.noTitleHint")}
         </p>
       </div>
 
       {error && <Notice tone="bad">{error}</Notice>}
-      {saved && <Notice tone="ok">Saved. The events page will show it within a few seconds.</Notice>}
+      {saved && <Notice tone="ok">{t("listing.saved")}</Notice>}
 
-      <Field label="Title" value={title} onChange={setTitle} hint="e.g. Thursday reading group" />
+      <Field
+        label={t("listing.title")}
+        value={title}
+        onChange={setTitle}
+        hint={t("listing.titleHint")}
+      />
       <label className="block">
         <span className="text-[13px] font-medium uppercase tracking-wider text-faint">
-          Description
+          {t("listing.description")}
         </span>
         <textarea
           value={blurb}
           onChange={(e) => setBlurb(e.target.value)}
           rows={3}
-          placeholder="Who it's for, what happens, where."
+          placeholder={t("listing.blurbPlaceholder")}
           className="mt-1.5 w-full resize-y rounded-xl border border-line-2 bg-ink px-3 py-2.5 text-[16px] outline-none placeholder:text-faint focus:border-accent"
         />
       </label>
-      <Field label="Link (optional)" value={url} onChange={setUrl} hint="A fuller page, if you have one" />
+      <Field
+        label={t("listing.link")}
+        value={url}
+        onChange={setUrl}
+        hint={t("listing.linkHint")}
+      />
 
       <Button onClick={() => void save()} disabled={!!busy} className="w-full">
-        {busy ?? (title ? "Save" : "Add a title")}
+        {busy ?? (title ? t("common.save") : t("listing.addTitle"))}
       </Button>
     </section>
   );

@@ -6,7 +6,7 @@ Attendees stake a deposit to register for an event. At the venue they attest to 
 
 Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropolis) · Track: Consumer Products & Payments
 
-**Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0xf0c53014079acc58912621caa434b01029355a6f`](https://testnet.monadscan.com/address/0xf0c53014079acc58912621caa434b01029355a6f) on Monad testnet (10143), source verified
+**Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0x6Dcaa43a0b6eBB82A4117b2c0eF28f246f345E2b`](https://testnet.monadscan.com/address/0x6Dcaa43a0b6eBB82A4117b2c0eF28f246f345E2b) on Monad testnet (10143), source verified
 
 ### Trying it
 
@@ -47,10 +47,11 @@ Organizer creates event      deposit / capacity / k / window / venue beacon key
 Attendee registers           stakes the deposit, registers an attest key
         │                    derived from their passkey's WebAuthn PRF output
         ▼
-At the venue                 each attendee displays a code that rotates every 15s;
-        │                    the venue screen displays a beacon that rotates every 2m
+Attendee checks in           scans the door screen, whose beacon rotates every 30s, and
+        │                    spends it immediately — the chain timestamps the arrival
         ▼
-Peers scan each other        one scan = one transaction = +1 credit for BOTH parties
+Peers scan each other        each attendee displays a code that rotates every 15s;
+        │                    one scan = one transaction = +1 credit for BOTH parties,
         │                    so a room of N reaches quorum in O(N) transactions
         ▼
 Presence established         k credits received AND at least one attestation given
@@ -70,11 +71,13 @@ Payouts                      present: deposit + share of forfeited pool
 
 Three constraints stack:
 
-1. **The peer code expires in 15 seconds**, so a screenshot forwarded to someone at home is worthless within two epochs.
-2. **Every attestation carries a fresh venue-beacon signature**, so whoever submits it had to read a display in the room.
-3. **Being confirmed requires having submitted an attestation yourself.** This is the important one: it means every account that settles as present held a live venue beacon. You cannot be relayed in by a friend.
+1. **The peer code changes every 15 seconds** and is accepted for four epochs, so it is worth something for the minute in which it is read and worthless after — a screenshot forwarded to someone at home included.
+2. **Checking in spends a live venue beacon in its own transaction**, so whoever did it read a display in the room, at a moment the chain — not the submitter — recorded.
+3. **Being confirmed requires having submitted an attestation yourself**, and attesting requires having checked in. This is the important one: every account that settles as present came through the door. You cannot be relayed in by a friend.
 
 Without (3), three confederates on site could farm unlimited remote accounts. With it, presence is non-transferable.
+
+Arrival and vouching are deliberately on separate clocks. An earlier version put the beacon signature on every attestation, which made the venue's 2-minute rotation a deadline for finding, greeting and scanning another human — a constraint the mechanism never needed and a room full of people cannot meet. A beacon signature carries no proof of when it was read, so the only honest way to date one is to make reading it a transaction; having done that once, nothing later in the evening has to touch the venue again.
 
 ## Why Monad
 
@@ -112,7 +115,7 @@ Deliberately **not implemented in V1**. A fee recipient is a privileged address,
 
 Stated plainly, because they are real:
 
-- **Onchain proof of physical location is an open problem.** The venue beacon raises the cost of remote collusion from zero to "at least one confederate must physically attend and relay the beacon." It does not eliminate it. NFC/UWB attestation is future work.
+- **Onchain proof of physical location is an open problem.** The venue beacon raises the cost of remote collusion from zero to "at least one confederate must physically attend and relay a beacon inside its 30-second epoch, once per remote account." It does not eliminate it. NFC/UWB attestation is future work.
 - **The deposit must be the user's own money.** Fiat onramps are out of scope, so V1 targets attendees of IRL crypto events who already hold MON but still resent extensions, seed phrases, and gas prompts. Passkey accounts remove the wallet friction, not the funding requirement.
 - **WebAuthn PRF is not universally available.** Chrome desktop's local-profile authenticator exposes no PRF at all. The app capability-detects and falls back to a connected wallet.
 - **Passkey loss means fund loss.** No recovery mechanism is implemented.
@@ -124,7 +127,7 @@ Stated plainly, because they are real:
 |---|---|
 | `/` | The link an attendee arrives on. Deposit, projected payout, one button to stake it. |
 | `/floor` | **The ten minutes that matter.** Your rotating code, a scanner, your vouch count, the on-chain latency of every attestation, and the settlement panel once the window shuts. |
-| `/venue` | Goes on a laptop or spare phone at the door. Displays the beacon that makes an attestation mean "was in this room". |
+| `/venue` | Goes on a laptop or spare phone at the door. Displays the rotating beacon that attendees check in against on arrival. |
 | `/organizer` | Create an event, watch registrations — and find no button that pays anybody. |
 | `/verify` | Public, no key needed. The attestation graph and the settlement arithmetic, rebuilt from chain events. |
 
@@ -140,20 +143,22 @@ The contract separates the registered address from the key that signs codes, and
 
 ## Contracts
 
-`src/AttendanceEscrow.sol` — the whole thing. No proxies, no external dependencies beyond `forge-std` for tests. 38 tests, including a parity test that pins both message digests against the values `viem` computes in the frontend — if those encodings ever drift, every attestation at the venue reverts and the failure is unreproducible on a laptop.
+`src/AttendanceEscrow.sol` — the whole thing. No proxies, no external dependencies beyond `forge-std` for tests. 66 tests, including a parity test that pins both message digests against the values `viem` computes in the frontend — if those encodings ever drift, every attestation at the venue reverts and the failure is unreproducible on a laptop.
 
-Measured under Monad execution rules (`network = "monad"`, which applies Monad's opcode repricing) at the 102 gwei both networks were quoting:
+Measured under Monad execution rules (`network = "monad"`, which applies Monad's opcode repricing) at the 102 gwei both networks were quoting. The right-hand column prices the **limit** the app actually sends, not the average, because Monad bills the limit:
 
-| Function | Gas | At 102 gwei |
-|---|---|---|
-| `attest` | 199,532 avg / 225,220 max | ≈ 0.020 MON |
-| `register` | 92,880 | ≈ 0.009 MON |
-| `claim` | 83,905 | ≈ 0.009 MON |
-| `settle` | 53,859 | ≈ 0.005 MON |
-| `createEvent` | 122,084 | ≈ 0.012 MON |
+| Function | Gas avg / max | Limit sent | At 102 gwei |
+|---|---|---|---|
+| `attest` | 186,104 / 240,991 | 250,000 | ≈ 0.026 MON |
+| `register` | 92,577 / 92,861 | 110,000 | ≈ 0.011 MON |
+| `claim` | 74,275 / 83,861 | 100,000 | ≈ 0.010 MON |
+| `checkIn` | 74,958 / 78,647 | 90,000 | ≈ 0.009 MON |
+| `settle` | 47,071 / 54,071 | 70,000 | ≈ 0.007 MON |
+| `createEvent` | 118,128 / 122,143 | 140,000 | ≈ 0.014 MON |
 
 At a 30 MON deposit — the intended production figure, about five dollars at the time of writing — a
-participant's total gas across three attestations is roughly **0.2% of their stake**.
+participant's whole evening (register, check in, three attestations, claim) is roughly **0.36% of
+their stake**.
 
 The deployed demo runs on **testnet with a 1 MON deposit and k = 2**, for two reasons worth stating
 plainly rather than hiding: testnet MON comes from a faucet in single digits, so a 30 MON stake
@@ -182,18 +187,27 @@ cd web && npm install && npm run dev
 panel on a local chain — fund the derived key, warp the chain into the attestation window, read the
 beacon without a camera — so the full loop is exercisable on one machine.
 
-Deploy to Monad mainnet:
+Deploy. Swap `monad_testnet` / `10143` for `monad` / `143` to go to mainnet:
 
 ```bash
 cast wallet import monad-deployer --interactive
 forge script script/Deploy.s.sol:Deploy --account monad-deployer \
-  --rpc-url monad --broadcast --gas-limit 2800000
+  --rpc-url monad_testnet --broadcast --gas-limit 2800000
 ```
+
+2,800,000 is pinned rather than estimated: the deployment measures 2,370,395 gas, and the
+difference is deliberate headroom. It is not free — Monad bills the limit — but a deployment that
+runs out of gas is billed the limit too, and then has to be paid again.
+
+`AttendanceEscrow` and `EventDirectory` are deployed separately, and the directory takes the escrow
+address as an immutable constructor argument. A new escrow therefore needs a new directory — which
+the organizer screen deploys from the browser through the CREATE2 factory, so its address follows
+from the bytecode and needs no configuration.
 
 Verification via Sourcify needs no API key:
 
 ```bash
-forge verify-contract <address> AttendanceEscrow --chain 143 \
+forge verify-contract <address> AttendanceEscrow --chain 10143 \
   --verifier sourcify --verifier-url https://sourcify-api-monad.blockvision.org/
 ```
 

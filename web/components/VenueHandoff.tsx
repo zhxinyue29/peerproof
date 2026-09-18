@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui";
+import { useT } from "@/lib/i18n";
 
 /// Gets the beacon key from the organizer's screen onto the device at the door.
 ///
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui";
 /// the host's logs or any referrer; the venue page stores it and strips it from the address bar on
 /// arrival, so it is not left sitting in the open on a screen propped up in a room.
 export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
+  const t = useT();
   const [qr, setQr] = useState<string | null>(null);
   const url =
     typeof window === "undefined"
@@ -39,33 +41,25 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
   return (
     <div className="space-y-3 rounded-xl border border-line-2 bg-ink/40 p-4">
       <div>
-        <p className="text-[16px] font-medium">Set up the display at the door</p>
-        <p className="mt-1 text-[15px] leading-relaxed text-dim">
-          Scan this from the device that will sit at the entrance — a spare phone, a tablet, a
-          laptop. It opens the venue display with this key already loaded.
-        </p>
+        <p className="text-[16px] font-medium">{t("handoff.title")}</p>
+        <p className="mt-1 text-[15px] leading-relaxed text-dim">{t("handoff.body")}</p>
       </div>
 
       <div className="flex flex-col items-start gap-3 sm:flex-row">
         {qr ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={qr} alt="Venue display setup code" className="h-[164px] w-[164px] rounded-lg" />
+          <img src={qr} alt={t("handoff.qrAlt")} className="h-[164px] w-[164px] rounded-lg" />
         ) : (
           <div className="h-[164px] w-[164px] shrink-0 rounded-lg bg-raised" />
         )}
         <div className="flex-1 space-y-2">
-          <p className="text-[13px] leading-relaxed text-faint">
-            Already on the right device? Open it here instead — no scanning needed.
-          </p>
+          <p className="text-[13px] leading-relaxed text-faint">{t("handoff.sameDevice")}</p>
           <a href={url} target="_blank" rel="noopener noreferrer" className="block">
             <Button variant="ghost" className="w-full">
-              Open the venue display
+              {t("venue.openDisplay")}
             </Button>
           </a>
-          <p className="text-[13px] leading-relaxed text-faint">
-            The code carries the key. Treat it like the key itself: it signs venue codes for this
-            event and nothing else, and it stops meaning anything once check-in closes.
-          </p>
+          <p className="text-[13px] leading-relaxed text-faint">{t("handoff.keyWarning")}</p>
         </div>
       </div>
     </div>

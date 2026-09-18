@@ -4,6 +4,7 @@ import type { Hex } from "viem";
 import { Button } from "@/components/ui";
 import { explorerTxUrl } from "@/lib/chain";
 import { countdown, mon } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// The moment the deposit leaves.
 ///
@@ -28,32 +29,35 @@ export default function RegisteredResult({
   vouchesNeeded: number;
   onContinue: () => void;
 }) {
+  const t = useT();
+
   return (
     <div className="space-y-4 rounded-2xl border border-line-2 bg-raised p-5 md:p-6">
       <span className="inline-flex rounded-full bg-ok/15 px-2.5 py-1 text-[13px] font-semibold uppercase tracking-wide text-ok">
-        Registered
+        {t("organizer.registered")}
       </span>
 
       <div className="space-y-2">
         <h3 className="text-[24px] font-medium leading-[1.2] tracking-tight md:text-[28px]">
-          {mon(deposit)} is now in the contract
+          {t("registered.inContract", { amount: mon(deposit) })}
         </h3>
-        <p className="text-[16px] leading-relaxed text-dim">
-          Not in the organizer&apos;s wallet. Your deposit comes back when the room proves you were
-          there — along with a share of what the no-shows leave behind.
-        </p>
+        <p className="text-[16px] leading-relaxed text-dim">{t("registered.body")}</p>
       </div>
 
       <p className="rounded-xl border border-ok/30 bg-ok/10 p-3.5 text-[15px] leading-relaxed text-dim">
-        <span className="font-medium text-fg">Next:</span>{" "}
+        <span className="font-medium text-fg">{t("registered.next")}</span>{" "}
         {opensIn > 0
-          ? `check-in opens in ${countdown(opensIn)}`
-          : "check-in is open now"}
-        , and you need {vouchesNeeded} {vouchesNeeded === 1 ? "person" : "people"} to vouch for you.
+          ? t("registered.opensIn", { t: countdown(opensIn) })
+          : t("registered.openNow")}
+        {/* One person and several are separate strings rather than a count plus a noun: the
+            plural rule is English's, and Chinese has no equivalent to apply. */}
+        {vouchesNeeded === 1
+          ? t("registered.andNeedOne")
+          : t("registered.andNeed", { n: vouchesNeeded })}
       </p>
 
       <Button onClick={onContinue} className="w-full">
-        Open my attendance code
+        {t("event.openMyCode")}
       </Button>
 
       {explorerTxUrl(hash) && (
@@ -63,7 +67,7 @@ export default function RegisteredResult({
           rel="noopener noreferrer"
           className="block text-center text-[15px] text-accent-2"
         >
-          View registration transaction ↗
+          {t("registered.viewTx")}
         </a>
       )}
     </div>
