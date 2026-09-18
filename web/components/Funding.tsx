@@ -114,7 +114,7 @@ export default function Funding({
           <AddressQR address={address} />
           <div className="min-w-0 flex-1 space-y-1.5">
             <CopyableCode value={address} />
-            <p className="text-[13px] leading-relaxed text-faint">
+            <p className="text-[14px] leading-relaxed text-faint">
               {t("funding.sendBody", { chain: chain.name })}
             </p>
           </div>
@@ -129,12 +129,12 @@ export default function Funding({
         {privyGate.enabled ? (
           <LazyTopUp address={address} />
         ) : (
-          <p className="text-[13px] leading-relaxed text-faint">{t("funding.topUpWalletNote")}</p>
+          <p className="text-[14px] leading-relaxed text-faint">{t("funding.topUpWalletNote")}</p>
         )}
       </div>
 
       {isLocalChain ? (
-        <p className="text-[13px] text-warn/70">
+        <p className="text-[14px] text-warn/70">
           {t("funding.localFund")} <code>cast send</code>
           {t("funding.localFundEnd")}
         </p>
@@ -148,7 +148,7 @@ export default function Funding({
         // product has no other way to obtain MON. That is answered in the README and the submission
         // notes, which is where an instruction to testers belongs.
         <div className="space-y-1.5 border-t border-line pt-2.5">
-          <p className="text-[13px] text-faint">Dev · testnet faucets</p>
+          <p className="text-[14px] text-faint">Dev · testnet faucets</p>
           <div className="flex flex-wrap gap-2">
             {faucets.map((f) => (
               <a
@@ -156,7 +156,7 @@ export default function Funding({
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg border border-line-2 px-2.5 py-1.5 text-[13px] text-dim"
+                className="rounded-lg border border-line-2 px-2.5 py-1.5 text-[14px] text-dim"
               >
                 {f.label} ↗
               </a>

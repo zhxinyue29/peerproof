@@ -8,6 +8,7 @@ import AppShell from "@/components/AppShell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
+import EventCover from "@/components/EventCover";
 import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import { Accordion, Button, LinkButton, Notice, Sheet, Skeleton } from "@/components/ui";
@@ -117,15 +118,12 @@ export default function EventPage() {
           {t("common.back")}
         </Link>
 
-        {/* No image exists to put here. The escrow stores numbers and the directory stores words;
-            stock photography would be the one thing on this page that nothing backs. A gradient keyed
-            to the event id gives the page a face while staying honest — and makes the same event
-            recognisable between the listing card and this screen, because both derive it the same way.
-            TODO: move to lib/cover.ts, which another agent owns, once it lands. */}
-        <div
-          aria-hidden
+        {/* Drawn, not fetched — see EventCover. Denser here than on a card because this surface is
+            several times the area, and six points on it read as an accident rather than a figure. */}
+        <EventCover
+          id={eventId()}
+          nodes={11}
           className="h-[170px] shrink-0 rounded-2xl border border-line md:h-[210px]"
-          style={{ background: cover(eventId()) }}
         />
 
         <div className="space-y-2">
@@ -230,7 +228,7 @@ export default function EventPage() {
                 </p>
                 {/* The balance is what the button above disables on. Left unsaid, a greyed-out
                     primary action has no explanation anywhere on the screen. */}
-                <p className="font-mono text-[13px] text-faint">
+                <p className="font-mono text-[14px] text-faint">
                   {t("event.walletBalance", {
                     address: shortAddress(signer.address),
                     balance: me ? mon(me.balance) : "—",
@@ -312,17 +310,6 @@ export default function EventPage() {
 /*                              Pieces                                */
 /* ------------------------------------------------------------------ */
 
-/// A band of colour per event, derived from its id.
-///
-/// Duplicated from the listing page on purpose and temporarily: `lib/cover.ts` is being written to
-/// own this, and the two must agree or the same event changes colour between the card somebody
-/// tapped and the page it opened. Delete this the moment that module exists.
-const HUES = [258, 292, 212, 168, 24, 340];
-function cover(id: bigint): string {
-  const h = HUES[Number(id % BigInt(HUES.length))];
-  return `linear-gradient(125deg, hsl(${h} 62% 18%), hsl(${h} 72% 44%) 52%, hsl(${(h + 34) % 360} 48% 14%))`;
-}
-
 /// Left-aligned, unlike `ui.tsx`'s centred `Stat`. Three of these sit in a row under a left-aligned
 /// headline and a left-aligned deposit; centring the numbers put a third ragged edge in a column
 /// that has only two.
@@ -334,7 +321,7 @@ function StatTile({ value, label }: { value: string | null; label: string }) {
       </div>
       {/* `dim`, not `faint` — the spec keeps low-contrast grey for optional metadata, and a number
           without its unit is not information. */}
-      <div className="mt-2 break-words text-[13px] leading-snug text-dim md:text-[14px]">{label}</div>
+      <div className="mt-2 break-words text-[14px] leading-snug text-dim md:text-[14px]">{label}</div>
     </div>
   );
 }

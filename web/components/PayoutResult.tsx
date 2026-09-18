@@ -47,7 +47,7 @@ export default function PayoutResult({
         </p>
       )}
 
-      <p className="text-[13px] leading-relaxed text-faint">{t("payout.noApproval")}</p>
+      <p className="text-[14px] leading-relaxed text-faint">{t("payout.noApproval")}</p>
 
       {link && (
         <a

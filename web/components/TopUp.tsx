@@ -63,7 +63,7 @@ export default function TopUp({ address }: { address: Address }) {
       <Button onClick={() => void start()} disabled={busy} variant="ghost" className="w-full">
         {busy ? t("topup.opening") : t("topup.cta")}
       </Button>
-      {note && <p className="text-[13px] leading-relaxed text-faint">{note}</p>}
+      {note && <p className="text-[14px] leading-relaxed text-faint">{note}</p>}
 
       {open && (
         <div

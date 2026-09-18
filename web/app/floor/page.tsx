@@ -510,7 +510,7 @@ export default function FloorPage() {
                       <span className="block font-mono text-xs text-dim">
                         {shortAddress(e.who)}
                       </span>
-                      <span className="block text-[13px] text-faint">{t("floor.vouchedByYou")}</span>
+                      <span className="block text-[14px] text-faint">{t("floor.vouchedByYou")}</span>
                     </span>
                     {explorerTxUrl(e.hash) ? (
                       <a
@@ -643,7 +643,7 @@ export default function FloorPage() {
               <DevBtn onClick={devCheckIn} label="check in" />
               <DevBtn onClick={devAttestPeer} label="attest scripted peer" />
             </div>
-            <p className="mt-2.5 font-mono text-[13px] leading-relaxed text-faint">
+            <p className="mt-2.5 font-mono text-[14px] leading-relaxed text-faint">
               me {signer.address}
               <br />
               phase {phase} · epoch {currentEpoch().toString()} · beacon{" "}

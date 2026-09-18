@@ -24,17 +24,24 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
-  --color-ink: #08101f;
-  --color-panel: #111d33;
-  --color-raised: #16243d;
-  --color-line: #2d3b55;
-  --color-line-2: #3b4a66;
+  /* The canvas is lifted off black on purpose.
+     Near-white on near-black measured 18:1, which is not a contrast problem — it is a comfort one.
+     At that ratio light type blooms into the background and a page of it is tiring to read, which
+     is the opposite of what a high number promises. Raising the floor and lowering the ceiling
+     narrows the range without ever dropping below AAA. */
+  --color-ink: #0d1626;
+  --color-panel: #16233c;
+  --color-raised: #1d2d4a;
+  --color-line: #33436a;
+  --color-line-2: #445578;
 
-  /* 15.9:1, 9.4:1 and 6.2:1 against the ink. The old --dim measured 5.4:1 and --faint 4.7:1,
-     which passes and still loses to a phone held at arm's length under a projector. */
-  --color-fg: #f7f9fd;
-  --color-dim: #c5cedb;
-  --color-faint: #9ba8ba;
+  /* Against the lightest surface (`raised`, the worst case): 12.3:1, 9.5:1 and 7.3:1 — all AAA.
+     `--faint` was the one that mattered. It measured 6.4:1 there and carried whole explanatory
+     sentences, which is exactly what the design spec says it must never do: muted grey is for
+     metadata nobody has to read. Either the colour moves or every one of those sentences does. */
+  --color-fg: #eef3fa;
+  --color-dim: #cdd7e5;
+  --color-faint: #b2becf;
 
   --color-accent: #765bff;
   --color-accent-2: #9a88ff;
@@ -60,7 +67,17 @@ body {
 
 /* One ambient wash behind everything, fixed so it never scrolls into a seam. This is the only
    gradient in the app — it lives on the page, never on a component, so nothing flickers during a
-   re-render and no element carries a light source it shouldn't. */
+   re-render and no element carries a light source it shouldn't.
+
+   Its base is `--color-ink` rather than two literals. It used to hardcode #0a1222 → #07101f, which
+   was darker than the token and painted over the top of it: lifting the palette to take the glare
+   out of near-white-on-near-black changed nothing on screen, because this layer covered the whole
+   page and put the old black back.
+
+   Three sources, not one. A single wash reads as a vignette; three at different sizes and hues give
+   the canvas somewhere to come from, which is the difference between a dark theme and a flat one.
+   All of them are under 12% alpha — this sits behind pages about money, and it should be felt
+   rather than noticed. */
 body::before {
   content: "";
   position: fixed;
@@ -68,8 +85,10 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(60rem 40rem at 80% -10rem, rgba(118, 91, 255, 0.18), transparent 60%),
-    linear-gradient(180deg, #0a1222 0%, #07101f 100%);
+    radial-gradient(70rem 45rem at 78% -12rem, rgba(118, 91, 255, 0.16), transparent 62%),
+    radial-gradient(48rem 38rem at 8% 6%, rgba(77, 183, 255, 0.07), transparent 58%),
+    radial-gradient(56rem 42rem at 52% 112%, rgba(57, 217, 138, 0.055), transparent 60%),
+    var(--color-ink);
 }
 
 body > * {

@@ -42,7 +42,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
             "0x7497…a80d" against anything they know — it is a number the app made up on their
             behalf — and the whole point of that route is that they never had to think about
             wallets. The address stays underneath, because it is what you send MON to. */}
-        <p className="text-center text-[13px] text-faint">
+        <p className="text-center text-[14px] text-faint">
           {t("identity.signedInAs")}{" "}
           {signer.label ? (
             <span className="text-dim">{signer.label}</span>
@@ -65,7 +65,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
           </button>
         </p>
         {signer.label && (
-          <p className="text-center text-[13px] text-faint">
+          <p className="text-center text-[14px] text-faint">
             {t("identity.wallet")}{" "}
             <button
               onClick={() => {
@@ -169,7 +169,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         ) : null}
       </div>
 
-      <p className="text-center text-[13px] text-faint">
+      <p className="text-center text-[14px] text-faint">
         {t("identity.boundTo")} <code>{relyingPartyId()}</code>
       </p>
     </div>

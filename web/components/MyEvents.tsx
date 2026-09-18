@@ -65,10 +65,10 @@ export default function MyEvents() {
                   {e.listing.title || `Event #${e.id.toString()}`}
                 </p>
                 {e.id === current && (
-                  <span className="shrink-0 text-[13px] text-accent-2">showing</span>
+                  <span className="shrink-0 text-[14px] text-accent-2">showing</span>
                 )}
               </div>
-              <p className="mt-1 text-[13px] text-faint">
+              <p className="mt-1 text-[14px] text-faint">
                 {e.registered}/{e.capacity} registered · {both(e.deposit)} each
                 {e.phase === "live" && ` · ends in ${countdown(Number(e.attestClose) - now)}`}
                 {e.phase === "registering" &&

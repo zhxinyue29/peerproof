@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLang, useT, type TFn } from "@/lib/i18n";
-import { coverFor } from "@/lib/cover";
+import EventCover from "@/components/EventCover";
 import { both, countdown, shortAddress } from "@/lib/format";
 import { chainNowMs } from "@/lib/chain";
 import { stillJoinable, type EventSummary, type Phase } from "@/lib/events";
@@ -94,9 +94,10 @@ export default function EventCard({ event: e }: { event: EventSummary }) {
       aria-label={e.listing.title || t("common.eventNumber", { id: e.id.toString() })}
       className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-panel transition-colors hover:border-line-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <div className="relative h-[112px] md:h-[128px]" style={{ background: coverFor(e.id) }}>
+      <div className="relative h-[112px] md:h-[128px]">
+        <EventCover id={e.id} className="absolute inset-0" />
         <span
-          className={`absolute left-3 top-3 rounded-full bg-ink/60 px-2.5 py-1 text-[13px] font-medium backdrop-blur-sm ${PHASE_TONE[e.phase]}`}
+          className={`absolute left-3 top-3 rounded-full bg-ink/60 px-2.5 py-1 text-[14px] font-medium backdrop-blur-sm ${PHASE_TONE[e.phase]}`}
         >
           {phaseLabel}
         </span>

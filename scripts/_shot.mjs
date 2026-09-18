@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const [url, out, w, h] = process.argv.slice(2);
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: +w, height: +h } });
+await ctx.addInitScript(() => localStorage.setItem("peerproof.lang", "zh"));
+const p = await ctx.newPage();
+await p.goto(url, { waitUntil: "networkidle", timeout: 90000 }).catch(()=>{});
+await p.waitForTimeout(2500);
+await p.screenshot({ path: out, fullPage: true });
+await b.close();

@@ -124,7 +124,7 @@ export function AppHeader({
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-accent-2">{children}</p>
+    <p className="text-[14px] font-bold uppercase tracking-[0.1em] text-accent-2">{children}</p>
   );
 }
 
@@ -274,7 +274,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-[13px] font-medium uppercase tracking-wider text-faint">{label}</span>
+      <span className="text-[14px] font-medium uppercase tracking-wider text-faint">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -284,7 +284,7 @@ export function Field({
         inputMode={mono ? "text" : "numeric"}
         className={`mt-1.5 min-h-[46px] w-full rounded-xl border border-line-2 bg-ink px-3.5 text-fg outline-none focus:border-accent ${mono ? "font-mono text-xs" : ""}`}
       />
-      {hint && <span className="mt-1 block text-[13px] text-faint">{hint}</span>}
+      {hint && <span className="mt-1 block text-[14px] text-faint">{hint}</span>}
     </label>
   );
 }
@@ -348,7 +348,7 @@ export function Stat({
       {/* `dim`, not `faint`. These labels say what the number is; the spec's rule is that essential
           information never sits in low-contrast grey, and a number without its unit is not
           information. */}
-      <div className="mt-1.5 text-[13px] text-dim">{label}</div>
+      <div className="mt-1.5 text-[14px] text-dim">{label}</div>
     </div>
   );
 }
@@ -421,10 +421,10 @@ export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg
           setTimeout(() => setCopied(false), 1600);
         });
       }}
-      className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[13px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
+      className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[14px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
     >
       {value}
-      <span className="mt-1.5 block font-sans text-[13px] text-faint">
+      <span className="mt-1.5 block font-sans text-[14px] text-faint">
         {copied ? "copied" : "tap to copy"}
       </span>
     </button>

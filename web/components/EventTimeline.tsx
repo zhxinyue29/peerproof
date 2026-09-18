@@ -38,7 +38,7 @@ export default function EventTimeline({
         <Tick at={100} tone="ok" />
       </div>
 
-      <div className="flex justify-between gap-2 text-[13px] text-dim">
+      <div className="flex justify-between gap-2 text-[14px] text-dim">
         <span>Now · registration</span>
         <span className="text-center">
           Doors open
@@ -50,7 +50,7 @@ export default function EventTimeline({
         </span>
       </div>
 
-      <p className="mt-3 text-[13px] leading-relaxed text-faint">
+      <p className="mt-3 text-[14px] leading-relaxed text-faint">
         {walkIns
           ? "The bar is filled for as long as people can still register — with walk-ins on, that is the whole event."
           : "Registration closes the moment the doors open. Nobody joins after that."}

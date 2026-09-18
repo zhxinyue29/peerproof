@@ -408,7 +408,7 @@ function SelectedEvent({
         <div className="space-y-2 rounded-2xl border border-warn/30 bg-warn/10 p-4">
           <h3 className="text-[16px] font-medium text-warn">{t("organizer.fallbackTitle")}</h3>
           <p className="text-[14px] leading-relaxed text-warn/90">{t("organizer.fallbackBody")}</p>
-          <p className="text-[13px] leading-relaxed text-warn/70">{t("organizer.fallbackHint")}</p>
+          <p className="text-[14px] leading-relaxed text-warn/70">{t("organizer.fallbackHint")}</p>
           <FallbackForm
             onDone={async () => {
               await refresh();
@@ -596,14 +596,14 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
         </h3>
         <p className="text-[15px] leading-relaxed text-dim">{t("create.beaconBody")}</p>
         <CopyableCode value={created.beacon} tone="ok" />
-        <p className="text-[13px] text-faint">{t("create.beaconWarning")}</p>
+        <p className="text-[14px] text-faint">{t("create.beaconWarning")}</p>
         <VenueHandoff beaconPk={created.beacon} />
         {/* The description is a second transaction and it can fail on its own. This card used to
             not render `notice` at all, so when it did fail the message was written to state nobody
             displayed: an event appeared with no title and no explanation, and no way to fix it. */}
         {notice && <Notice tone="warn">{notice}</Notice>}
         {notice && (
-          <p className="text-[13px] leading-relaxed text-faint">
+          <p className="text-[14px] leading-relaxed text-faint">
             {t("create.descriptionFailedNote")}
           </p>
         )}
@@ -623,7 +623,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
         {(["about", "rules"] as const).map((sName, i) => (
           <div key={sName} className="flex flex-1 items-center gap-2.5">
             <span
-              className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[13px] ${
+              className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[14px] ${
                 step === sName
                   ? "border-accent-2 bg-accent text-white"
                   : "border-line-2 bg-raised text-faint"
@@ -654,7 +654,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             hint={t("listing.titleHint")}
           />
           <label className="block">
-            <span className="mb-1.5 block text-[13px] uppercase tracking-wide text-faint">
+            <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
               {t("listing.description")}
             </span>
             <textarea
@@ -714,7 +714,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             walkIns={walkIns}
           />
 
-          <p className="text-[13px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
+          <p className="text-[14px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
         </section>
 
         {notice && <Notice tone="bad">{notice}</Notice>}

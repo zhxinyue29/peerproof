@@ -33,7 +33,7 @@ export default function RegisteredResult({
 
   return (
     <div className="space-y-4 rounded-2xl border border-line-2 bg-raised p-5 md:p-6">
-      <span className="inline-flex rounded-full bg-ok/15 px-2.5 py-1 text-[13px] font-semibold uppercase tracking-wide text-ok">
+      <span className="inline-flex rounded-full bg-ok/15 px-2.5 py-1 text-[14px] font-semibold uppercase tracking-wide text-ok">
         {t("organizer.registered")}
       </span>
 

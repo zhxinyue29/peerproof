@@ -141,7 +141,7 @@ function Bars({ pulse, caption, t }: { pulse: Pulse; caption: string; t: TFn }) 
 
       {/* Two events on a testnet is what this will show on the night, so the panel states its own
           scale rather than letting eight bars imply a busier room than there is. */}
-      <p className="text-[13px] text-faint">
+      <p className="text-[14px] text-faint">
         {pulse.total === 1 ? t("organizer.vouchOne") : t("organizer.vouchMany", { n: pulse.total })}
         {pulse.spanSeconds !== null && pulse.spanSeconds > 0
           ? t("organizer.overTheLast", { t: countdown(pulse.spanSeconds) })
@@ -178,7 +178,7 @@ function PayoutsNote() {
     <div className="space-y-2 rounded-xl border border-dashed border-line-2 p-4">
       <p className="text-[16px] font-medium">{t("organizer.payoutsAutomatic")}</p>
       <p className="text-[14px] leading-relaxed text-dim">{t("organizer.payoutsBody")}</p>
-      <p className="text-[13px] leading-relaxed text-faint">{t("organizer.payoutsDetail")}</p>
+      <p className="text-[14px] leading-relaxed text-faint">{t("organizer.payoutsDetail")}</p>
     </div>
   );
 }

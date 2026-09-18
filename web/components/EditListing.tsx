@@ -101,7 +101,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         hint={t("listing.titleHint")}
       />
       <label className="block">
-        <span className="text-[13px] font-medium uppercase tracking-wider text-faint">
+        <span className="text-[14px] font-medium uppercase tracking-wider text-faint">
           {t("listing.description")}
         </span>
         <textarea

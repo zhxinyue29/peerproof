@@ -71,7 +71,7 @@ export default function DeployDirectory() {
           >
             {busy ? t("deploy.dirBusy") : t("deploy.dirCta")}
           </Button>
-          <p className="text-[13px] leading-relaxed text-faint">{t("deploy.dirGas")}</p>
+          <p className="text-[14px] leading-relaxed text-faint">{t("deploy.dirGas")}</p>
         </>
       )}
     </div>

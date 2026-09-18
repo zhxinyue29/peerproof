@@ -53,13 +53,13 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
           <div className="h-[164px] w-[164px] shrink-0 rounded-lg bg-raised" />
         )}
         <div className="flex-1 space-y-2">
-          <p className="text-[13px] leading-relaxed text-faint">{t("handoff.sameDevice")}</p>
+          <p className="text-[14px] leading-relaxed text-faint">{t("handoff.sameDevice")}</p>
           <a href={url} target="_blank" rel="noopener noreferrer" className="block">
             <Button variant="ghost" className="w-full">
               {t("venue.openDisplay")}
             </Button>
           </a>
-          <p className="text-[13px] leading-relaxed text-faint">{t("handoff.keyWarning")}</p>
+          <p className="text-[14px] leading-relaxed text-faint">{t("handoff.keyWarning")}</p>
         </div>
       </div>
     </div>
