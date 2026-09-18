@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { chainNowMs } from "@/lib/chain";
-import { coverFor } from "@/lib/cover";
+import EventCover from "@/components/EventCover";
 import { useLang, type TFn } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui";
 import type { EventSummary, Phase } from "@/lib/events";
@@ -155,10 +155,13 @@ function Row({
 /// a link is looking at the same colour that person is.
 function Swatch({ id, selected }: { id: bigint; selected: boolean }) {
   return (
-    <span
-      aria-hidden="true"
-      className={`h-10 w-10 rounded-lg border ${selected ? "border-accent-2" : "border-line-2"}`}
-      style={{ background: coverFor(id) }}
+    // The same drawing the card and the event page use, at 40px. Three nodes rather than six:
+    // a constellation shrunk to a thumbnail is a grey square, and the point of the swatch is only
+    // that the row and the card are recognisably the same event.
+    <EventCover
+      id={id}
+      nodes={3}
+      className={`h-10 w-10 shrink-0 rounded-lg border ${selected ? "border-accent-2" : "border-line-2"}`}
     />
   );
 }
