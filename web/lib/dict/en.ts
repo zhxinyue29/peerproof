@@ -430,7 +430,7 @@ export const en = {
   // not copy. What a person could act on wrongly is translated.
   "deploy.escrowWarning":
     "Every event on the current escrow is left behind. Deposits there stay claimable at the old address, but nothing here will point at them again.",
-  "deploy.dirTitle": "Optional · one-time setup",
+  "deploy.dirTitle": "Set up once for this deployment",
   "deploy.dirBodyPre": "Events currently show as",
   "deploy.dirBodyPost":
     "rather than a name. Titles live in a second contract, so the one holding deposits never has to change to store text — deploy it once and every event after this can describe itself.",
@@ -438,7 +438,7 @@ export const en = {
     "Deployed. Nothing to configure — the address is derived from the bytecode, so every build finds it.",
   "deploy.dirTx": "deployment transaction",
   "deploy.dirBusy": "Deploying…",
-  "deploy.dirCta": "Enable event titles",
+  "deploy.dirCta": "Deploy the directory",
   "deploy.dirGas":
     "About 0.12 MON. The gas limit is pinned at 1,300,000 rather than estimated, because Monad charges the limit and not the amount used.",
   "home.redirecting": "Taking you to the event…",
@@ -494,6 +494,7 @@ export const en = {
   "graph.forfeited": "forfeited",
   "floor.alreadyCheckedIn": "You're already checked in — keep looking for a person's code.",
   "floor.checkedInFlash": "Checked in. Now go and scan people — no rush, this lasts all event.",
+  "deploy.dirBody": "Events can only show a number until this is deployed — titles and descriptions live in a second contract, so the one holding deposits never has to change to store text. Whoever deploys it, everyone uses it: its address is derived from the escrow, not from the deployer. Organizers never see this step.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

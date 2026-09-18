@@ -409,14 +409,14 @@ export const zh: Dict = {
 
   "deploy.escrowWarning":
     "当前托管合约上的所有活动都会被留在原地。那边的押金还能用旧地址领取，但这个应用不会再指向它们。",
-  "deploy.dirTitle": "可选 · 一次性设置",
+  "deploy.dirTitle": "这套部署只需做一次",
   "deploy.dirBodyPre": "活动现在显示成",
   "deploy.dirBodyPost":
     "，而不是名字。标题存在第二个合约里，这样保管押金的那个合约永远不必为了存文字而改动——部署一次，之后每场活动都能自己写介绍。",
   "deploy.dirDone": "已部署。没有要配置的东西——地址是从字节码推出来的，每个构建都能找到它。",
   "deploy.dirTx": "部署交易",
   "deploy.dirBusy": "部署中…",
-  "deploy.dirCta": "启用活动标题",
+  "deploy.dirCta": "部署目录合约",
   "deploy.dirGas":
     "大约 0.12 MON。gas 上限固定写死为 1,300,000，而不是估算出来的，因为 Monad 按上限收费，不按实际用量。",
   "home.redirecting": "正在带你去这个活动…",
@@ -472,4 +472,5 @@ export const zh: Dict = {
   "graph.forfeited": "押金没收",
   "floor.alreadyCheckedIn": "你已经签到过了——继续找人的二维码就行。",
   "floor.checkedInFlash": "签到完成。现在去扫人吧，不用急，这个整晚有效。",
+  "deploy.dirBody": "在这个部署之前，活动只能显示编号。标题和简介存在第二个合约里，这样保管押金的那个合约永远不必为了存文字而改动。谁部署都一样，之后所有人共用同一个——它的地址是从押金合约算出来的，和部署者是谁无关。主办方不会看到这一步。",
 };

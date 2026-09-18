@@ -3,7 +3,8 @@
 #
 # Every value below defaults to the live testnet deployment, so a fresh clone deploys a working
 # site with no setup. Override any of them with repository variables (Settings → Secrets and
-# variables → Actions → Variables): NETWORK, ESCROW_ADDRESS, EVENT_ID, DEPLOY_BLOCK.
+# variables → Actions → Variables): NETWORK only. The contract address, the event and the deploy
+# block are written in this file on purpose — see the comment on NEXT_PUBLIC_ESCROW_ADDRESS.
 #
 # They were variables with no defaults, and nobody had set them — so the site built and deployed
 # green while serving "No contract configured". A workflow that succeeds at shipping a broken page
@@ -56,7 +57,14 @@ jobs:
           # together. They are one decision: a chunk above the endpoint's cap is rejected outright,
           # not merely slow, so splitting them across two files is how they drift apart.
           NEXT_PUBLIC_LOGS_RPC_URL: ${{ vars.NETWORK == 'mainnet' && 'https://rpc3.monad.xyz' || '' }}
-          NEXT_PUBLIC_ESCROW_ADDRESS: ${{ vars.ESCROW_ADDRESS || '0x6Dcaa43a0b6eBB82A4117b2c0eF28f246f345E2b' }}
+          # Written here, not read from a repository variable.
+          #
+          # A dashboard setting that silently overrides a checked-in default has already cost this
+          # project a working demo once: `vars.EVENT_ID` pinned the public site to an event that had
+          # ended, and nothing on the page or in the diff said so. Which contract a build talks to is
+          # a fact about that build, so it belongs in the file, in the history, next to the change
+          # that made it true.
+          NEXT_PUBLIC_ESCROW_ADDRESS: '0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679'
           # Deliberately not `vars.EVENT_ID`. A number here switches off resolve-to-newest, so the
           # site serves one fixed event forever — and a repository variable is invisible from the
           # code, from the build log, and from the page itself. One left over from an afternoon's
@@ -76,7 +84,7 @@ jobs:
           # Without this the reader falls back to scanning the last 20,000 blocks. The contract was
           # deployed ~274,000 blocks ago, so the graph would come back empty and look like nothing
           # ever happened.
-          NEXT_PUBLIC_DEPLOY_BLOCK: ${{ vars.DEPLOY_BLOCK || '63365596' }}
+          NEXT_PUBLIC_DEPLOY_BLOCK: '63497445'
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 

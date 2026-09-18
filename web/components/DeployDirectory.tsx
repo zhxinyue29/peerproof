@@ -35,8 +35,7 @@ export default function DeployDirectory() {
       <div>
         <p className="text-[15px] font-medium text-dim">{t("deploy.dirTitle")}</p>
         <p className="mt-1.5 text-sm leading-relaxed text-dim">
-          {t("deploy.dirBodyPre")} <span className="font-mono">Event #5</span>{" "}
-          {t("deploy.dirBodyPost")}
+          {t("deploy.dirBody")}
         </p>
       </div>
 

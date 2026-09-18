@@ -27,7 +27,6 @@ import { useVisiblePoll } from "@/lib/poll";
 import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
-import DeployEscrow from "@/components/DeployEscrow";
 import EditListing from "@/components/EditListing";
 import EventsTable from "@/components/EventsTable";
 import EventTimeline from "@/components/EventTimeline";
@@ -155,7 +154,6 @@ export default function OrganizerPage() {
             "deploy a contract" is our infrastructure problem, not something to put in front of
             somebody who wanted to invite people to a reading group. */}
         {devMode && <DeployDirectory />}
-        {devMode && <DeployEscrow />}
       </IdentityGate>
 
       <p className="text-[14px] leading-relaxed text-faint md:max-w-[70ch]">
