@@ -476,4 +476,6 @@ export const zh: Dict = {
   "events.heroEyebrow": "同伴互证的出席",
   "events.heroTitle": "找到你的下一场链上活动",
   "events.heroBodyQuiet": "现在没有正在进行的活动。谁都可以办一场——没有审批这一步，而且主办方永远碰不到押金。",
+  "event.noSuchTitle": "这里还没有活动",
+  "event.noSuchBody": "这个合约上没有这个编号的活动。要么还没创建，要么这个链接指向的是另一份部署。没有任何损失——这里本来就什么都没有。",
 };

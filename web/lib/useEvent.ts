@@ -93,6 +93,9 @@ export function useEvent(address: Address | null, pollMs = 4000) {
   const [ev, setEv] = useState<EventInfo | null>(null);
   const [me, setMe] = useState<MyState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /// The event id resolved, the read succeeded, and there is no such event. Distinct from
+  /// `ev === null`, which is also how 'still loading' looks.
+  const [missing, setMissing] = useState(false);
 
   const read = useCallback(async () => {
     if (!hasDeployment) return;
@@ -102,6 +105,21 @@ export function useEvent(address: Address | null, pollMs = 4000) {
       functionName: "getEvent",
       args: [eventId()],
     });
+
+    // `getEvent` answers for an event that does not exist with a zero struct rather than a revert,
+    // and a zero struct passes every check downstream. So a fresh contract rendered a complete,
+    // convincing event: a deposit of 0.0000 MON, a window on the 1st of January 1970, nought of
+    // nought places taken, and the words "this event is full" under it. Every figure invented, on
+    // the one screen whose whole argument is that nothing on it was.
+    //
+    // No organizer means no event. Nothing else about the struct distinguishes the two.
+    if (e.organizer === "0x0000000000000000000000000000000000000000") {
+      setEv(null);
+      setMe(null);
+      setMissing(true);
+      return;
+    }
+    setMissing(false);
     setEv({
       organizer: e.organizer,
       k: Number(e.k),
@@ -176,5 +194,5 @@ export function useEvent(address: Address | null, pollMs = 4000) {
     if (hasDeployment) void refresh();
   }, pollMs);
 
-  return { ev, me, refresh, error };
+  return { ev, me, refresh, error, missing };
 }

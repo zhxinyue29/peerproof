@@ -32,7 +32,7 @@ import { useEventMeta } from "@/lib/eventMeta";
 /// actually know.
 export default function EventPage() {
   const { signer, signOut } = useIdentity();
-  const { ev, me, refresh, error: readError } = useEvent(signer?.address ?? null);
+  const { ev, me, refresh, error: readError, missing } = useEvent(signer?.address ?? null);
   const router = useRouter();
   const { t, lang } = useLang();
   // The app's language, not the browser's: somebody who switched to Chinese on an
@@ -87,6 +87,38 @@ export default function EventPage() {
           {t("event.runDevChain")} <code className="text-fg">scripts/dev-chain.sh</code>
           {t("event.runDevChainEnd")}
         </Notice>
+      </AppShell>
+    );
+  }
+
+  // Said outright rather than rendered as zeroes. Before this the page drew a whole event out of
+  // an empty struct — 0.0000 MON held by the contract, a window on the 1st of January 1970, "this
+  // event is full" under nought of nought places — which is the one thing this product must never
+  // do, on the one page that exists to say it doesn't.
+  if (missing) {
+    return (
+      <AppShell nav="participant" active="events" langSwitcher={<LanguageSwitcher />}>
+        <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-9">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-20 -top-10 hidden h-[280px] w-[400px] opacity-[0.18] md:block"
+          >
+            <EventCover id={0n} nodes={9} bare className="h-full w-full" />
+          </span>
+          <div className="relative max-w-[52ch] space-y-3">
+            <h1 className="text-[24px] font-semibold md:text-[28px]">{t("event.noSuchTitle")}</h1>
+            <p className="text-[16px] leading-relaxed text-dim">{t("event.noSuchBody")}</p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <LinkButton href="/events">{t("nav.events")}</LinkButton>
+              <Link
+                href="/organizer"
+                className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+              >
+                {t("events.createFirst")}
+              </Link>
+            </div>
+          </div>
+        </section>
       </AppShell>
     );
   }
