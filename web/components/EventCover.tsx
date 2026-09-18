@@ -110,8 +110,8 @@ export default function EventCover({
       >
         <defs>
           <radialGradient id={`${gid}-n`}>
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="45%" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+            <stop offset="30%" stopColor="#ffffff" stopOpacity="0.3" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
           {/* A wash across the bottom so a title laid over the band keeps its contrast wherever
@@ -137,10 +137,14 @@ export default function EventCover({
           />
         ))}
 
+        {/* A tight core with a small halo, not a soft blob.
+            The halo was 3.4× the node and half-opaque, which is fine at card size and turns into
+            cotton wool on the event banner — the same drawing scaled up by five. A point of light
+            needs a hard centre to read as a point at all. */}
         {pts.map((p, i) => (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={p.r * 3.4} fill={`url(#${gid}-n)`} opacity="0.5" />
-            <circle cx={p.x} cy={p.y} r={p.r} fill="#ffffff" fillOpacity="0.92" />
+            <circle cx={p.x} cy={p.y} r={p.r * 2.1} fill={`url(#${gid}-n)`} opacity="0.34" />
+            <circle cx={p.x} cy={p.y} r={p.r * 0.62} fill="#ffffff" fillOpacity="0.96" />
           </g>
         ))}
 
