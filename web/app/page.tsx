@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ProofArt from "@/components/ProofArt";
+import { LinkButton } from "@/components/ui";
+import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
 import { PeerProofMark } from "@/components/NavIcons";
 import { useIdentity } from "@/components/IdentityProvider";
 import { shortAddress } from "@/lib/format";
@@ -336,13 +338,43 @@ function HowItWorks() {
       <div className="space-y-3 border-t border-line pt-6">
         <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.custodyNote")}</p>
         <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.bothRoles")}</p>
-        <Link
-          href="/verify"
-          className="inline-flex min-h-[44px] items-center text-[16px] text-accent-2 underline decoration-line-2"
-        >
-          {t("home.readPublicRecord")} →
-        </Link>
       </div>
+
+      {/* The close.
+          The page used to end on two grey paragraphs and an underlined link, which is how a
+          document ends, not a product. And the strongest thing this project can say last is not a
+          slogan — it is an address. Everything above is a claim; this is the thing a sceptic can
+          go and check, so it gets the weight. */}
+      <section className="relative overflow-hidden rounded-2xl border border-line-2 bg-panel p-6 md:p-8">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(38rem 20rem at 88% -6rem, rgba(118,91,255,0.16), transparent 62%)",
+          }}
+        />
+        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 space-y-2">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
+              {t("home.closeTitle")}
+            </h2>
+            <p className="max-w-[54ch] text-[16px] leading-relaxed text-dim">{t("home.closeBody")}</p>
+            <p className="break-all pt-1 font-mono text-[14px] text-faint">{ESCROW_ADDRESS}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-3">
+            <LinkButton href="/verify">{t("home.readPublicRecord")}</LinkButton>
+            {explorerAddressUrl(ESCROW_ADDRESS) && (
+              <a
+                href={explorerAddressUrl(ESCROW_ADDRESS)}
+                className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+              >
+                {t("verify.openOnExplorer")} ↗
+              </a>
+            )}
+          </div>
+        </div>
+      </section>
     </section>
   );
 }

@@ -207,3 +207,10 @@ export function explorerTxUrl(hash: string): string {
   if (isLocal) return "";
   return `https://monadvision.com/tx/${hash}`;
 }
+
+/// Empty on a local chain, where no explorer exists to send anybody to — callers render the link
+/// only when there is one, rather than offering a dead end.
+export function explorerAddressUrl(address: string): string {
+  if (isLocal) return "";
+  return `https://monadvision.com/address/${address}`;
+}

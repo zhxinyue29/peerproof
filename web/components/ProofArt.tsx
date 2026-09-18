@@ -83,6 +83,31 @@ export default function ProofArt({ className = "" }: { className?: string }) {
           />
         ))}
 
+        {/* A vouch, crossing. A still picture of a network is a diagram; something moving along the
+            edges is a room in use, and that is the difference between a page that has been designed
+            and a page that is alive. Five at a time out of twenty-one, on long offset cycles, so it
+            reads as occasional traffic rather than a loading animation.
+
+            Pure SMIL-free CSS: a dash pattern sliding along a path costs the compositor nothing and
+            needs no JavaScript, so it survives the page being served as static files. */}
+        <g className="pa-traffic">
+          {edges
+            .filter((_, n) => n % 4 === 0)
+            .map(([i, j], n) => (
+              <line
+                key={`t-${i}-${j}`}
+                x1={PEERS[i].x}
+                y1={PEERS[i].y}
+                x2={PEERS[j].x}
+                y2={PEERS[j].y}
+                stroke="#cdc2ff"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                style={{ animationDelay: `${n * 1.45}s` }}
+              />
+            ))}
+        </g>
+
         {/* The hole. Drawn after the edges so it reads as sitting in front of them — a space the
             lines pass behind rather than a shape they connect to. */}
         <circle cx={CX} cy={CY} r="40" fill="var(--color-panel)" fillOpacity="0.72" />

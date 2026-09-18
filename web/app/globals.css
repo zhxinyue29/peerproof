@@ -122,3 +122,35 @@ textarea {
 ::selection {
   background: rgba(118, 91, 255, 0.35);
 }
+
+/* Light travelling along the edges of the proof figure.
+   A still diagram of a network says what the mechanism is; something moving through it says the
+   room is in use. The dash is short and the cycle long, so at any moment one or two edges are
+   carrying something and the rest are quiet — traffic, not a progress bar.
+
+   `stroke-dashoffset` on a path is compositor-friendly and needs no JavaScript, which matters for
+   a page served as static files from a CDN. */
+.pa-traffic line {
+  stroke-dasharray: 26 420;
+  stroke-dashoffset: 446;
+  opacity: 0;
+  animation: pa-travel 7.2s linear infinite;
+}
+
+@keyframes pa-travel {
+  0% { stroke-dashoffset: 446; opacity: 0; }
+  8% { opacity: 0.85; }
+  55% { opacity: 0.85; }
+  70% { stroke-dashoffset: 0; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* Somebody who has asked their system to stop things moving has asked for a reason — vestibular
+   disorders are the usual one, and a page about money is not the place to overrule it. */
+@media (prefers-reduced-motion: reduce) {
+  .pa-traffic line {
+    animation: none;
+    opacity: 0.22;
+    stroke-dasharray: none;
+  }
+}

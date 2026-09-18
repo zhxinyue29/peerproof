@@ -500,6 +500,8 @@ export const en = {
   "events.heroBodyQuiet": "Nothing is running right now. Anyone can host one — there is no approval step, and the host never touches the deposits.",
   "event.noSuchTitle": "There is no event here yet",
   "event.noSuchBody": "This contract has no event with that number. Either it has not been created yet, or the link points at a different deployment. Nothing has been lost — there was never anything here to lose.",
+  "home.closeTitle": "Don't take our word for any of it",
+  "home.closeBody": "The contract is on Monad testnet and its source is verified. Every deposit, every vouch and every payout is a transaction you can read without asking us anything.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the
