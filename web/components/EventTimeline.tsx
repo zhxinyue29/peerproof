@@ -1,6 +1,7 @@
 "use client";
 
 import { countdown } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 /// What the three numbers add up to, drawn.
 ///
@@ -21,13 +22,14 @@ export default function EventTimeline({
   runsMins: number;
   walkIns: boolean;
 }) {
+  const t = useT();
   const total = Math.max(1, doorsMins + runsMins);
   const doorsAt = (doorsMins / total) * 100;
   const registrationEndsAt = walkIns ? 100 : doorsAt;
 
   return (
     <div className="rounded-[13px] border border-line-2 bg-ink/60 p-4">
-      <p className="text-[15px] font-medium">What participants will experience</p>
+      <p className="text-[15px] font-medium">{t("timeline.whatParticipants")}</p>
 
       <div className="relative mx-2 mb-3 mt-7 h-2 rounded-full bg-line">
         <div
@@ -39,21 +41,25 @@ export default function EventTimeline({
       </div>
 
       <div className="flex justify-between gap-2 text-[14px] text-dim">
-        <span>Now · registration</span>
+        <span>{t("timeline.nowRegistration")}</span>
         <span className="text-center">
-          Doors open
-          {doorsMins > 0 && <span className="block text-faint">in {countdown(doorsMins * 60)}</span>}
+          {t("timeline.doorsOpen")}
+          {doorsMins > 0 && (
+            <span className="block text-faint">
+              {t("timeline.inTime", { time: countdown(doorsMins * 60) })}
+            </span>
+          )}
         </span>
         <span className="text-right">
-          Event ends
-          <span className="block text-faint">after {countdown(runsMins * 60)}</span>
+          {t("timeline.eventEnds")}
+          <span className="block text-faint">
+            {t("timeline.afterTime", { time: countdown(runsMins * 60) })}
+          </span>
         </span>
       </div>
 
       <p className="mt-3 text-[14px] leading-relaxed text-faint">
-        {walkIns
-          ? "The bar is filled for as long as people can still register — with walk-ins on, that is the whole event."
-          : "Registration closes the moment the doors open. Nobody joins after that."}
+        {t(walkIns ? "timeline.walkInsNote" : "timeline.noWalkInsNote")}
       </p>
     </div>
   );

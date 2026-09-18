@@ -1,29 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT, type TKey } from "@/lib/i18n";
 
 /// Camera scanner. Loaded on demand because qr-scanner touches `navigator` and ships a worker.
 export default function Scanner({
   onResult,
   onClose,
   notice,
-  title = "Point at someone's code",
+  title,
   hint,
 }: {
   onResult: (text: string) => void;
   onClose: () => void;
   /// The same camera reads two different things at two different moments in the evening, and the
   /// header is the only place that says which one is wanted now.
-  title?: string;
-  hint?: string;
+  ///
+  /// Dictionary keys rather than words. These used to be finished English sentences with a default
+  /// baked in here, so the one screen somebody stares at while standing in a room — and every
+  /// message it shows when a scan fails — stayed English no matter what language the rest of the
+  /// app was in.
+  title?: TKey;
+  hint?: TKey;
   /// Shown over the camera. Everything that can go wrong during a scan — a code that is yours, a
   /// venue code you have not read yet, one that expired between the photograph and the chain — was
   /// being written to a notice on the page *underneath* this full-screen overlay. So every failure
   /// looked identical to the camera simply not working, which is what "nothing happens" meant.
   notice?: string | null;
 }) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  /// The key, not the sentence — the camera starts once and never restarts, so a message resolved
+  /// at failure time would keep the language it was in when the camera refused.
+  const [errorKey, setErrorKey] = useState<string | null>(null);
 
   // Held in a ref so starting the camera does not depend on it.
   //
@@ -78,10 +87,10 @@ export default function Scanner({
         await s.start();
       } catch (e) {
         if (!cancelled) {
-          setError(
+          setErrorKey(
             e instanceof Error && e.name === "NotAllowedError"
-              ? "Camera permission denied."
-              : "Could not start the camera.",
+              ? "scan.cameraDenied"
+              : "scan.cameraFailed",
           );
         }
       }
@@ -98,12 +107,12 @@ export default function Scanner({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center justify-between px-5 py-4 text-fg">
-        <span className="text-[15px]">{title}</span>
+        <span className="text-[15px]">{t(title ?? "floor.pointAtCode")}</span>
         <button
           onClick={onClose}
           className="min-h-[44px] rounded-lg border border-line-2 px-4 text-[15px] text-dim"
         >
-          Close
+          {t("common.close")}
         </button>
       </div>
       <div className="relative flex-1">
@@ -112,20 +121,19 @@ export default function Scanner({
             everything looked enormous and you had to stand back to fit a code in. Letterboxed, what
             you see is what the camera sees, which is what every other scanner does. */}
         <video ref={videoRef} className="h-full w-full object-contain" playsInline muted />
-        {error && (
+        {errorKey && (
           <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-[15px] text-dim">
-            {error}
+            {t(errorKey)}
           </div>
         )}
-        {notice && !error && (
+        {notice && !errorKey && (
           <div className="absolute inset-x-4 bottom-4 rounded-xl border border-warn/40 bg-warn/15 px-4 py-3 text-center text-[15px] leading-relaxed text-warn backdrop-blur">
             {notice}
           </div>
         )}
       </div>
       <p className="px-5 pb-6 pt-3 text-center text-[14px] text-faint">
-        {hint ??
-          "Hold the other phone close, so the code fills most of the picture. Codes change every 15 seconds — if one expires mid-scan, the next is already on screen."}
+        {t(hint ?? "scan.hintPeer")}
       </p>
     </div>
   );

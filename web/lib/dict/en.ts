@@ -76,6 +76,7 @@ export const en = {
   "floor.doorsOpenIn": "Doors open in",
   "floor.refreshesIn": "refreshes in {n}s",
   "floor.scanVenueFirst": "Scan the venue display first — you only have to do it once.",
+  "floor.codeAlt": "Your attendance code",
   "floor.pointAtCode": "Point at someone's code",
   "floor.pointAtDoor": "Point at the screen at the door",
 
@@ -124,7 +125,6 @@ export const en = {
   "events.showAll": "Show everything",
   "events.signInForMine": "Sign in on any event to see the ones you have joined.",
   "events.sourceNote": "Titles come from a contract that holds no money. The deposits sit somewhere else entirely.",
-  "events.readError": "Couldn't read the events.",
   "common.localChain": "Local chain — real transactions, fake money.",
   "common.noContract": "No contract configured.",
   "common.signIn": "Sign in",
@@ -156,6 +156,8 @@ export const en = {
   "event.noWalletPlugin": "No wallet plugin required.",
   "event.publicProof": "Public proof",
   "event.publicProofSub": "Every accepted vouch is a transaction you can inspect",
+  "myEvents.noneHosted": "You haven't hosted anything yet",
+  "myEvents.noneHostedBody": "Use the New Event tab. There is no approval step and no listing fee — the deposits go to the contract, and you never hold them.",
   "organizer.yourEventsEmpty": "You haven't created an event yet.",
   "organizer.noVouchesYet": "No vouches yet — the chart fills as people scan each other.",
   "organizer.readOnly": "This event was created by {who}. You're viewing it read-only.",
@@ -171,6 +173,10 @@ export const en = {
   "venue.start": "Start the display",
   "venue.forgetKey": "forget this key",
   "venue.beacon": "beacon {address}",
+  // Two keys, one per line, so each language breaks the phrase where its own words break.
+  // Inside an SVG there is no wrapping to fall back on.
+  "art.noJudge1": "no central",
+  "art.noJudge2": "judge",
   "home.eyebrow": "PEER-VERIFIED ATTENDANCE",
   "home.headline": "Attendance you don't have to trust the organizer for.",
   "home.sub": "Real people prove each other were in the room. Deposits and payouts follow the proof — not anyone's discretion.",
@@ -484,6 +490,8 @@ export const en = {
   "identity.creatingKey": "Creating your key…",
   "identity.unlocking": "Unlocking…",
   "identity.waitingWallet": "Waiting for your wallet…",
+  "identity.signInFailedLoad": "Sign-in failed to load — {why}. This is the email sign-in code itself not arriving, usually an ad blocker or privacy extension blocking it, or a page left open across a redeploy. Reload the page first; if that does not help, allow this site in the extension.",
+  "identity.signInBlocked": "Sign-in didn't load. Something on this browser may be blocking privy.io — an ad blocker, a privacy extension, or a strict tracking setting. Allow it for this site, or use a browser wallet.",
   "identity.openingSignIn": "Opening sign-in…",
   "identity.noWallet": "No browser wallet found.",
   "graph.confirmed": "confirmed present",
@@ -518,6 +526,47 @@ export const en = {
   "gate.floor2Body": "One scan credits both of you. No rush — their code changes every fifteen seconds, and the next one is already on screen.",
   "gate.floor3Title": "Take your deposit back",
   "gate.floor3Body": "Once enough people have vouched for you, you count as present — and when the window closes you get your stake plus a share of what the no-shows left behind.",
+
+  // The scan overlay and everything it can say when a scan does not work.
+  //
+  // These were English literals until the whole flow was read in Chinese: the camera screen and
+  // every one of its failure messages. Which meant the one moment where somebody needs to be told
+  // precisely what went wrong — standing in a room, holding a phone at somebody else's phone — was
+  // the moment the app stopped speaking their language.
+  "scan.hintPeer":
+    "Hold the other phone close, so the code fills most of the picture. Codes change every 15 seconds — if one expires mid-scan, the next is already on screen.",
+  "scan.hintVenue":
+    "The venue display is showing a code that changes every 30 seconds. This is sent straight to the chain, so scan it where it is — not from a photograph.",
+  "scan.cameraDenied": "Camera permission denied.",
+  "scan.cameraFailed": "Could not start the camera.",
+
+  "floor.notPeerProofCode": "Not a PeerProof code.",
+  "floor.ownCode": "That's your own code — you need somebody else's.",
+  "floor.codeFailedVerification": "That code failed verification.",
+  "floor.venueCodeMalformed": "That venue code is malformed.",
+  "floor.checkInOpensIn": "Code reads fine — check-in opens in {time}.",
+  "floor.checkInClosed": "Code reads fine, but check-in has closed for this event.",
+  "floor.checkInReverted": "Check-in reverted on chain. Scan the venue display again.",
+  "floor.attestReverted": "That attestation reverted on chain.",
+  "floor.settleEvent": "Settle this event",
+  "floor.yourDepositBack": "Your deposit back",
+  "floor.shareOfForfeited": "Share of forfeited deposits",
+
+  "timeline.whatParticipants": "What participants will experience",
+  "timeline.nowRegistration": "Now · registration",
+  "timeline.doorsOpen": "Doors open",
+  "timeline.inTime": "in {time}",
+  "timeline.eventEnds": "Event ends",
+  "timeline.afterTime": "after {time}",
+  "timeline.walkInsNote":
+    "The bar is filled for as long as people can still register — with walk-ins on, that is the whole event.",
+  "timeline.noWalkInsNote":
+    "Registration closes the moment the doors open. Nobody joins after that.",
+
+  "bridge.settingUpKey": "Setting up your key…",
+
+  "graph.nobodyRegistered": "Nobody has registered yet.",
+  "graph.noVouchesYet": "No lines yet — one appears each time somebody scans somebody else.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

@@ -12,59 +12,7 @@ import { both, fiat, mon, shortAddress, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
-import { useT, type TFn } from "@/lib/i18n";
-
-/// The copy this screen introduced, in the language it was written in.
-///
-/// `t()` answers with the key itself when a dictionary has not caught up, which would put
-/// "verify.roomDecided" on the one page whose job is to be checkable by a stranger. Falling back to
-/// English costs a Chinese reader their Chinese until these land in lib/dict; falling back to the
-/// key costs every reader the sentence. This map is the list of what is owed.
-const EN: Record<string, string> = {
-  "verify.openOnExplorer": "Open on explorer",
-  "verify.roomDecided": "The room decided this",
-  "verify.eachLine": "Each line is a real accepted vouch.",
-  "verify.settlement": "Settlement",
-  "verify.eachReceives": "each confirmed attendee receives",
-  "verify.eachWouldReceive": "each confirmed attendee would receive",
-  "verify.nobodyConfirmedYet": "Nobody has been confirmed present yet.",
-  "verify.depositPlusShare": "{deposit} deposit + {share} share of no-shows",
-  "verify.confirmedPresent": "{n} confirmed present",
-  "verify.getDepositBack": "get their deposit back",
-  "verify.neverConfirmed": "{n} never confirmed",
-  "verify.forfeit": "forfeit {amount}",
-  "verify.settledNote":
-    "Fixed by the contract at settlement. The divisor cannot move afterwards, so the pool can never be over-committed.",
-  "verify.settlementTx": "settlement transaction",
-  "verify.projectedNote":
-    "Not final. If nobody can be confirmed present, the contract refunds every deposit rather than issue an unreliable verdict — and the organizer receives nothing in that branch either.",
-  "verify.noOrganizerApproved": "No organizer approved this.",
-  "verify.payoutFollowsGraph": "The payout follows the graph at the close of the window.",
-  "verify.settlementRow": "settlement",
-  "verify.blocks": "blocks {from}–{to}",
-  "verify.viaEnvio": "Attestation graph indexed by Envio HyperIndex.",
-  "verify.viaLogs":
-    "Attestation graph read from contract logs directly — the index was unreachable.",
-  "verify.noPayoutFunction":
-    "There is no function on this contract that pays the organizer. Check the source: every branch of claim pays msg.sender, and only registered attendees can reach it.",
-};
-
-function useCopy(): TFn {
-  const t = useT();
-  return (key, vars) => {
-    const hit = t(key, vars);
-    // `lookup` returns the key verbatim when nothing matched, and no key contains a placeholder,
-    // so equality here is an exact test for "this string does not exist yet".
-    if (hit !== key) return hit;
-    const en = EN[key as string];
-    if (!en) return hit;
-    return vars
-      ? en.replace(/\{(\w+)\}/g, (whole, name: string) =>
-          name in vars ? String(vars[name]) : whole,
-        )
-      : en;
-  };
-}
+import { useT } from "@/lib/i18n";
 
 /// Public, no key required. The whole product claims nobody has to be trusted, and a claim like
 /// that is worth nothing if the only way to check it is to believe our own UI. Everything here is
@@ -75,7 +23,7 @@ function useCopy(): TFn {
 /// the panel can be opened on a block explorer. Nothing on this page is computed from anything but
 /// the contract's own logs.
 export default function VerifyPage() {
-  const t = useCopy();
+  const t = useT();
   const { ev } = useEvent(null, 4000);
   const [history, setHistory] = useState<EventHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +36,7 @@ export default function VerifyPage() {
         setHistory(await readHistory(eventId()));
         setError(null);
       } catch (e) {
-        setError(shortenError(e));
+        setError(shortenError(e, t));
       }
     };
     void load();
@@ -303,7 +251,7 @@ function Payout({
   share: bigint | null;
   settled: boolean;
 }) {
-  const t = useCopy();
+  const t = useT();
   return (
     <div className="min-w-0 rounded-2xl border border-line-2 bg-raised p-5">
       <p className="text-[38px] font-semibold leading-none tracking-[-0.03em] tabular-nums md:text-[40px]">
@@ -330,7 +278,7 @@ function Payout({
 /// that happened to this event, and separating it would suggest it came from somewhere other than
 /// the same log stream as the vouches.
 function ProofList({ history }: { history: EventHistory }) {
-  const t = useCopy();
+  const t = useT();
   const rows: Array<{ key: string; label: string; hash: string }> = [];
   if (history.settlement) {
     rows.push({

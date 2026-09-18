@@ -19,6 +19,17 @@ import { chain, publicClient } from "@/lib/chain";
 /// key survives a refresh without being stored anywhere.
 const DERIVATION_PATH = "m/44'/60'/0'/0/0";
 
+/// NEVER TRANSLATE THIS. i18n-exempt-file: the signature over this text is the seed.
+///
+/// These lines are shown in the wallet's signing dialog, so they look like copy and an i18n sweep
+/// will reach for them. They are not copy — they are an input. The signature over this exact string
+/// is the entropy the attest key is derived from, so changing a single character derives a
+/// different key and therefore a different account. Somebody who registered while the app was in
+/// English and came back with it in Chinese would arrive as a stranger: not registered, not checked
+/// in, and unable to claim the deposit they had already staked.
+///
+/// If this ever has to say something different, it needs a version marker and a migration that can
+/// still derive the old key, not an edit.
 function derivationMessage(escrow: Address, eventId: bigint): string {
   return [
     "PeerProof attendance key",

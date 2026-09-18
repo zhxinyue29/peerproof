@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import EventCard from "@/components/EventCard";
@@ -20,6 +20,7 @@ import {
   syncChainClock,
 } from "@/lib/chain";
 import { readAllEvents, type EventSummary } from "@/lib/events";
+import { shortenError } from "@/lib/format";
 import { useVisiblePoll } from "@/lib/poll";
 
 /// The directory. Every event the contract knows about, newest first.
@@ -49,6 +50,14 @@ export default function EventsPage() {
   const [choice, setChoice] = useState<Choice>(null);
   const [query, setQuery] = useState("");
 
+  // Same trick `useEvent` uses. `t` is a new function on every language switch, so naming it as a
+  // dependency below would re-read the whole chain when somebody presses 中文 — and leaving it out
+  // captures whichever language was current when the effect first ran. A ref is neither: the effect
+  // stays keyed to nothing, and the message resolves in the language on screen at the moment it
+  // fails.
+  const tRef = useRef(t);
+  tRef.current = t;
+
   useEffect(() => {
     if (!hasDeployment) return;
     const load = async () => {
@@ -57,11 +66,7 @@ export default function EventsPage() {
         setEvents(await readAllEvents());
         setError(null);
       } catch (e) {
-        // Not routed through `t`: this effect runs once with an empty dependency list, and pulling
-        // the translator in would either re-read the whole chain on a language switch or leave a
-        // lint suppression behind. The branch is a non-Error throw, which viem does not produce —
-        // and the branch above it is an English message from viem either way.
-        setError(e instanceof Error ? e.message : "Couldn't read the events.");
+        setError(shortenError(e, tRef.current));
       }
     };
     void load();

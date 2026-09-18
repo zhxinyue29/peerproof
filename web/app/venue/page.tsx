@@ -20,42 +20,7 @@ import {
 import { makeBeaconCode } from "@/lib/codes";
 import { useEventMeta } from "@/lib/eventMeta";
 import { Button, Notice } from "@/components/ui";
-import { useT, type TFn } from "@/lib/i18n";
-
-/// The copy this screen introduced, in the language it was written in.
-///
-/// `t()` answers with the key itself when a dictionary has not caught up. On a screen that is
-/// propped up at a door for an evening, "venue.setupHeadline" in 44px is the worst possible failure
-/// mode. Falling back to English costs a Chinese reader their Chinese until these land in lib/dict;
-/// falling back to the key costs every reader the sentence. This map is the list of what is owed.
-const EN: Record<string, string> = {
-  "venue.eyebrow": "Venue beacon",
-  "venue.setupEyebrow": "One-time setup",
-  "venue.setupHeadline": "Load the venue beacon",
-  "venue.credentialNote":
-    "The beacon key is a credential. It stays on this device and is removed from the address bar after setup.",
-  "venue.keyHoldsNoFunds":
-    "It holds no funds and can never move money — it only signs. Stored in this browser only; it is never sent anywhere.",
-  "venue.notAKey": "That doesn't look like a private key (64 hex characters).",
-  "venue.invalidKey": "That key isn't valid.",
-};
-
-function useCopy(): TFn {
-  const t = useT();
-  return (key, vars) => {
-    const hit = t(key, vars);
-    // `lookup` returns the key verbatim when nothing matched, and no key contains a placeholder,
-    // so equality here is an exact test for "this string does not exist yet".
-    if (hit !== key) return hit;
-    const en = EN[key as string];
-    if (!en) return hit;
-    return vars
-      ? en.replace(/\{(\w+)\}/g, (whole, name: string) =>
-          name in vars ? String(vars[name]) : whole,
-        )
-      : en;
-  };
-}
+import { useT } from "@/lib/i18n";
 
 /// The venue display. Put this on a laptop or spare phone at the door: it is what makes an
 /// attestation mean "was in this room". Every attestation must carry a signature from this key,
@@ -67,7 +32,7 @@ function useCopy(): TFn {
 const STORAGE_KEY = "peerproof.beacon.pk";
 
 export default function VenuePage() {
-  const t = useCopy();
+  const t = useT();
   const [account, setAccount] = useState<LocalAccount | null>(null);
   const [payload, setPayload] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(Number(BEACON_EPOCH));

@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "@/lib/i18n";
+
 /// The mechanism, drawn.
 ///
 /// A room of people, every pair connected, and a hole where a product like this would normally put
@@ -28,6 +32,7 @@ const PEERS = JITTER.map(([dx, dy], i) => {
 });
 
 export default function ProofArt({ className = "" }: { className?: string }) {
+  const t = useT();
   const edges: Array<[number, number]> = [];
   for (let i = 0; i < PEERS.length; i++) {
     for (let j = i + 1; j < PEERS.length; j++) edges.push([i, j]);
@@ -128,6 +133,11 @@ export default function ProofArt({ className = "" }: { className?: string }) {
           </g>
         ))}
 
+        {/* The label in the hole, which is the whole argument of the picture — and which stayed
+            English on an otherwise Chinese landing page for as long as this existed. It slipped the
+            hardcoded-English check because "no central" and "judge" are each under its length and
+            word thresholds: the check is a lint for prose, and a two-word label in an SVG is not
+            prose. Short labels still have to be read by hand. */}
         <text
           x={CX}
           y={CY - 4}
@@ -135,7 +145,7 @@ export default function ProofArt({ className = "" }: { className?: string }) {
           className="fill-faint"
           style={{ fontSize: 11, letterSpacing: "0.04em" }}
         >
-          no central
+          {t("art.noJudge1")}
         </text>
         <text
           x={CX}
@@ -144,7 +154,7 @@ export default function ProofArt({ className = "" }: { className?: string }) {
           className="fill-faint"
           style={{ fontSize: 11, letterSpacing: "0.04em" }}
         >
-          judge
+          {t("art.noJudge2")}
         </text>
       </svg>
     </div>

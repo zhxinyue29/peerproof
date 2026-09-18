@@ -10,50 +10,7 @@ import { PeerProofMark } from "@/components/NavIcons";
 import { useIdentity } from "@/components/IdentityProvider";
 import { shortAddress } from "@/lib/format";
 import { basePath } from "@/lib/chain";
-import { useT, type TFn } from "@/lib/i18n";
-
-/// The copy this screen introduced, in the language it was written in.
-///
-/// `t()` answers with the key itself when a dictionary has not caught up, which puts
-/// "home.step1Title" on the landing page — the first thing anybody sees. Falling back to English
-/// instead costs a Chinese reader their Chinese until these land in lib/dict; falling back to the
-/// key costs every reader the sentence. This map is the list of what is owed.
-const EN: Record<string, string> = {
-  "home.redirecting": "Taking you to the event…",
-  "home.howItWorksSub":
-    "A deposit, a room, and a contract that settles from what the room proves about itself.",
-  "home.step1Title": "Put a deposit down",
-  "home.step1Body":
-    "The deposit is what holds your place. The contract takes it — the organizer never does.",
-  "home.step2Title": "Scan each other in the room",
-  "home.step2Body":
-    "Check in once at the door, then vouch for the people you actually meet. Every vouch is its own transaction.",
-  "home.step3Title": "The contract settles itself",
-  "home.step3Body":
-    "Everyone confirmed present takes their deposit back, plus a share of what the no-shows left behind.",
-  "home.custodyNote":
-    "Whoever created the event has no function that releases, withholds, or receives a single wei. That is not a promise — it is the absence of a door.",
-  "home.bothRoles":
-    "The same account can do both — these are two ways in, not two kinds of person. Anyone can host; there is no approval step.",
-  "home.readPublicRecord": "Read the public record",
-};
-
-function useCopy(): TFn {
-  const t = useT();
-  return (key, vars) => {
-    const hit = t(key, vars);
-    // `lookup` returns the key verbatim when nothing matched, and no key contains a placeholder,
-    // so equality here is an exact test for "this string does not exist yet".
-    if (hit !== key) return hit;
-    const en = EN[key as string];
-    if (!en) return hit;
-    return vars
-      ? en.replace(/\{(\w+)\}/g, (whole, name: string) =>
-          name in vars ? String(vars[name]) : whole,
-        )
-      : en;
-  };
-}
+import { useT } from "@/lib/i18n";
 
 /// The door.
 ///
@@ -69,7 +26,7 @@ function useCopy(): TFn {
 /// that is the point of a landing page — somebody arriving from a QR code at a venue has not yet
 /// agreed to be in an application. The two doors are the navigation.
 export default function HomePage() {
-  const t = useCopy();
+  const t = useT();
 
   // Links of the form /?event=12 were handed out before the event page moved, and somebody's phone
   // still has one. Sending them on is cheaper than breaking them, and it happens before paint.
@@ -159,7 +116,7 @@ export default function HomePage() {
 /// token — but the language control does not. Somebody who cannot read "Verify" cannot read their
 /// way to a control that is hidden behind a width.
 function TopBar() {
-  const t = useCopy();
+  const t = useT();
   return (
     <header className="flex items-center gap-3 border-b border-line py-4 md:py-5">
       <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
@@ -293,7 +250,7 @@ function Door({
 /// somewhere, and a nav link that scrolls to nothing is worse than no nav link. So the explanation
 /// that used to crowd the headline lives here, one anchor down, in the order it actually happens.
 function HowItWorks() {
-  const t = useCopy();
+  const t = useT();
   const steps = [
     { title: t("home.step1Title"), body: t("home.step1Body") },
     { title: t("home.step2Title"), body: t("home.step2Body") },

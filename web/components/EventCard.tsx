@@ -110,6 +110,15 @@ export default function EventCard({ event: e }: { event: EventSummary }) {
           {e.listing.title || t("common.eventNumber", { id: e.id.toString() })}
         </h3>
 
+        {/* The one line on this card that says what the evening actually is.
+            The organizer already wrote it and the directory already stores it — the event page has
+            been rendering it all along, while the listing showed a title, a clock and a price and
+            made every event look like the same event. Two lines, clamped, so a long blurb cannot
+            push its neighbours around; absent when there is none, rather than a reserved gap. */}
+        {e.listing.blurb && (
+          <p className="line-clamp-2 text-[15px] leading-relaxed text-dim">{e.listing.blurb}</p>
+        )}
+
         {/* 14px `dim`, not `faint`: the spec reserves muted grey for optional metadata, and when
             an event happens is the second thing anyone reads. */}
         <div className="min-w-0 space-y-1.5 text-[14px] text-dim">

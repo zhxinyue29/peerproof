@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { privyUsable, usePrivyGate } from "@/components/PrivyClientProvider";
 import {
   checkPrfSupport,
@@ -55,6 +55,8 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const privyGate = usePrivyGate();
+  /// Set the first time PrivyBridge reports anything. See the timeout in setUpPrivy.
+  const privyReported = useRef(false);
 
   useEffect(() => {
     // The query string and the injected provider do not exist during the static export, so these
@@ -110,7 +112,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       saveSession(await resolveEventId(), "passkey", id.attestPk, id.account.address);
     } catch (e) {
       if (e instanceof PrfUnavailableError) setPrf({ available: false, reason: "prf-unavailable" });
-      else setError(shortenError(e));
+      else setError(shortenError(e, t));
     } finally {
       setBusy(null);
     }
@@ -137,7 +139,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     try {
       setSigner(passkeySigner(createDevIdentity().account));
     } catch (e) {
-      setError(shortenError(e));
+      setError(shortenError(e, t));
     }
   }, []);
 
@@ -157,26 +159,21 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     // by the runtime, so asking twice costs one request and no extra bytes.
     void import("@/components/PrivyInner").catch((e: unknown) => {
       setBusy(null);
-      setError(
-        `Sign-in failed to load — ${shortenError(e)}. This is the email sign-in code itself not ` +
-          `arriving, usually an ad blocker or privacy extension blocking it, or a page left open ` +
-          `across a redeploy. Reload the page first; if that does not help, allow this site in the ` +
-          `extension.`,
-      );
+      setError(t("identity.signInFailedLoad", { why: shortenError(e, t) }));
     });
 
     // And if it neither loads nor fails — blocked at the network layer, or simply very slow — say
-    // so rather than spinning forever. The bridge takes over this message the moment it mounts, so
-    // this only fires when it never did.
+    // so rather than spinning forever.
+    //
+    // Whether the bridge got there first is a fact, so it is recorded as one. This used to compare
+    // the busy message against the literal "Opening sign-in…" while the message itself came from
+    // `t()` — so the moment the dictionary answered in Chinese the comparison could never match,
+    // and the twenty-second safety net silently stopped existing for exactly the readers most
+    // likely to need it. A sentinel that is also copy is not a sentinel.
     window.setTimeout(() => {
-      setBusy((b) => {
-        if (b !== "Opening sign-in…") return b;
-        setError(
-          "Sign-in didn't load. Something on this browser may be blocking privy.io — an ad blocker, " +
-            "a privacy extension, or a strict tracking setting. Allow it for this site, or use a browser wallet.",
-        );
-        return null;
-      });
+      if (privyReported.current) return;
+      setBusy(null);
+      setError(t("identity.signInBlocked"));
     }, 20_000);
   }, [privyGate]);
 
@@ -205,7 +202,16 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       {/* Inside Privy's context (the gate wraps this provider) and inside ours, which is the one
           place that can read Privy's hooks and hand the result back as a Signer. */}
       {privyGate.enabled && !signer && (
-        <PrivyBridge onSigner={setSigner} onError={setError} onBusy={setBusy} />
+        <PrivyBridge
+          onSigner={setSigner}
+          onError={setError}
+          // The bridge reporting anything at all is what "Privy arrived" means, so record it here
+          // rather than inferring it from the message it happened to send.
+          onBusy={(m) => {
+            privyReported.current = true;
+            setBusy(m);
+          }}
+        />
       )}
       {children}
     </IdentityContext.Provider>

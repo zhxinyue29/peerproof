@@ -17,12 +17,18 @@ export default function VouchGraph({
 }) {
   const t = useT();
   if (participants.length === 0) {
-    return <p className="text-sm text-dim">Nobody has registered yet.</p>;
+    return <p className="text-sm text-dim">{t("graph.nobodyRegistered")}</p>;
   }
 
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 42;
+
+  // The ring gets crowded before it gets empty. Nodes sit on a circle of circumference 2πr, so
+  // past about a dozen people the 26px discs start overlapping and the count inside them stops
+  // being readable — shrink them instead of letting them collide.
+  const spacing = (2 * Math.PI * r) / participants.length;
+  const nodeR = Math.max(6, Math.min(13, spacing / 2 - 2));
 
   const pos = new Map<string, { x: number; y: number }>();
   participants.forEach((p, i) => {
@@ -39,7 +45,17 @@ export default function VouchGraph({
 
   return (
     <div className="space-y-3">
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full" role="img" aria-label="Attestation graph">
+      {/* Capped, and centred in whatever is left.
+          The svg was `w-full` on a square viewBox, so in the desktop column it drew a ring 880px
+          across — five nodes pushed out to the edges of a screen-high void, which reads as a
+          rendering fault rather than as a room. A ring does not get more legible by getting
+          bigger; past a certain size the lines are just longer. */}
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="mx-auto w-full max-w-[400px]"
+        role="img"
+        aria-label="Attestation graph"
+      >
         {vouches.map((v) => {
           const a = pos.get(v.from.toLowerCase());
           const b = pos.get(v.to.toLowerCase());
@@ -68,24 +84,34 @@ export default function VouchGraph({
               <circle
                 cx={pt.x}
                 cy={pt.y}
-                r={13}
+                r={nodeR}
                 fill={p.confirmed ? "currentColor" : "#0a0713"}
                 stroke="currentColor"
                 strokeWidth={2}
                 className={p.confirmed ? "text-ok" : "text-faint"}
               />
-              <text
-                x={pt.x}
-                y={pt.y + 4}
-                textAnchor="middle"
-                className={`text-[14px] tabular-nums ${p.confirmed ? "fill-ink" : "fill-faint"}`}
-              >
-                {n}
-              </text>
+              {/* Below about 9px the numeral is smaller than the stroke around it, so the disc
+                  alone carries the state and the count lives in the list underneath. */}
+              {nodeR >= 9 && (
+                <text
+                  x={pt.x}
+                  y={pt.y + 4}
+                  textAnchor="middle"
+                  className={`text-[14px] tabular-nums ${p.confirmed ? "fill-ink" : "fill-faint"}`}
+                >
+                  {n}
+                </text>
+              )}
             </g>
           );
         })}
       </svg>
+
+      {/* Without this, a graph with nobody vouching yet is a ring of circles and no lines — which
+          looks exactly like a graph that failed to draw its lines. Say which one it is. */}
+      {vouches.length === 0 && (
+        <p className="text-center text-[14px] text-dim">{t("graph.noVouchesYet")}</p>
+      )}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-faint">
         <span className="flex items-center gap-1">

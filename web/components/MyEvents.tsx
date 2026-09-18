@@ -8,6 +8,7 @@ import { chainNowMs, eventId, hasDeployment } from "@/lib/chain";
 import { both, countdown } from "@/lib/format";
 import { readAllEvents, type EventSummary } from "@/lib/events";
 import { useVisiblePoll } from "@/lib/poll";
+import { useT } from "@/lib/i18n";
 
 /// The organizer's own events, and only theirs.
 ///
@@ -15,6 +16,7 @@ import { useVisiblePoll } from "@/lib/poll";
 /// An organizer pressing back landed there, in a room full of events they had nothing to do with,
 /// with no way to reach the ones they were running. Two roles, two lists.
 export default function MyEvents() {
+  const t = useT();
   const { signer } = useIdentity();
   const [all, setAll] = useState<EventSummary[] | null>(null);
 
@@ -36,17 +38,14 @@ export default function MyEvents() {
 
   return (
     <section className="space-y-3">
-      <Eyebrow>your events</Eyebrow>
+      <Eyebrow>{t("organizer.yourEvents")}</Eyebrow>
 
       {!all ? (
         <Skeleton className="h-20" />
       ) : !mine || mine.length === 0 ? (
         <Card className="space-y-1.5">
-          <p className="text-[16px] font-medium">You haven&apos;t hosted anything yet</p>
-          <p className="text-sm leading-relaxed text-dim">
-            Use the New Event tab. There is no approval step and no listing fee — the deposits go to
-            the contract, and you never hold them.
-          </p>
+          <p className="text-[16px] font-medium">{t("myEvents.noneHosted")}</p>
+          <p className="text-sm leading-relaxed text-dim">{t("myEvents.noneHostedBody")}</p>
         </Card>
       ) : (
         <div className="space-y-2">

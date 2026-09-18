@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { useT } from "@/lib/i18n";
 
 const RING = 2 * Math.PI * 10;
 
@@ -19,6 +20,7 @@ export default function RotatingCode({
   totalSeconds: number;
   size?: "lg" | "xl";
 }) {
+  const t = useT();
   /// The rendered code is stored together with the payload it was rendered from, and the render
   /// below only trusts it while the two still agree. Keeping a bare URL in state meant that for
   /// the few milliseconds between a rotation and the next encode finishing, the screen showed the
@@ -64,7 +66,7 @@ export default function RotatingCode({
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={dataUrl}
-            alt="Your attendance code"
+            alt={t("floor.codeAlt")}
             className="w-full"
             style={{ imageRendering: "pixelated" }}
           />

@@ -39,37 +39,31 @@ export function shortAddress(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
 
-/// A sentence that exists in two languages.
+/// A dictionary key, carried where a `t()` call cannot go.
 ///
 /// This module is imported by hooks, by event handlers and by `useEvent`'s bare promise chains, so
-/// it cannot call `useT()` — a hook here would be a hook called outside a component. Instead each
-/// message carries its dictionary key next to the English it was written as, and `shortenError`
-/// takes an optional `t`. A caller that has one gets the reader's language; a caller that does not
-/// gets exactly the string this file has always returned, so no screen regresses while the call
-/// sites are converted one at a time.
-type Copy = { key: string; en: string };
+/// it cannot call `useT()` — a hook here would be a hook called outside a component. So each
+/// message is named by its key and `shortenError` takes the `t` it needs as an argument.
+///
+/// `t` used to be optional, next to an English copy of every sentence as a fallback. The intent was
+/// to convert call sites one at a time; what happened instead is that the conversion stopped
+/// halfway and nobody could see where. All three calls on the floor screen — the phone somebody is
+/// holding at a venue when a scan fails — passed no `t`, so every contract revert came back in
+/// English while its Chinese sat finished in the dictionary. Required, the compiler keeps the list.
+type Copy = string;
 
-function say(c: Copy, t?: (k: string) => string): string {
-  return t ? t(c.key) : c.en;
+function say(key: Copy, t: (k: string) => string): string {
+  return t(key);
 }
 
 /// Contract reverts arrive as long simulation dumps; surface only the custom error name.
 /// EIP-1193 rejections that are worth saying in words. A wallet reports these as numbers, and the
 /// number is never the thing the person needs to know.
 const PROVIDER_CODES: Record<number, Copy> = {
-  4001: { key: "error.walletRejected", en: "You rejected this in your wallet." },
-  4100: {
-    key: "error.walletUnauthorised",
-    en: "Your wallet has not authorised this site. Reconnect and try again.",
-  },
-  4902: {
-    key: "error.walletNoNetwork",
-    en: "Your wallet does not have this network configured.",
-  },
-  [-32002]: {
-    key: "error.walletBusy",
-    en: "Your wallet already has a request open — check it for a pending prompt.",
-  },
+  4001: "error.walletRejected",
+  4100: "error.walletUnauthorised",
+  4902: "error.walletNoNetwork",
+  [-32002]: "error.walletBusy",
 };
 
 /// What the escrow's own errors mean to somebody standing in a room holding a phone.
@@ -79,40 +73,25 @@ const PROVIDER_CODES: Record<number, Copy> = {
 /// leaves "The contract function \"attest\" reverted", a sentence that tells a person nothing about
 /// what to do next. The name is the only part that does.
 const CONTRACT_ERRORS: Record<string, Copy> = {
-  StaleBeacon: {
-    key: "error.staleBeacon",
-    en: "That venue code had already changed by the time check-in reached the chain. Scan the screen at the door again.",
-  },
-  BadBeacon: { key: "error.badBeacon", en: "That venue code is for a different event." },
-  NotCheckedIn: {
-    key: "error.notCheckedIn",
-    en: "Check in at the door first — scan the screen at the venue. You only do it once.",
-  },
-  AlreadyCheckedIn: {
-    key: "error.alreadyCheckedIn",
-    en: "You are already checked in. Go and scan people.",
-  },
-  StaleCode: {
-    key: "error.staleCode",
-    en: "Their code expired before it reached the chain. Ask them to hold it steady and scan again.",
-  },
-  BadCode: { key: "error.badCode", en: "That code didn't verify. It may belong to a different event." },
-  PairAlreadyUsed: {
-    key: "error.pairAlreadyUsed",
-    en: "You two have already vouched for each other. One scan counts for both of you.",
-  },
-  SelfAttestation: { key: "error.selfAttestation", en: "That's your own code — you need somebody else's." },
-  NotRegistered: { key: "error.notRegistered", en: "One of you hasn't registered for this event." },
-  WindowOpen: { key: "error.windowOpen", en: "Check-in hasn't opened yet." },
-  WindowClosed: { key: "error.windowClosed", en: "Check-in has closed for this event." },
-  WrongStatus: { key: "error.wrongStatus", en: "This event is no longer open." },
-  AlreadyRegistered: { key: "error.alreadyRegistered", en: "You're already registered." },
+  StaleBeacon: "error.staleBeacon",
+  BadBeacon: "error.badBeacon",
+  NotCheckedIn: "error.notCheckedIn",
+  AlreadyCheckedIn: "error.alreadyCheckedIn",
+  StaleCode: "error.staleCode",
+  BadCode: "error.badCode",
+  PairAlreadyUsed: "error.pairAlreadyUsed",
+  SelfAttestation: "error.selfAttestation",
+  NotRegistered: "error.notRegistered",
+  WindowOpen: "error.windowOpen",
+  WindowClosed: "error.windowClosed",
+  WrongStatus: "error.wrongStatus",
+  AlreadyRegistered: "error.alreadyRegistered",
   // These two say the same thing the event screen already says, in the same words, so they share
   // its keys rather than introducing a second phrasing for one fact.
-  AtCapacity: { key: "event.full", en: "This event is full." },
-  DeadlinePassed: { key: "event.registrationClosed", en: "Registration has closed." },
-  QuorumNotMet: { key: "error.quorumNotMet", en: "Too few people registered for this event to run." },
-  FallbackPending: { key: "error.fallbackPending", en: "Settlement is waiting out the fallback window." },
+  AtCapacity: "event.full",
+  DeadlinePassed: "event.registrationClosed",
+  QuorumNotMet: "error.quorumNotMet",
+  FallbackPending: "error.fallbackPending",
 };
 
 /// viem wraps the revert several layers deep; the name lives on a `cause` somewhere in the chain.
@@ -126,10 +105,9 @@ function contractErrorName(e: unknown): string | undefined {
   return undefined;
 }
 
-/// `t` is optional so this stays callable from anywhere. Pass it wherever a component can — the
-/// venue is where these sentences are read, and reading them in the wrong language is the failure
-/// this whole pass exists to prevent.
-export function shortenError(e: unknown, t?: (k: string) => string): string {
+/// The venue is where these sentences are read, and reading them in the wrong language is the
+/// failure this exists to prevent — so `t` is an argument, not an option.
+export function shortenError(e: unknown, t: (k: string) => string): string {
   const named = contractErrorName(e);
   if (named) {
     const hit = CONTRACT_ERRORS[named];
@@ -154,13 +132,7 @@ export function shortenError(e: unknown, t?: (k: string) => string): string {
   const s = typeof e === "string" ? e : e instanceof Error ? e.message : String(e);
   if (/user (rejected|denied)/i.test(s)) return say(PROVIDER_CODES[4001], t);
   if (/insufficient funds/i.test(s)) {
-    return say(
-      {
-        key: "error.insufficientFunds",
-        en: "Not enough MON in this wallet to cover the gas for this transaction.",
-      },
-      t,
-    );
+    return say("error.insufficientFunds", t);
   }
   const m = s.match(/Error:\s*(\w+)\(\)/) ?? s.match(/reverted with the following reason:\s*(\S+)/);
   if (m) return m[1];
@@ -168,7 +140,7 @@ export function shortenError(e: unknown, t?: (k: string) => string): string {
   // Still nothing legible — better to admit that than to print "[object Object]".
   return line && line !== "[object Object]"
     ? line
-    : say({ key: "error.noReason", en: "The wallet refused this without saying why." }, t);
+    : say("error.noReason", t);
 }
 
 /// Written for an attestation window measured in minutes, where m:ss is exactly right. A

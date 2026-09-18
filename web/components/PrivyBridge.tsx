@@ -9,6 +9,7 @@ import { walletSigner, type Signer } from "@/lib/signer";
 import { ESCROW_ADDRESS, resolveEventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 import { saveSession } from "@/lib/session";
+import { useT } from "@/lib/i18n";
 
 /// Turns a Privy session into the same Signer the wallet path produces. Rendered only once the
 /// gate has mounted Privy, and imported dynamically, so nothing here reaches a page that never
@@ -37,6 +38,7 @@ export default function PrivyBridge({
   onError: (msg: string) => void;
   onBusy: (msg: string | null) => void;
 }) {
+  const t = useT();
   const { ready, authenticated, user } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
 
@@ -62,7 +64,7 @@ export default function PrivyBridge({
   useEffect(() => {
     if (!ready || authenticated || askedToLogIn.current) return;
     askedToLogIn.current = true;
-    onBusy("Opening sign-in…");
+    onBusy(t("identity.openingSignIn"));
     // Email only. The dashboard config lists wallet as well, and the shared modal offered both —
     // so pressing "Continue with email" produced a wallet chooser, next to a button on our own page
     // that already does wallets. Narrowing here, not in the config, keeps the wallet route
@@ -101,7 +103,7 @@ export default function PrivyBridge({
 
     derived.current = true;
     void (async () => {
-      onBusy("Setting up your key…");
+      onBusy(t("bridge.settingUpKey"));
       try {
         // switchChain first: the provider caches the chain it was created with, and Privy's own
         // docs say an existing provider is not updated by a later switch.
@@ -129,7 +131,7 @@ export default function PrivyBridge({
         );
       } catch (e) {
         derived.current = false;
-        onError(shortenError(e));
+        onError(shortenError(e, t));
       } finally {
         onBusy(null);
       }

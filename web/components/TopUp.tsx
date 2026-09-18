@@ -51,7 +51,7 @@ export default function TopUp({ address }: { address: Address }) {
     } catch (e) {
       // Matched against the English, which is what viem and the provider emit whatever the UI
       // language is — the translated sentence is only ever the thing shown.
-      const why = shortenError(e);
+      const why = shortenError(e, t);
       setNote(/reject|denied|exit|cancel/i.test(why) ? t("topup.closed") : shortenError(e, t));
     } finally {
       setBusy(false);

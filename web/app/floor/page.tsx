@@ -120,7 +120,7 @@ export default function FloorPage() {
       try {
         await fn();
       } catch (e) {
-        setNotice(shortenError(e));
+        setNotice(shortenError(e, t));
       } finally {
         setBusy(null);
       }
@@ -161,7 +161,7 @@ export default function FloorPage() {
         // waitForTransactionReceipt resolves for reverted transactions too, so a green tick
         // without this check would be a lie on stage.
         if (receipt.status !== "success") {
-          setNotice("That attestation reverted on chain.");
+          setNotice(t("floor.attestReverted"));
           return;
         }
         const latencyMs = Math.round(performance.now() - started);
@@ -169,7 +169,7 @@ export default function FloorPage() {
         setResult({ who: subject, latencyMs, hash, mine: minesBefore, theirs: theirsBefore });
         await refresh();
       } catch (e) {
-        setNotice(shortenError(e));
+        setNotice(shortenError(e, t));
       } finally {
         inFlight.current = false;
       }
@@ -185,8 +185,10 @@ export default function FloorPage() {
       const tooEarly = ev && Math.floor(chainNowMs() / 1000) < Number(ev.attestOpen);
       const outsideWindow = !windowOpen
         ? tooEarly
-          ? `Code reads fine — check-in opens in ${countdown(Number(ev!.attestOpen) - Math.floor(chainNowMs() / 1000))}.`
-          : "Code reads fine, but check-in has closed for this event."
+          ? t("floor.checkInOpensIn", {
+              time: countdown(Number(ev!.attestOpen) - Math.floor(chainNowMs() / 1000)),
+            })
+          : t("floor.checkInClosed")
         : null;
 
       const b = parseBeaconCode(text);
@@ -196,7 +198,7 @@ export default function FloorPage() {
           hash: beaconDigest(ESCROW_ADDRESS, b.eventId, b.beaconEpoch),
           signature: b.sig,
         }).catch(() => null);
-        if (!ok) return setNotice("That venue code is malformed.");
+        if (!ok) return setNotice(t("floor.venueCodeMalformed"));
         if (outsideWindow) return setNotice(outsideWindow);
         // Say so and keep looking, rather than closing the camera.
         //
@@ -221,14 +223,14 @@ export default function FloorPage() {
           });
           const receipt = await publicClient.waitForTransactionReceipt({ hash });
           if (receipt.status !== "success") {
-            return setNotice("Check-in reverted on chain. Scan the venue display again.");
+            return setNotice(t("floor.checkInReverted"));
           }
           setScanning(false);
           setNotice(null);
           setFlash(t("floor.checkedInFlash"));
           await refresh();
         } catch (e) {
-          setNotice(shortenError(e));
+          setNotice(shortenError(e, t));
         } finally {
           inFlight.current = false;
           setBusy(null);
@@ -237,17 +239,17 @@ export default function FloorPage() {
       }
 
       const p = parsePeerCode(text);
-      if (!p) return setNotice("Not a PeerProof code.");
+      if (!p) return setNotice(t("floor.notPeerProofCode"));
       if (!signer) return;
       if (p.subject.toLowerCase() === signer.address.toLowerCase()) {
-        return setNotice("That's your own code — you need somebody else's.");
+        return setNotice(t("floor.ownCode"));
       }
       // The same check the contract performs, done locally so a bad scan never costs gas.
       const recovered = await recoverAddress({
         hash: codeDigest(ESCROW_ADDRESS, p.eventId, p.subject, p.epoch),
         signature: p.sig,
       }).catch(() => null);
-      if (!recovered) return setNotice("That code failed verification.");
+      if (!recovered) return setNotice(t("floor.codeFailedVerification"));
 
       // Everything above is worth exercising whenever somebody wants to: the camera, the
       // permission prompt, the decode, the signature check. Only submitting is time-bound, so
@@ -262,7 +264,7 @@ export default function FloorPage() {
       // which bills the limit rather than the amount used.
       if (!checkedIn) {
         setScanning(true);
-        return setNotice("Scan the venue display first — you only have to do it once.");
+        return setNotice(t("floor.scanVenueFirst"));
       }
 
       setScanning(false);
@@ -576,7 +578,7 @@ export default function FloorPage() {
                       </Notice>
                     ) : (
                       <Button onClick={() => void settle()} disabled={!!busy} className="w-full">
-                        {busy ?? "Settle this event"}
+                        {busy ?? t("floor.settleEvent")}
                       </Button>
                     )}
                   </>
@@ -589,9 +591,9 @@ export default function FloorPage() {
                     ) : (
                       <>
                         <div className="space-y-2.5">
-                          <KeyValue label="Your deposit back" value={mon(ev.deposit)} />
+                          <KeyValue label={t("floor.yourDepositBack")} value={mon(ev.deposit)} />
                           <KeyValue
-                            label="Share of forfeited deposits"
+                            label={t("floor.shareOfForfeited")}
                             value={mon(ev.sharePerAttendee - ev.deposit)}
                           />
                           <div className="border-t border-line pt-2.5">
@@ -671,12 +673,8 @@ export default function FloorPage() {
           onResult={(t) => void onScan(t)}
           onClose={() => setScanning(false)}
           notice={busy ?? notice}
-          title={checkedIn ? "Point at someone's code" : "Point at the screen at the door"}
-          hint={
-            checkedIn
-              ? undefined
-              : "The venue display is showing a code that changes every 30 seconds. This is sent straight to the chain, so scan it where it is — not from a photograph."
-          }
+          title={checkedIn ? "floor.pointAtCode" : "floor.pointAtDoor"}
+          hint={checkedIn ? undefined : "scan.hintVenue"}
         />
       )}
     </Shell>
