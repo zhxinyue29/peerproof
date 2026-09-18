@@ -12,7 +12,17 @@ import { Button, Notice } from "@/components/ui";
 /// The unsupported-device case is deliberately compact. It used to be four paragraphs, which made
 /// an error state the tallest thing on the landing page — the deposit and the call to action were
 /// below the fold on a phone. The explanation now lives behind a disclosure.
-export default function IdentityGate({ children }: { children: React.ReactNode }) {
+export default function IdentityGate({
+  children,
+  intro,
+}: {
+  children: React.ReactNode;
+  /// Shown beneath the sign-in controls, and only while signed out. Two of the three screens
+  /// behind this gate were a lone button on an otherwise empty page: nothing said what was on
+  /// the other side, so the only way to find out was to hand over an identity first. This is
+  /// where the answer goes.
+  intro?: React.ReactNode;
+}) {
   // Tapping the truncated address copies it in full. Needed before it is possible to
   // send anything to a wallet the app just created for somebody.
   const [copied, setCopied] = useState(false);
@@ -85,8 +95,15 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
   }
   if (prf === null) return <p className="text-sm text-dim">{t("identity.checking")}</p>;
 
+  const withIntro = (controls: React.ReactNode) => (
+    <div className="space-y-8">
+      {controls}
+      {intro}
+    </div>
+  );
+
   if (!prf.available) {
-    return (
+    return withIntro(
       <div className="space-y-3">
         <Notice tone="warn">
           {t("identity.noPrf")}{" "}
@@ -136,7 +153,7 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
     );
   }
 
-  return (
+  return withIntro(
     <div className="space-y-3">
       <div>
         <p className="text-[16px] font-medium">{t("identity.setUpTitle")}</p>

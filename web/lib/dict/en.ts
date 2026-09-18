@@ -502,6 +502,22 @@ export const en = {
   "event.noSuchBody": "This contract has no event with that number. Either it has not been created yet, or the link points at a different deployment. Nothing has been lost — there was never anything here to lose.",
   "home.closeTitle": "Don't take our word for any of it",
   "home.closeBody": "The contract is on Monad testnet and its source is verified. Every deposit, every vouch and every payout is a transaction you can read without asking us anything.",
+  "gate.orgTitle": "What hosting an event does",
+  "gate.orgBody": "You set the terms once, and then the contract runs them. There is no step where you decide who showed up.",
+  "gate.org1Title": "You set the terms",
+  "gate.org1Body": "Deposit, capacity, how many vouches count as present, and when the doors open. After registration starts, none of it can change — not by you, not by anyone.",
+  "gate.org2Title": "People arrive and prove it",
+  "gate.org2Body": "They check in against the screen at your door, then vouch for each other. You put the screen up; you do not mark anybody present.",
+  "gate.org3Title": "The contract settles",
+  "gate.org3Body": "Whoever was confirmed present takes their deposit back and splits what the no-shows left. You receive nothing, because there is no function that could pay you.",
+  "gate.floorTitle": "What you'll do at the venue",
+  "gate.floorBody": "Two scans and a wait. Everything else happens on chain without anybody's permission.",
+  "gate.floor1Title": "Check in at the door",
+  "gate.floor1Body": "Point your camera at the screen at the venue. Once, when you arrive — it lasts the whole event.",
+  "gate.floor2Title": "Scan the people you meet",
+  "gate.floor2Body": "One scan credits both of you. No rush — their code changes every fifteen seconds, and the next one is already on screen.",
+  "gate.floor3Title": "Take your deposit back",
+  "gate.floor3Body": "Once enough people have vouched for you, you count as present — and when the window closes you get your stake plus a share of what the no-shows left behind.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

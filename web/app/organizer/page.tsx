@@ -5,6 +5,7 @@ import Link from "next/link";
 import { parseEther } from "viem";
 import AppShell from "@/components/AppShell";
 import IdentityGate from "@/components/IdentityGate";
+import GateIntro from "@/components/GateIntro";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button, Card, CopyableCode, Field, Notice, Skeleton } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
@@ -116,7 +117,7 @@ export default function OrganizerPage() {
     >
       {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
-      <IdentityGate>
+      <IdentityGate intro={<GateIntro kind="organizer" />}>
         {creating ? (
           <CreateForm
             onCreated={async () => {

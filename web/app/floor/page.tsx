@@ -9,6 +9,7 @@ import Scanner from "@/components/Scanner";
 import PayoutResult from "@/components/PayoutResult";
 import VouchResult from "@/components/VouchResult";
 import IdentityGate from "@/components/IdentityGate";
+import GateIntro from "@/components/GateIntro";
 import {
   AppHeader,
   Button,
@@ -403,7 +404,7 @@ export default function FloorPage() {
 
       {isLocalChain && <Notice tone="warn">{t("floor.localChain")}</Notice>}
 
-      <IdentityGate>
+      <IdentityGate intro={<GateIntro kind="floor" />}>
         {!me?.registered ? (
           <div className="space-y-4">
             <h1 className="text-[22px] font-medium leading-snug">{t("floor.notRegistered")}</h1>
