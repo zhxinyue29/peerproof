@@ -470,4 +470,6 @@ export const zh: Dict = {
   "graph.present": "到场",
   "graph.presentFallback": "到场（主办方兜底判定）",
   "graph.forfeited": "押金没收",
+  "floor.alreadyCheckedIn": "你已经签到过了——继续找人的二维码就行。",
+  "floor.checkedInFlash": "签到完成。现在去扫人吧，不用急，这个整晚有效。",
 };

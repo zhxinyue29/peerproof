@@ -492,6 +492,8 @@ export const en = {
   "graph.present": "present",
   "graph.presentFallback": "present (organizer fallback)",
   "graph.forfeited": "forfeited",
+  "floor.alreadyCheckedIn": "You're already checked in — keep looking for a person's code.",
+  "floor.checkedInFlash": "Checked in. Now go and scan people — no rush, this lasts all event.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

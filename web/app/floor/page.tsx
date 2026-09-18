@@ -197,10 +197,14 @@ export default function FloorPage() {
         }).catch(() => null);
         if (!ok) return setNotice("That venue code is malformed.");
         if (outsideWindow) return setNotice(outsideWindow);
+        // Say so and keep looking, rather than closing the camera.
+        //
+        // The venue display is a large lit screen in a room where people are holding up small ones,
+        // so it lands in frame by accident constantly. Treating that as a completed action shut the
+        // scanner on somebody who was mid-way through finding a person, and they had to open it
+        // again — for doing nothing wrong.
         if (checkedIn) {
-          setScanning(false);
-          setNotice(null);
-          return setFlash("You are already checked in — go and scan people.");
+          return setNotice(t("floor.alreadyCheckedIn"));
         }
         // Straight to chain, while the code on the display is still the current one. This is the
         // only moment in the evening that is genuinely time-critical, and it is over in a second:
@@ -220,7 +224,7 @@ export default function FloorPage() {
           }
           setScanning(false);
           setNotice(null);
-          setFlash("Checked in. Now go and scan people — no rush, this lasts all event.");
+          setFlash(t("floor.checkedInFlash"));
           await refresh();
         } catch (e) {
           setNotice(shortenError(e));
