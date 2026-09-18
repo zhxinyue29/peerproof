@@ -3,7 +3,7 @@
 import type { Hex } from "viem";
 import { Button } from "@/components/ui";
 import { explorerTxUrl } from "@/lib/chain";
-import { countdown, mon } from "@/lib/format";
+import { countdown, mon, sentenceGap } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 
 /// The moment the deposit leaves.
@@ -30,6 +30,8 @@ export default function RegisteredResult({
   onContinue: () => void;
 }) {
   const t = useT();
+  // Bound rather than called inline: sentenceGap has to read the very string it follows.
+  const next = t("registered.next");
 
   return (
     <div className="space-y-4 rounded-2xl border border-line-2 bg-raised p-5 md:p-6">
@@ -45,7 +47,8 @@ export default function RegisteredResult({
       </div>
 
       <p className="rounded-xl border border-ok/30 bg-ok/10 p-3.5 text-[15px] leading-relaxed text-dim">
-        <span className="font-medium text-fg">{t("registered.next")}</span>{" "}
+        <span className="font-medium text-fg">{next}</span>
+        {sentenceGap(next)}
         {opensIn > 0
           ? t("registered.opensIn", { t: countdown(opensIn) })
           : t("registered.openNow")}

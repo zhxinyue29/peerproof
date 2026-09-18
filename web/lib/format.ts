@@ -162,3 +162,16 @@ export function countdown(seconds: number): string {
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+/// The gap between two sentences set on one line.
+///
+/// Full-width CJK punctuation carries its own trailing space inside the glyph — 。 occupies a whole
+/// em with the mark sitting at the left of it — so the `{" "}` that correctly separates two English
+/// sentences renders as a visible double gap after a Chinese one. It showed up on the sign-in
+/// warning as 「通行密钥。  改用邮箱」, which reads as a typo rather than as a sentence break.
+///
+/// Keyed off the text rather than off the language: the rule is a property of the character that
+/// ends the first sentence, and a dictionary may mix scripts within one string.
+export function sentenceGap(before: string): string {
+  return /[。．！？；：、，）〕】」』〉》]$/.test(before) ? "" : " ";
+}

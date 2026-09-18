@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useIdentity } from "@/components/IdentityProvider";
 import { relyingPartyId } from "@/lib/passkey";
-import { shortAddress } from "@/lib/format";
+import { sentenceGap, shortAddress } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { Button, Notice } from "@/components/ui";
 
@@ -27,6 +27,8 @@ export default function IdentityGate({
   // send anything to a wallet the app just created for somebody.
   const [copied, setCopied] = useState(false);
   const t = useT();
+  // Bound rather than called inline: sentenceGap has to read the very string it follows.
+  const noPrf = t("identity.noPrf");
   const {
     signer,
     prf,
@@ -106,7 +108,8 @@ export default function IdentityGate({
     return withIntro(
       <div className="space-y-3">
         <Notice tone="warn">
-          {t("identity.noPrf")}{" "}
+          {noPrf}
+          {sentenceGap(noPrf)}
           {privyAvailable
             ? t("identity.noPrfEmail")
             : walletAvailable

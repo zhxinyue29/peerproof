@@ -27,17 +27,25 @@ export default function GateIntro({ kind }: { kind: "organizer" | "floor" }) {
           ["gate.floor3Title", "gate.floor3Body"],
         ] as const);
 
+  // Container queries, not `md:`.
+  //
+  // This renders in two very different boxes: a full-width column on /events and /organizer, and
+  // the phone-shaped ~380px column of /floor. `md:` asks the *viewport*, so on a desktop browser
+  // the floor version was told it had room for three columns and squeezed them into 110px each —
+  // Chinese wrapped to one or two characters a line, a wall of vertical text. It only broke on
+  // desktop, because a real phone's viewport is below the breakpoint and gets one column by
+  // accident. `@container` asks the box this actually sits in, which is the thing that decides.
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-5 md:p-7">
+    <section className="@container relative overflow-hidden rounded-2xl border border-line bg-panel p-5 @2xl:p-7">
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-16 -top-12 hidden h-[240px] w-[340px] opacity-[0.16] md:block"
+        className="pointer-events-none absolute -right-16 -top-12 hidden h-[240px] w-[340px] opacity-[0.16] @2xl:block"
       >
         <EventCover id={kind === "organizer" ? 3n : 5n} nodes={8} bare className="h-full w-full" />
       </span>
 
       <div className="relative space-y-1.5">
-        <h2 className="text-[18px] font-semibold tracking-[-0.01em] md:text-[20px]">
+        <h2 className="text-[18px] font-semibold tracking-[-0.01em] @2xl:text-[20px]">
           {t(kind === "organizer" ? "gate.orgTitle" : "gate.floorTitle")}
         </h2>
         <p className="max-w-[52ch] text-[16px] leading-relaxed text-dim">
@@ -45,7 +53,7 @@ export default function GateIntro({ kind }: { kind: "organizer" | "floor" }) {
         </p>
       </div>
 
-      <ol className="relative mt-5 grid gap-3 md:grid-cols-3 md:gap-4">
+      <ol className="relative mt-5 grid gap-3 @2xl:grid-cols-3 @2xl:gap-4">
         {steps.map(([title, body], i) => (
           <li
             key={title}

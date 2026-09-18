@@ -8,7 +8,7 @@ import VouchGraph from "@/components/VouchGraph";
 import { Card, Eyebrow, KeyValue, Notice, Skeleton } from "@/components/ui";
 import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
 import { useVisiblePoll } from "@/lib/poll";
-import { both, fiat, mon, shortAddress, shortenError } from "@/lib/format";
+import { both, fiat, mon, sentenceGap, shortAddress, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
@@ -80,6 +80,10 @@ export default function VerifyPage() {
   // UI, and the only honest target for it is a transaction we can prove exists — a settlement once
   // there is one, otherwise the latest accepted vouch. Before anything has happened there is
   // nothing to open, and the action is withheld rather than pointed at a guess.
+  // Bound rather than called inline: sentenceGap has to read the very string it follows.
+  const settledNote = t("verify.settledNote");
+  const noApproval = t("verify.noOrganizerApproved");
+
   const latestTx = history?.settlement?.hash ?? history?.vouches.at(-1)?.hash ?? null;
   const explorerHref = latestTx ? explorerTxUrl(latestTx) : "";
 
@@ -146,7 +150,8 @@ export default function VerifyPage() {
                 <p className="text-[14px] leading-relaxed text-dim">
                   {history?.settlement ? (
                     <>
-                      {t("verify.settledNote")}{" "}
+                      {settledNote}
+                      {sentenceGap(settledNote)}
                       {explorerTxUrl(history.settlement.hash) && (
                         <a
                           href={explorerTxUrl(history.settlement.hash)}
@@ -164,7 +169,8 @@ export default function VerifyPage() {
                 </p>
 
                 <p className="text-[14px] leading-relaxed text-dim">
-                  <span className="font-semibold text-fg">{t("verify.noOrganizerApproved")}</span>{" "}
+                  <span className="font-semibold text-fg">{noApproval}</span>
+                  {sentenceGap(noApproval)}
                   {t("verify.payoutFollowsGraph")}
                 </p>
               </>
