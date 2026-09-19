@@ -161,7 +161,17 @@ export default function EventPage() {
         <div className="space-y-2">
           {/* 28/34px from the V3 type scale, matching AppShell's own heading. Rendered here rather
               than through its `title` prop because the cover band has to come first. */}
-          <h1 className="text-[28px] font-semibold leading-[1.1] tracking-[-0.02em] md:text-[34px] md:tracking-[-0.03em]">
+          {/* Same treatment as the listing and the landing page. A detail page whose title is set
+              in the plain body face, one click after a headline with light running across it, reads
+              as a different product's screen. */}
+          <h1
+            className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.06] tracking-[-0.03em] text-transparent md:text-[40px] md:leading-[1.02]"
+            style={{
+              fontFamily: '"Montserrat", var(--font-sans)',
+              backgroundImage:
+                "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+            }}
+          >
             {meta.title}
           </h1>
           {meta.blurb && <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{meta.blurb}</p>}
@@ -383,19 +393,54 @@ function Details({ ev }: { ev: EventInfo | null }) {
               term={walkIns(ev) ? t("event.walkInsOn") : t("event.walkInsOff")}
               detail={joinUntil(ev, t, locale)}
             />
-            <DetailRow
-              term={
-                <span className="tabular-nums">
+            {/* How full the room is, as a bar rather than only as a fraction.
+                "128 / 200" is a fact you have to do arithmetic on; the bar is the same fact read at
+                a glance, which is what somebody deciding whether to stake a deposit is actually
+                asking. Both are kept — the numbers stay exact underneath.
+                The second, brighter segment is `confirmed`: people the room has already vouched
+                for. It is the only figure on this page that cannot be produced by signing up, so
+                it is worth seeing grow separately from the ones who merely registered. */}
+            <li className="py-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[15px] font-medium tabular-nums">
                   {ev.registered} / {ev.capacity}
                 </span>
-              }
-              detail={t("event.spotsTaken")}
-            />
+                <span className="text-[13px] text-faint">{t("event.spotsTaken")}</span>
+              </div>
+              <div
+                className="mt-2 h-2 w-full overflow-hidden rounded-full bg-line"
+                role="img"
+                aria-label={`${ev.registered} / ${ev.capacity}`}
+              >
+                <div className="flex h-full w-full">
+                  <span
+                    className="h-full bg-ok"
+                    style={{ width: `${pct(ev.confirmed, ev.capacity)}%` }}
+                  />
+                  <span
+                    className="h-full bg-accent"
+                    style={{ width: `${pct(ev.registered - ev.confirmed, ev.capacity)}%` }}
+                  />
+                </div>
+              </div>
+              {ev.confirmed > 0 && (
+                <p className="mt-1.5 text-[13px] text-ok">
+                  {ev.confirmed} {t("event.confirmedPresentShort")}
+                </p>
+              )}
+            </li>
           </>
         )}
       </dl>
     </section>
   );
+}
+
+/// Clamped, and never divided by a zero capacity. An uncapped event has `capacity` 0, and a bar
+/// that renders NaN% collapses to nothing — which looks exactly like an empty room.
+function pct(n: number, of: number) {
+  if (!of) return 0;
+  return Math.max(0, Math.min(100, (n / of) * 100));
 }
 
 function DetailRow({ term, detail }: { term: React.ReactNode; detail: React.ReactNode }) {

@@ -34,10 +34,14 @@ export default function HowItWorksModal({
     if (!open && el.open) el.close();
   }, [open]);
 
+  // Four, matching the design sheet — and matching the mechanism, which has always had four
+  // moves. The door and the vouching were one card here because the landing page had room for
+  // three; that was a layout decision quietly deciding what the product is.
   const steps = [
     { title: t("home.step1Title"), body: t("home.step1Body") },
     { title: t("home.step2Title"), body: t("home.step2Body") },
     { title: t("home.step3Title"), body: t("home.step3Body") },
+    { title: t("home.step4Title"), body: t("home.step4Body") },
   ];
 
   return (
@@ -60,7 +64,7 @@ export default function HowItWorksModal({
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0 space-y-2">
             <h2 className="text-[24px] font-semibold tracking-[-0.02em] md:text-[28px]">
-              {t("home.howItWorks")}
+              {t("home.howTitle4")}
             </h2>
             <p className="max-w-[58ch] text-[16px] leading-relaxed text-dim">
               {t("home.howItWorksSub")}
@@ -78,14 +82,14 @@ export default function HowItWorksModal({
           </button>
         </div>
 
-        <ol className="mt-6 grid gap-4 md:grid-cols-3">
+        <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
             <li
               key={s.title}
               className="min-w-0 overflow-hidden rounded-2xl border border-line bg-ink/40 p-4"
             >
               <div className="rounded-xl border border-line bg-ink/40 px-3 py-4">
-                <StepFigure step={(i + 1) as 1 | 2 | 3} />
+                <StepFigure step={(i + 1) as 1 | 2 | 3 | 4} />
               </div>
               <span className="mt-3 block text-[14px] font-medium tabular-nums text-accent-2">
                 {String(i + 1).padStart(2, "0")}

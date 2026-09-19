@@ -35,7 +35,14 @@ function arc(a: { x: number; y: number }, b: { x: number; y: number }, lift: num
   return `M ${a.x} ${a.y} Q ${mx} ${a.y - lift}, ${b.x} ${b.y}`;
 }
 
-export default function StepFigure({ step }: { step: 1 | 2 | 3 }) {
+/// Four frames, not three.
+///
+/// The third used to be settlement and the second carried both the door and the vouching. Those are
+/// two different transactions on two different clocks — a beacon signature spent at the door, then
+/// peer attestations all evening — and that separation is the load-bearing idea in this product:
+/// it is what makes an attestation mean presence rather than mean a forwarded screenshot. A figure
+/// that merges them is a figure that hides the mechanism.
+export default function StepFigure({ step }: { step: 1 | 2 | 3 | 4 }) {
   // Who is confirmed at settlement. The last peer is the no-show in every frame that has one, so
   // the eye can follow the same person across all three cards.
   const confirmed = (i: number) => i < PEERS.length - 1;
@@ -91,7 +98,7 @@ export default function StepFigure({ step }: { step: 1 | 2 | 3 }) {
       )}
 
       {/* ------------------------------------------------------------ 03 · contract pays ----- */}
-      {step === 3 && (
+      {step === 4 && (
         <>
           {PEERS.map((p, i) =>
             confirmed(i) ? (
@@ -126,11 +133,11 @@ export default function StepFigure({ step }: { step: 1 | 2 | 3 }) {
         width={BAR.w}
         height={BAR.h}
         rx={BAR.r}
-        fill={step === 3 ? OK : ACCENT}
-        fillOpacity={step === 2 ? 0.1 : 0.22}
-        stroke={step === 3 ? OK : ACCENT}
+        fill={step === 4 ? OK : ACCENT}
+        fillOpacity={step === 2 || step === 3 ? 0.1 : 0.22}
+        stroke={step === 4 ? OK : ACCENT}
         strokeWidth="1.2"
-        strokeOpacity={step === 2 ? 0.35 : 0.8}
+        strokeOpacity={step === 2 || step === 3 ? 0.35 : 0.8}
       />
 
       {PEERS.map((p, i) => {

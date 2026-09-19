@@ -43,7 +43,14 @@
   --color-dim: #cdd7e5;
   --color-faint: #b2becf;
 
-  --color-accent: #765bff;
+  /* Monad's own primary, from monad.xyz/brand-and-media-kit, not an approximation of it.
+     This was #765bff — eight points of red and seven of green away from the real value, close
+     enough that nobody would catch it by eye and wrong enough to be wrong. On a submission to
+     Monad's own hackathon the brand colour is worth getting exactly right, and it costs nothing:
+     the palette was already built around this hue.
+     --color-accent-2 stays a lighter relative of it rather than a second brand colour; it carries
+     figures and links, which need to clear the accent's contrast on a dark panel. */
+  --color-accent: #6e54ff;
   --color-accent-2: #9a88ff;
   --color-ok: #39d98a;
   --color-warn: #ffbf5f;
@@ -348,11 +355,13 @@ textarea {
    a ring measured in the picture's pixels, so if the picture scaled and the SVG did not, a 2.5%
    push would slide them 17px off the light they are supposed to be riding. One class on both
    boxes — which have identical geometry — keeps them locked.
-   2.5% over eight seconds is about a pixel a second. That is the point: it should register as the
-   room being alive rather than as a camera move. */
+   2.5% was not a slow push, it was no push: about four pixels a second on a 680px-wide scene,
+   which is under the threshold where anything reads as movement at all. Aiming for "deniable"
+   produced "absent". 6% is roughly ten pixels a second at the midpoint — still slow enough that
+   nobody watches it happen, fast enough that the room is visibly breathing rather than frozen. */
 @keyframes pp-hero-push {
   0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.025); }
+  50%      { transform: scale(1.06); }
 }
 .pp-hero-push {
   animation: pp-hero-push 8s ease-in-out infinite;

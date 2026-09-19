@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useMotionPrefs } from "@/lib/motion";
 import HeroProofAnimation from "@/components/HeroProofAnimation";
+import TopNav from "@/components/TopNav";
 import HowItWorksModal from "@/components/HowItWorksModal";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import StepFigure from "@/components/StepFigure";
 import HeroArt from "@/components/HeroArt";
 import LiveStats from "@/components/LiveStats";
@@ -17,8 +16,6 @@ import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
 import { PeerProofMark } from "@/components/NavIcons";
-import { useIdentity } from "@/components/IdentityProvider";
-import { shortAddress } from "@/lib/format";
 import { basePath } from "@/lib/chain";
 import { useLang, useT } from "@/lib/i18n";
 
@@ -67,7 +64,7 @@ export default function HomePage() {
     // long word in a language we have not seen yet must not be able to take the page sideways.
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopBar />
+        <TopNav active="home" />
 
         <main>
           <section className="relative pb-10 pt-4 md:min-h-[540px] md:pb-16 md:pt-8">
@@ -264,139 +261,6 @@ export default function HomePage() {
 /// The text links drop below `sm` — `00-home-mobile.png` carries only the mark and the identity
 /// token — but the language control does not. Somebody who cannot read "Verify" cannot read their
 /// way to a control that is hidden behind a width.
-function TopBar() {
-  const t = useT();
-  const router = useRouter();
-  const { signer } = useIdentity();
-
-  // Transparent over the artwork, solid once the artwork has scrolled away. Watched with a
-  // passive listener and a boolean rather than a scroll-linked value: this needs to change twice,
-  // not sixty times a second, and a state update per frame is how a header makes a phone stutter.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // The search belongs to the listing, which already has one. Rather than build a second index
-  // here, this hands the query over: /events reads `?q=` on arrival and applies it as its filter.
-  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const q = new FormData(e.currentTarget).get("q");
-    router.push(typeof q === "string" && q.trim() ? `/events?q=${encodeURIComponent(q.trim())}` : "/events");
-  };
-
-  return (
-    <header
-      // The negative margin has to match the padding exactly — it exists only to let the bar's
-      // background bleed to the container's edges while its contents stay on the same left edge as
-      // everything below. They were -32 against +17 after the column padding changed, which pulled
-      // the whole header 15px left of the cards under it.
-      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-[17px] md:gap-5 md:px-[17px] md:py-5 ${
-        scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
-      }`}
-    >
-      <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
-        <PeerProofMark />
-        <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
-      </Link>
-
-      <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main">
-        {/* The current page is marked, not merely reachable. Everything else in this bar is a way
-            out of here, and without this the bar gives no sign of where "here" is. */}
-        <span className="relative flex min-h-[44px] items-center px-3 text-[16px] font-medium text-fg">
-          {t("nav.home")}
-          <span aria-hidden className="absolute inset-x-3 bottom-2 h-[2px] rounded-full bg-accent" />
-        </span>
-        <Link
-          href="/events"
-          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-        >
-          {t("nav.events")}
-        </Link>
-        <a
-          href="#how-it-works"
-          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-        >
-          {t("home.howItWorks")}
-        </a>
-        <Link
-          href="/organizer"
-          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-        >
-          {t("nav.forOrganizers")}
-        </Link>
-        <Link
-          href="/verify"
-          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-        >
-          {t("nav.verify")}
-        </Link>
-      </nav>
-
-      <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
-        <label className="relative flex items-center">
-          <span aria-hidden className="pointer-events-none absolute left-3.5 text-faint">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="6.4" stroke="currentColor" strokeWidth="1.8" />
-              <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </span>
-          <input
-            name="q"
-            type="search"
-            placeholder={t("home.searchPlaceholder")}
-            aria-label={t("home.searchPlaceholder")}
-            className="h-11 w-full min-w-0 rounded-full border border-line-2 bg-panel/70 pl-11 pr-4 text-[15px] text-fg outline-none transition-colors placeholder:text-faint focus:border-accent/70"
-          />
-        </label>
-      </form>
-
-      <span className="ml-auto md:ml-0" />
-      <LanguageSwitcher />
-      <IdentityToken />
-
-      {/* Only when there is nobody signed in. With a session the token to its left is the account,
-          and a button inviting you to sign in next to it is a screen arguing with itself. */}
-      {!signer && (
-        <Link
-          href="/events"
-          className="hidden h-11 shrink-0 items-center rounded-full bg-white px-5 text-[15px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] sm:inline-flex"
-        >
-          {t("home.signIn")}
-        </Link>
-      )}
-    </header>
-  );
-}
-
-/// The round token from `00-home-desktop.png`, and the landing page's only sign of a session.
-///
-/// Its colour is derived from the account rather than picked, so it is a weak identity check rather
-/// than decoration: the same account is the same colour on every screen, and a wrong account is
-/// visibly a different one before you read a single character. The app chrome draws the same token
-/// for the same reason — this page has no app chrome, so it draws its own.
-function IdentityToken() {
-  const { signer } = useIdentity();
-  if (!signer) return null;
-
-  const label = signer.label ?? shortAddress(signer.address);
-  const hue = Number.parseInt(signer.address.slice(2, 6), 16) % 360;
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      title={label}
-      className="h-8 w-8 shrink-0 rounded-full border border-line-2"
-      // Generated per account, so it cannot come from the token palette.
-      style={{
-        background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
-      }}
-    />
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*                              Pieces                                */

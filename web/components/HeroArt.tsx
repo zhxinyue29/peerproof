@@ -1,3 +1,5 @@
+import { basePath } from "@/lib/chain";
+
 /// The scene on the right of the landing page.
 ///
 /// It is one image, and everything in it — the three people, the dashed triangle, the light at each
@@ -51,7 +53,10 @@ export default function HeroArt() {
           // column decides that height, and every time it changed — a longer headline, a taller
           // card — `cover` re-cropped the artwork and took a different figure out of frame.
           aspectRatio: "1460 / 838",
-          backgroundImage: "url(hero.webp)",
+          // Absolute, via basePath. The relative form resolves against the *document*, so this
+          // component works on "/" and silently loads nothing on any nested route — which is
+          // exactly what happened the first time the scene was reused on /events.
+          backgroundImage: `url(${basePath}/hero.webp)`,
           // Fades on the left into the text column and on the bottom into the page, so the
           // picture has no edge anywhere it meets something that is not a picture.
           WebkitMaskImage:
@@ -68,7 +73,7 @@ export default function HeroArt() {
       <div
         aria-hidden
         className="relative -mx-4 mt-8 h-[260px] bg-cover bg-center sm:-mx-6 md:hidden"
-        style={{ backgroundImage: "url(hero-sm.webp)" }}
+        style={{ backgroundImage: `url(${basePath}/hero-sm.webp)` }}
       />
     </>
   );

@@ -111,10 +111,29 @@ export default function AppShell({
               <header className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-start sm:justify-between md:pt-0">
                 <div className="min-w-0 space-y-2">
                   {title && (
-                    // 28/34px, from the V3 type scale. Tighter tracking at the larger size only,
-                    // because the same negative tracking that makes a 34px headline cohere makes a
-                    // 28px one look cramped on a phone.
-                    <h1 className="text-[28px] font-semibold leading-[1.1] tracking-[-0.02em] md:text-[34px] md:tracking-[-0.03em]">
+                    // The landing page's headline treatment, brought inside the app.
+                    //
+                    // This was 28/34px of the plain body face, taken from the V3 type scale — and
+                    // V3 is the old, deliberately plain system. The landing page has since moved
+                    // to Montserrat extra-bold with light lying across the letters, and walking
+                    // from that into a flat semibold heading is the moment the product stops
+                    // looking designed and starts looking like an admin panel.
+                    //
+                    // Not a copy of the home headline, a smaller relative of it: same face, same
+                    // weight, same horizontal gradient, but 32/44px rather than up to 74px. A page
+                    // title competes with the content under it; the landing headline has nothing
+                    // to compete with, which is why it can be that size and this cannot.
+                    //
+                    // `pb-[0.12em]` because `bg-clip-text` crops to the glyph box, and descenders
+                    // in a tightly-led line get their tails shaved off without it.
+                    <h1
+                      className="bg-clip-text pb-[0.12em] text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em] text-transparent md:text-[44px] md:leading-[1]"
+                      style={{
+                        fontFamily: '"Montserrat", var(--font-sans)',
+                        backgroundImage:
+                          "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+                      }}
+                    >
                       {title}
                     </h1>
                   )}

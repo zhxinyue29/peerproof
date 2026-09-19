@@ -40,6 +40,16 @@ contract EventDirectory {
         string blurb;
         /// Optional link to a fuller description — a meetup page, a doc, anything.
         string url;
+        /// Where it happens, as the organizer writes it — "Kaiyuan Space, Singapore", "Online".
+        ///
+        /// Added 2026-09-20, before this contract was ever deployed, so there is no migration and
+        /// no second version of the struct to support. A listing without a place is not a listing:
+        /// the one question every attendee has before a deposit is "can I get there", and an
+        /// attendance product that cannot say where attendance happens is missing its subject.
+        ///
+        /// Free text and not validated, on purpose. The escrow decides where money goes and this
+        /// contract decides nothing — the worst a bad venue string can do is make a card read badly.
+        string venue;
         /// Zero until described. Lets a reader tell "no description" from "described with empty
         /// strings", which a caller is free to do.
         uint64 updatedAt;
@@ -60,6 +70,7 @@ contract EventDirectory {
     uint256 public constant MAX_TITLE = 120;
     uint256 public constant MAX_BLURB = 600;
     uint256 public constant MAX_URL = 300;
+    uint256 public constant MAX_VENUE = 160;
 
     constructor(address escrowAddress) {
         escrow = IAttendanceEscrow(escrowAddress);
@@ -67,19 +78,25 @@ contract EventDirectory {
 
     /// Only the organizer of that event, and only for an event that exists. There is no admin
     /// override: an organizer who writes something wrong fixes it by writing again.
-    function describe(uint256 eventId, string calldata title, string calldata blurb, string calldata url)
-        external
-    {
+    function describe(
+        uint256 eventId,
+        string calldata title,
+        string calldata blurb,
+        string calldata url,
+        string calldata venue
+    ) external {
         if (eventId == 0 || eventId >= escrow.nextEventId()) revert NoSuchEvent();
         if (escrow.getEvent(eventId).organizer != msg.sender) revert NotOrganizer();
         if (bytes(title).length > MAX_TITLE) revert TooLong();
         if (bytes(blurb).length > MAX_BLURB) revert TooLong();
         if (bytes(url).length > MAX_URL) revert TooLong();
+        if (bytes(venue).length > MAX_VENUE) revert TooLong();
 
         _listings[eventId] = Listing({
             title: title,
             blurb: blurb,
             url: url,
+            venue: venue,
             updatedAt: uint64(block.timestamp)
         });
 
