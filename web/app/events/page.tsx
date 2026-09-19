@@ -58,6 +58,17 @@ export default function EventsPage() {
   const tRef = useRef(t);
   tRef.current = t;
 
+  // `?q=` from the landing page's search box. Read on mount rather than during render: the query
+  // string does not exist during the static export, so a lazy initialiser would make the client's
+  // first render disagree with the prerendered HTML — the same reason `resolveEventId` reads it in
+  // an effect. Without this the box on the home page would take a query and drop it, which is a
+  // worse control than no control.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (q) setQuery(q);
+  }, []);
+
   useEffect(() => {
     if (!hasDeployment) return;
     const load = async () => {

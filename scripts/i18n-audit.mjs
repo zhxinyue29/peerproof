@@ -66,7 +66,7 @@ for (const f of walk(join(WEB, "app")).concat(walk(join(WEB, "components")), wal
   // Without this the unused list filled up with keys that are used, which is worse than not having
   // the list: every name on it has to be checked by hand before it can be believed, so nobody
   // checks any of them. It was reporting all nineteen contract-revert messages as dead.
-  for (const m of s.matchAll(/"((?:nav|common|events|organizer|floor|venue|event|verify|home|identity|error|gate|scan|timeline|create|deploy|topup|myEvents|graph|lang)\.[\w.-]+)"/g)) {
+  for (const m of s.matchAll(/"((?:nav|common|events|organizer|floor|venue|event|verify|home|identity|error|gate|scan|timeline|create|deploy|topup|myEvents|graph|lang|strip|scene|art|payout|registered|myEvents)\.[\w.-]+)"/g)) {
     if (!used.has(m[1])) used.set(m[1], []);
     used.get(m[1]).push(f.replace(WEB + "/", ""));
   }

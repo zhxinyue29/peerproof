@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import ProofArt from "@/components/ProofArt";
 import StepFigure from "@/components/StepFigure";
+import HeroScene from "@/components/HeroScene";
+import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
 import { PeerProofMark } from "@/components/NavIcons";
@@ -57,71 +59,85 @@ export default function HomePage() {
       <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
         <TopBar />
 
-        <main
-          className="flex flex-col gap-16 md:gap-24"
-          style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
-        >
-          {/* The first screen had no light in it.
-              The app-wide wash in globals.css is a fixed layer at 0.16 across the whole viewport,
-              which is atmosphere for every page and a focal point for none — so the screen somebody
-              lands on was one flat slab of navy with a headline on it. This is local: a large soft
-              source sitting behind the figure, falling off before it reaches the text, so the hero
-              has a near and a far rather than a single plane. It is `-z-10` inside the section
-              rather than another fixed layer, so it scrolls away with the thing it lights. */}
-          <section className="relative grid items-center gap-10 pt-10 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-16">
+        <main>
+          <section className="relative grid items-center gap-10 pb-10 pt-8 md:grid-cols-[1.02fr_0.98fr] md:gap-10 md:pt-12">
             <div
               aria-hidden
-              className="pointer-events-none absolute -z-10 -left-[15%] -right-[15%] -top-[22%] h-[145%]"
+              className="pointer-events-none absolute -z-10 -left-[15%] -right-[15%] -top-[22%] h-[150%]"
               style={{
                 background:
-                  "radial-gradient(52rem 32rem at 74% 44%, rgba(118,91,255,0.30), transparent 66%)," +
-                  "radial-gradient(34rem 24rem at 12% 14%, rgba(77,183,255,0.13), transparent 62%)",
+                  "radial-gradient(52rem 32rem at 76% 46%, rgba(118,91,255,0.30), transparent 66%)," +
+                  "radial-gradient(34rem 24rem at 10% 12%, rgba(77,183,255,0.12), transparent 62%)",
               }}
             />
-            <div className="relative min-w-0 space-y-5">
-              <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
+
+            <div className="relative min-w-0 space-y-6">
+              <p className="text-[15px] font-medium tracking-[0.02em] text-accent-2">
                 {t("home.eyebrow")}
               </p>
-              <h1 className="text-[38px] font-semibold leading-[1.04] tracking-[-0.035em] md:text-[54px]">
-                {t("home.headline")}
+
+              {/* The accent lands on the object of the sentence — the thing you would otherwise have
+                  to take somebody's word for. Three keys rather than one string with markup in it,
+                  because where the emphasis falls is a decision each language makes for itself. */}
+              <h1 className="max-w-[16ch] text-[40px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[58px]">
+                {t("home.headlineLead")}
+                <span className="text-accent-2">{t("home.headlineAccent")}</span>
+                {t("home.headlineTail")}
               </h1>
-              <p className="max-w-[46ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
+
+              <p className="max-w-[44ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
                 {t("home.sub")}
               </p>
 
-              {/* Equally weighted, side by side. Neither is the primary action: which one is right
-                  depends entirely on who is reading, and a product that guesses puts the other half
-                  of its audience through a screen built for somebody else. */}
-              <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                <Door href="/events" eyebrow={t("home.goingLabel")} cta={t("home.goingCta")} tone="join" />
-                <Door href="/organizer" eyebrow={t("home.hostingLabel")} cta={t("home.hostingCta")} tone="host" />
+              <div className="grid gap-4 pt-1 sm:grid-cols-2">
+                <Door
+                  href="/events"
+                  title={t("home.joinTitle")}
+                  body={t("home.joinBody")}
+                  tone="join"
+                />
+                <Door
+                  href="/organizer"
+                  title={t("home.hostTitle")}
+                  body={t("home.hostBody")}
+                  tone="host"
+                />
               </div>
 
-              {/* The claim in three words each, for somebody scanning rather than reading. Chips
-                  rather than a row of bullets: three loose dots under two large cards read as
-                  leftovers, and these are the three things the product is actually promising. */}
-              <ul className="flex flex-wrap gap-2 pt-1">
-                {[t("home.pillCustody"), t("home.pillPeer"), t("home.pillRecord")].map((label) => (
-                  <li
-                    key={label}
-                    className="flex items-center gap-2 rounded-full border border-ok/25 bg-ok/[0.07] px-3.5 py-2 text-[15px] text-dim"
-                  >
-                    <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-ok" />
-                    {label}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-1">
+                <a
+                  href="#how-it-works"
+                  className="flex min-h-[44px] items-center gap-2.5 text-[15px] text-dim transition-colors hover:text-fg"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent-2">
+                    <svg width="9" height="10" viewBox="0 0 9 10" aria-hidden>
+                      <path d="M0 0v10l9-5z" fill="currentColor" />
+                    </svg>
+                  </span>
+                  {t("home.watchMinute")}
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="flex min-h-[44px] items-center gap-2 text-[15px] text-dim transition-colors hover:text-fg"
+                >
+                  {t("home.howLink")}
+                  <span aria-hidden>→</span>
+                </a>
+              </div>
             </div>
 
-            {/* Taller than it looks like it needs to be. The drawing is close to square and the
-                card is not, so `meet` scales it to the *height*: at 340px it rendered 380px wide
-                inside a 507px card and sat in 63px of empty gradient on either side. Height is the
-                constraint, so height is the lever. */}
-            <ProofArt className="h-[240px] w-full md:h-[420px]" />
+            <HeroScene />
           </section>
-
-          <HowItWorks />
         </main>
+      </div>
+
+      <ValueStrip />
+
+      <div
+        className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8"
+        style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
+      >
+        <HowItWorks />
       </div>
     </div>
   );
@@ -138,17 +154,37 @@ export default function HomePage() {
 /// way to a control that is hidden behind a width.
 function TopBar() {
   const t = useT();
+  const router = useRouter();
+  const { signer } = useIdentity();
+
+  // The search belongs to the listing, which already has one. Rather than build a second index
+  // here, this hands the query over: /events reads `?q=` on arrival and applies it as its filter.
+  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const q = new FormData(e.currentTarget).get("q");
+    router.push(typeof q === "string" && q.trim() ? `/events?q=${encodeURIComponent(q.trim())}` : "/events");
+  };
+
   return (
-    <header className="flex items-center gap-3 border-b border-line py-4 md:py-5">
+    <header className="flex items-center gap-3 py-4 md:gap-5 md:py-5">
       <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
         <PeerProofMark />
-        <span className="truncate text-[17px] font-semibold tracking-[-0.01em]">PeerProof</span>
+        <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
       </Link>
-      {/* A spacer rather than `flex-1` on the wordmark: this page *is* `/`, and a link stretched
-          across the empty half of the bar is 800px of invisible target that reloads the screen. */}
-      <span className="flex-1" />
 
-      <nav className="hidden items-center gap-1 sm:flex" aria-label="Main">
+      <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main">
+        {/* The current page is marked, not merely reachable. Everything else in this bar is a way
+            out of here, and without this the bar gives no sign of where "here" is. */}
+        <span className="relative flex min-h-[44px] items-center px-3 text-[16px] font-medium text-fg">
+          {t("nav.home")}
+          <span aria-hidden className="absolute inset-x-3 bottom-2 h-[2px] rounded-full bg-accent" />
+        </span>
+        <Link
+          href="/events"
+          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
+        >
+          {t("nav.events")}
+        </Link>
         <Link
           href="/verify"
           className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
@@ -159,12 +195,42 @@ function TopBar() {
           href="#how-it-works"
           className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
         >
-          {t("home.howItWorks")}
+          {t("nav.about")}
         </a>
       </nav>
 
+      <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
+        <label className="relative flex items-center">
+          <span aria-hidden className="pointer-events-none absolute left-3.5 text-faint">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="6.4" stroke="currentColor" strokeWidth="1.8" />
+              <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <input
+            name="q"
+            type="search"
+            placeholder={t("home.searchPlaceholder")}
+            aria-label={t("home.searchPlaceholder")}
+            className="h-11 w-full min-w-0 rounded-full border border-line-2 bg-panel/70 pl-11 pr-4 text-[15px] text-fg outline-none transition-colors placeholder:text-faint focus:border-accent/70"
+          />
+        </label>
+      </form>
+
+      <span className="ml-auto md:ml-0" />
       <LanguageSwitcher />
       <IdentityToken />
+
+      {/* Only when there is nobody signed in. With a session the token to its left is the account,
+          and a button inviting you to sign in next to it is a screen arguing with itself. */}
+      {!signer && (
+        <Link
+          href="/events"
+          className="hidden h-11 shrink-0 items-center rounded-full bg-white px-5 text-[15px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] sm:inline-flex"
+        >
+          {t("home.signIn")}
+        </Link>
+      )}
     </header>
   );
 }
@@ -199,64 +265,70 @@ function IdentityToken() {
 /*                              Pieces                                */
 /* ------------------------------------------------------------------ */
 
-/// One of the two ways in. The label above says who you are; the line below says where that goes.
+/// One of the two ways in.
 ///
-/// These are the page's only real controls, and they were two grey rectangles the same colour as
-/// every card beneath them — a primary action has to look like one. Each now carries its own light:
-/// a tint that sits under the panel colour, a glow that lifts on hover, and a figure in the corner
-/// that says which door this is before the words are read.
+/// Icon, what you are here for, a line of what happens next, and a round arrow that is the button.
+/// The pair used to be a label and a link with the whole card as the target, which said which door
+/// this was and nothing about what was behind it — so the choice had to be made on two words.
+///
+/// Tinted to their own colour: violet for joining, green for hosting. Same two hues the rest of the
+/// app uses for the same two roles, so the association is already learned by the time anybody gets
+/// to a floor screen.
 function Door({
   href,
-  eyebrow,
-  cta,
+  title,
+  body,
   tone,
 }: {
   href: string;
-  eyebrow: string;
-  cta: string;
+  title: string;
+  body: string;
   tone: "join" | "host";
 }) {
   const join = tone === "join";
   return (
     <Link
       href={href}
-      className="group relative flex min-h-[148px] flex-col justify-between overflow-hidden rounded-2xl border border-line-2 p-5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/70 md:min-h-[164px] md:p-6"
+      className={`group relative flex min-h-[188px] flex-col justify-between overflow-hidden rounded-[18px] border p-5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 md:p-6 ${
+        join ? "border-accent/30 hover:border-accent/70" : "border-ok/30 hover:border-ok/60"
+      }`}
       style={{
         background: join
-          ? "linear-gradient(150deg, rgba(118,91,255,0.20) 0%, rgba(22,35,60,0.9) 58%)"
-          : "linear-gradient(150deg, rgba(57,217,138,0.16) 0%, rgba(22,35,60,0.9) 58%)",
+          ? "linear-gradient(158deg, rgba(118,91,255,0.17) 0%, rgba(20,28,48,0.72) 62%)"
+          : "linear-gradient(158deg, rgba(34,197,94,0.15) 0%, rgba(18,32,36,0.72) 62%)",
       }}
     >
-      {/* The mark, not an icon set. Two arcs for joining a room, three points for convening one —
-          drawn rather than imported so the page still has no outbound request. */}
-      <svg
-        aria-hidden
-        viewBox="0 0 64 64"
-        className="pointer-events-none absolute -right-3 -top-3 h-[92px] w-[92px] opacity-[0.28] transition-opacity duration-200 group-hover:opacity-50"
-      >
+      <span className={join ? "text-accent-2" : "text-ok"}>
         {join ? (
-          <g fill="none" stroke={join ? "#9a88ff" : "#39d98a"} strokeWidth="2.2" strokeLinecap="round">
-            <path d="M20 42a14 14 0 1 1 24 0" />
-            <path d="M12 50a22 22 0 0 1 40 0" opacity="0.55" />
-          </g>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="9" cy="8.2" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+            <path d="M3.3 19.2a5.7 5.7 0 0 1 11.4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            <circle cx="17.2" cy="9.3" r="2.5" stroke="currentColor" strokeWidth="1.5" opacity="0.72" />
+            <path d="M15.1 18.7a4.7 4.7 0 0 1 5.9-3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.72" />
+          </svg>
         ) : (
-          <g>
-            <g stroke="#39d98a" strokeWidth="1.8" opacity="0.6">
-              <path d="M22 24 L42 24 M22 24 L32 44 M42 24 L32 44" />
-            </g>
-            {[[22, 24], [42, 24], [32, 44]].map(([cx, cy]) => (
-              <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4.6" fill="#39d98a" />
-            ))}
-          </g>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3" stroke="currentColor" strokeWidth="1.7" />
+            <path d="M3.4 9.6h17.2M8 3.4v3.6M16 3.4v3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            <path d="M12 12.6v4.6M9.7 14.9h4.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
         )}
-      </svg>
+      </span>
 
-      <span className="relative text-[15px] text-dim">{eyebrow}</span>
-      <span className="relative flex items-center gap-2.5 text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
-        {cta}
+      <span className="mt-auto flex items-end justify-between gap-4">
+        <span className="min-w-0">
+          <span className="block text-[19px] font-semibold tracking-[-0.015em] md:text-[20px]">
+            {title}
+          </span>
+          <span className="mt-1.5 block max-w-[24ch] text-[15px] leading-relaxed text-dim">
+            {body}
+          </span>
+        </span>
         <span
-          aria-hidden="true"
-          className={`transition-transform duration-200 group-hover:translate-x-1 ${join ? "text-accent-2" : "text-ok"}`}
+          aria-hidden
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] transition-transform duration-200 group-hover:translate-x-0.5 ${
+            join ? "bg-accent text-white" : "bg-ok text-[#08261a]"
+          }`}
         >
           →
         </span>
@@ -279,7 +351,7 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="scroll-mt-8 space-y-6 pb-4">
+    <section id="how-it-works" className="scroll-mt-8 space-y-6 pb-4 pt-14 md:pt-20">
       <div className="space-y-2">
         <h2 className="text-[28px] font-semibold tracking-[-0.025em] md:text-[34px]">
           {t("home.howItWorks")}
