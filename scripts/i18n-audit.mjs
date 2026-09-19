@@ -66,7 +66,7 @@ for (const f of walk(join(WEB, "app")).concat(walk(join(WEB, "components")), wal
   // Without this the unused list filled up with keys that are used, which is worse than not having
   // the list: every name on it has to be checked by hand before it can be believed, so nobody
   // checks any of them. It was reporting all nineteen contract-revert messages as dead.
-  for (const m of s.matchAll(/"((?:nav|common|events|organizer|floor|venue|event|verify|home|identity|error|gate|scan|timeline|create|deploy|topup|myEvents|graph|lang|strip|scene|art|payout|registered|myEvents)\.[\w.-]+)"/g)) {
+  for (const m of s.matchAll(/"((?:nav|common|events|organizer|floor|venue|event|verify|home|identity|error|gate|scan|timeline|create|deploy|topup|myEvents|graph|lang|strip|scene|art|payout|registered|myEvents|stats|footer|proof)\.[\w.-]+)"/g)) {
     if (!used.has(m[1])) used.set(m[1], []);
     used.get(m[1]).push(f.replace(WEB + "/", ""));
   }
@@ -149,6 +149,10 @@ function looksEnglish(s) {
   // Human-readable ABI. `event Attested(uint256 indexed eventId, …)` is the chain's own vocabulary,
   // and translating it would stop it parsing.
   if (/^(?:event|function|error|struct|constructor)\s+\w+\(/.test(text)) return false;
+  // CSS values. `linear-gradient(to right, transparent 0%, #000 28%)` is four English words by this
+  // check's reckoning, and it is a mask, not a sentence. Matching on the leading function name
+  // rather than on the presence of a colour keeps this narrow — prose does not begin with `calc(`.
+  if (/^(?:linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|url|calc|rgba?|hsla?|var|clamp|min|max|translate|scale|rotate|cubic-bezier)\(/.test(text)) return false;
   const words = text.split(/\s+/).filter((w) => /^[A-Za-z][A-Za-z'’]*[.,!?;:]?$/.test(w));
   if (words.length < 3) return false;
   return words.some((w) => /^[a-z]{3,}/.test(w));

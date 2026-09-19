@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { useMotionPrefs } from "@/lib/motion";
+import HeroProofAnimation from "@/components/HeroProofAnimation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import StepFigure from "@/components/StepFigure";
 import HeroArt from "@/components/HeroArt";
+import StatsBar from "@/components/StatsBar";
+import FeaturedEvents from "@/components/FeaturedEvents";
 import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
@@ -30,6 +35,7 @@ import { useT } from "@/lib/i18n";
 /// agreed to be in an application. The two doors are the navigation.
 export default function HomePage() {
   const t = useT();
+  const m = useMotionPrefs();
 
   // Links of the form /?event=12 were handed out before the event page moved, and somebody's phone
   // still has one. Sending them on is cheaper than breaking them, and it happens before paint.
@@ -60,77 +66,98 @@ export default function HomePage() {
         <TopBar />
 
         <main>
-          <section className="relative pb-10 pt-8 md:pb-16 md:pt-12">
+          <section className="relative pb-10 pt-6 md:min-h-[540px] md:pb-16 md:pt-10">
             <HeroArt />
 
-            {/* The glow sits behind the artwork's left edge, where the picture fades out, so the
-                two hand over to each other instead of meeting at a line. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -z-10 -left-[15%] -top-[22%] right-0 h-[150%]"
-              style={{
-                background:
-                  "radial-gradient(40rem 26rem at 58% 46%, rgba(118,91,255,0.22), transparent 66%)," +
-                  "radial-gradient(34rem 24rem at 8% 12%, rgba(77,183,255,0.12), transparent 62%)",
-              }}
-            />
+            {/* Arrival order is reading order: the badge that says what this is, the two lines of
+                the claim, the line under them, the body, then the two things you can do about it.
+                Nothing overshoots — a headline that bounces is a headline nobody reads twice. */}
+            <motion.div
+              className="relative max-w-[620px] space-y-5"
+              variants={m.container}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.div variants={m.item} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/15 px-3.5 py-1.5 text-[14px] font-medium text-accent-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M13.4 2.8 5.6 13.4h5.3l-.9 7.8 8-10.8h-5.4l.8-7.6Z" />
+                  </svg>
+                  {t("home.builtOn")}
+                </span>
+                <span className="text-[15px] text-dim">{t("home.fastFair")}</span>
+              </motion.div>
 
-            <div className="relative max-w-[600px] space-y-6">
-              <p className="text-[15px] font-medium tracking-[0.02em] text-accent-2">
-                {t("home.eyebrow")}
-              </p>
-
-              {/* The accent lands on the object of the sentence — the thing you would otherwise have
-                  to take somebody's word for. Three keys rather than one string with markup in it,
-                  because where the emphasis falls is a decision each language makes for itself. */}
-              <h1 className="max-w-[16ch] whitespace-pre-line text-[40px] font-semibold leading-[1.12] tracking-[-0.035em] md:text-[56px]">
-                {t("home.headlineLead")}
-                <span className="text-accent-2">{t("home.headlineAccent")}</span>
-                {t("home.headlineTail")}
+              <h1 className="text-[42px] font-semibold leading-[1.06] tracking-[-0.04em] md:text-[62px]">
+                <motion.span variants={m.item} className="block">
+                  {t("home.headline1")}
+                </motion.span>
+                <motion.span variants={m.item} className="mt-1 block text-accent-2">
+                  {t("home.headline2")}
+                </motion.span>
               </h1>
 
-              <p className="max-w-[40ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
-                {t("home.sub")}
-              </p>
-
-              <div className="grid gap-4 pt-1 sm:grid-cols-2">
-                <Door href="/events" title={t("home.joinTitle")} body={t("home.joinBody")} tone="join" />
-                <Door href="/organizer" title={t("home.hostTitle")} body={t("home.hostBody")} tone="host" />
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-1">
-                <a
-                  href="#how-it-works"
-                  className="flex min-h-[44px] items-center gap-2.5 text-[15px] text-dim transition-colors hover:text-fg"
+              {/* The design sets this line as handwriting with a drawn underline. There is no
+                  handwritten face to load — the CSP blocks font CDNs and a webfont would be the
+                  page's only outbound request — so it is italic with the stroke drawn in SVG, which
+                  keeps the gesture and keeps the line translatable. */}
+              <motion.p variants={m.item} className="relative inline-block pb-3 text-[19px] italic leading-snug text-accent-2 md:text-[22px]">
+                {t("home.script")}
+                <svg
+                  aria-hidden
+                  viewBox="0 0 300 12"
+                  preserveAspectRatio="none"
+                  className="absolute inset-x-0 bottom-0 h-[10px] w-full text-accent/70"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent/60 text-accent-2">
-                    <svg width="9" height="10" viewBox="0 0 9 10" aria-hidden>
-                      <path d="M0 0v10l9-5z" fill="currentColor" />
-                    </svg>
-                  </span>
-                  {t("home.watchMinute")}
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="flex min-h-[44px] items-center gap-2 text-[15px] text-dim transition-colors hover:text-fg"
-                >
-                  {t("home.howLink")}
-                  <span aria-hidden>→</span>
-                </a>
-              </div>
+                  <path
+                    d="M2 8C58 3 121 2 176 5c40 2 78 4 121 1"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </motion.p>
+
+              <motion.div variants={m.item} className="max-w-[46ch] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
+                <p>{t("home.subA")}</p>
+                <p>{t("home.subB")}</p>
+              </motion.div>
+
+              <motion.div variants={m.item} className="grid gap-4 pt-2 sm:grid-cols-2">
+                <Door href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
+                <Door href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
+              </motion.div>
+            </motion.div>
+
+            {/* The proof itself, playing over the scene. */}
+            {/* Low and left of the figures, in the darkest part of the scene — over their faces it
+                competed with the artwork, and over the painted badge it repeated it. */}
+            <HeroProofAnimation
+              label={t("proof.label")}
+              className="pointer-events-none absolute bottom-[6%] left-[52%] hidden h-[150px] w-[270px] lg:block"
+            />
+
+            {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
+                and where it reads as a caption on the scene rather than a fourth thing in the column. */}
+            <div className="relative mt-8 md:absolute md:-bottom-2 md:right-0 md:mt-0 md:w-[min(28rem,40%)]">
+              <StatsBar />
             </div>
           </section>
         </main>
       </div>
 
+      <div className="mx-auto w-full max-w-[1280px] px-4 pt-12 sm:px-6 md:px-8 md:pt-16">
+        <FeaturedEvents />
+      </div>
+
       <ValueStrip />
 
-      <div
-        className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8"
-        style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
-      >
+      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
         <HowItWorks />
       </div>
+
+      <SiteFooter />
     </div>
   );
 }
@@ -149,6 +176,17 @@ function TopBar() {
   const router = useRouter();
   const { signer } = useIdentity();
 
+  // Transparent over the artwork, solid once the artwork has scrolled away. Watched with a
+  // passive listener and a boolean rather than a scroll-linked value: this needs to change twice,
+  // not sixty times a second, and a state update per frame is how a header makes a phone stutter.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 80);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // The search belongs to the listing, which already has one. Rather than build a second index
   // here, this hands the query over: /events reads `?q=` on arrival and applies it as its filter.
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -158,7 +196,11 @@ function TopBar() {
   };
 
   return (
-    <header className="flex items-center gap-3 py-4 md:gap-5 md:py-5">
+    <header
+      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-8 md:gap-5 md:px-8 md:py-5 ${
+        scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
+      }`}
+    >
       <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
         <PeerProofMark />
         <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
@@ -177,18 +219,24 @@ function TopBar() {
         >
           {t("nav.events")}
         </Link>
+        <a
+          href="#how-it-works"
+          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
+        >
+          {t("home.howItWorks")}
+        </a>
+        <Link
+          href="/organizer"
+          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
+        >
+          {t("nav.forOrganizers")}
+        </Link>
         <Link
           href="/verify"
           className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
         >
           {t("nav.verify")}
         </Link>
-        <a
-          href="#how-it-works"
-          className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-        >
-          {t("nav.about")}
-        </a>
       </nav>
 
       <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
@@ -259,13 +307,13 @@ function IdentityToken() {
 
 /// One of the two ways in.
 ///
-/// Icon, what you are here for, a line of what happens next, and a round arrow that is the button.
-/// The pair used to be a label and a link with the whole card as the target, which said which door
-/// this was and nothing about what was behind it — so the choice had to be made on two words.
+/// A picture of a person, then what you are here for, then the arrow. The figures are cropped from
+/// the design and carry its own lighting, so the card's tint is set to meet them rather than to a
+/// palette value — the seam between a lit render and a flat gradient is the thing that gives a
+/// pasted-in asset away.
 ///
-/// Tinted to their own colour: violet for joining, green for hosting. Same two hues the rest of the
-/// app uses for the same two roles, so the association is already learned by the time anybody gets
-/// to a floor screen.
+/// The image is masked out on its right rather than ending at an edge, so the character stands in
+/// the card instead of sitting in a rectangle inside it.
 function Door({
   href,
   title,
@@ -278,54 +326,94 @@ function Door({
   tone: "join" | "host";
 }) {
   const join = tone === "join";
+  const m = useMotionPrefs();
   return (
+    /* Transform and opacity only, and the height never changes — the card must not be able to push
+       anything below it, on a page whose first screen is what somebody is reading while it settles.
+       `whileTap` is here because a phone has no hover: without it the two controls that matter most
+       would give no feedback at all on the device this product is used on. */
+    <motion.div
+      whileHover={m.reduced ? undefined : { y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+    >
     <Link
       href={href}
-      className={`group relative flex min-h-[188px] flex-col justify-between overflow-hidden rounded-[18px] border p-5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 md:p-6 ${
+      className={`group relative flex min-h-[132px] items-center gap-3 overflow-hidden rounded-[18px] border pr-4 transition-colors duration-200 ${
         join ? "border-accent/30 hover:border-accent/70" : "border-ok/30 hover:border-ok/60"
       }`}
       style={{
         background: join
-          ? "linear-gradient(158deg, rgba(118,91,255,0.17) 0%, rgba(20,28,48,0.72) 62%)"
-          : "linear-gradient(158deg, rgba(34,197,94,0.15) 0%, rgba(18,32,36,0.72) 62%)",
+          ? "linear-gradient(105deg, rgba(41,38,92,0.95) 0%, rgba(20,28,48,0.92) 58%)"
+          : "linear-gradient(105deg, rgba(16,48,40,0.95) 0%, rgba(16,30,34,0.92) 58%)",
       }}
     >
-      <span className={join ? "text-accent-2" : "text-ok"}>
-        {join ? (
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <circle cx="9" cy="8.2" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M3.3 19.2a5.7 5.7 0 0 1 11.4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            <circle cx="17.2" cy="9.3" r="2.5" stroke="currentColor" strokeWidth="1.5" opacity="0.72" />
-            <path d="M15.1 18.7a4.7 4.7 0 0 1 5.9-3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.72" />
-          </svg>
-        ) : (
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="3.4" y="5.2" width="17.2" height="15.4" rx="3" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M3.4 9.6h17.2M8 3.4v3.6M16 3.4v3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            <path d="M12 12.6v4.6M9.7 14.9h4.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          </svg>
-        )}
+      <span
+        aria-hidden
+        className="h-[132px] w-[104px] shrink-0 self-end bg-cover bg-bottom transition-transform duration-200 group-hover:translate-x-[3px]"
+        style={{
+          backgroundImage: `url(${join ? "door-join.webp" : "door-host.webp"})`,
+          WebkitMaskImage: "linear-gradient(to right, #000 62%, transparent 100%)",
+          maskImage: "linear-gradient(to right, #000 62%, transparent 100%)",
+        }}
+      />
+
+      <span className="min-w-0 flex-1 py-4">
+        <span className={`block text-[19px] font-semibold leading-tight tracking-[-0.015em] ${join ? "text-accent-2" : "text-fg"}`}>
+          {title}
+        </span>
+        <span className="mt-1.5 block text-[15px] text-dim">{body}</span>
       </span>
 
-      <span className="mt-auto flex items-end justify-between gap-4">
-        <span className="min-w-0">
-          <span className="block text-[19px] font-semibold tracking-[-0.015em] md:text-[20px]">
-            {title}
-          </span>
-          <span className="mt-1.5 block max-w-[24ch] text-[15px] leading-relaxed text-dim">
-            {body}
-          </span>
-        </span>
-        <span
-          aria-hidden
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] transition-transform duration-200 group-hover:translate-x-0.5 ${
-            join ? "bg-accent text-white" : "bg-ok text-[#08261a]"
-          }`}
-        >
-          →
-        </span>
+      <span
+        aria-hidden
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[17px] transition-transform duration-200 group-hover:translate-x-0.5 ${
+          join ? "bg-accent text-white" : "bg-ok text-[#08261a]"
+        }`}
+      >
+        →
       </span>
     </Link>
+    </motion.div>
+  );
+}
+
+/// The last thing on the page, and the only one that is an address rather than a claim.
+///
+/// The design lists Docs, GitHub, Discord and X. Two of those do not exist — there is no Discord
+/// and no account on X — and a footer link that goes nowhere is the cheapest possible way to look
+/// unfinished. What is here is what there is.
+function SiteFooter() {
+  const t = useT();
+  return (
+    <footer className="mt-16 border-t border-line md:mt-24">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between md:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <PeerProofMark />
+          <span className="text-[17px] font-semibold tracking-[-0.01em]">PeerProof</span>
+          <span className="hidden text-[15px] text-dim sm:inline">{t("footer.tagline")}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[15px]">
+          <a
+            href="https://github.com/zhxinyue29/peerproof"
+            className="min-h-[44px] items-center text-dim transition-colors hover:text-fg"
+          >
+            {t("footer.source")}
+          </a>
+          {explorerAddressUrl(ESCROW_ADDRESS) && (
+            <a
+              href={explorerAddressUrl(ESCROW_ADDRESS)}
+              className="min-h-[44px] items-center text-dim transition-colors hover:text-fg"
+            >
+              {t("footer.contract")}
+            </a>
+          )}
+          <Link href="/verify" className="min-h-[44px] items-center text-dim transition-colors hover:text-fg">
+            {t("nav.verify")}
+          </Link>
+        </div>
+      </div>
+    </footer>
   );
 }
 

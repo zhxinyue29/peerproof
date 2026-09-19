@@ -95,7 +95,13 @@ export default function EventCard({ event: e }: { event: EventSummary }) {
       className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-panel transition-colors hover:border-line-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <div className="relative h-[112px] md:h-[128px]">
-        <EventCover id={e.id} className="absolute inset-0" />
+        {/* Only the picture moves, and only by 2.5%. Scaling the whole card would shift the text
+            inside it, and text that grows under the cursor is harder to read, not more alive. The
+            band already clips, so nothing escapes the card. */}
+        <EventCover
+          id={e.id}
+          className="absolute inset-0 transition-transform duration-300 ease-out motion-safe:group-hover:scale-[1.025]"
+        />
         <span
           className={`absolute left-3 top-3 rounded-full bg-ink/60 px-2.5 py-1 text-[14px] font-medium backdrop-blur-sm ${PHASE_TONE[e.phase]}`}
         >
