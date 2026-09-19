@@ -190,9 +190,11 @@ export default function MePage() {
           </section>
 
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Tile value={rows ? String(rows.length) : null} label={t("me.eventsJoined")} />
+            <Tile value={rows ? String(rows.length) : null} label={t("me.eventsJoined")}
+                  sub={t("me.vsLastMonth", { delta: "—" })} />
             <Tile value={hosted ? String(hosted.length) : null} label={t("me.eventsHosted")} />
-            <Tile value={rows ? mon(staked) : null} label={t("me.staked")} />
+            <Tile value={rows ? mon(staked) : null} label={t("me.staked")}
+                  sub={t("me.approxUsd", { amount: "—" })} />
             <Tile
               value={rows ? (rate === null ? "—" : `${rate}%`) : null}
               label={t("me.turnout")}
@@ -282,7 +284,16 @@ function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Tile({ value, label, tone }: { value: string | null; label: string; tone?: "ok" }) {
+/// `sub` is for the figures the sheet shows underneath a number — a dollar conversion, a
+/// month-on-month change. Neither exists yet and both will: the first needs a price source, the
+/// second needs enough history to have a previous month. So the slot is built and reads "—".
+///
+/// "—" rather than 0, deliberately. "+0% on last month" is an assertion about a month that has not
+/// happened; "—" is the absence of one. The difference matters most on the page whose whole subject
+/// is what can and cannot be substantiated.
+function Tile({
+  value, label, tone, sub,
+}: { value: string | null; label: string; tone?: "ok"; sub?: string }) {
   return (
     <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
       <dt
@@ -293,6 +304,7 @@ function Tile({ value, label, tone }: { value: string | null; label: string; ton
         {value ?? <Skeleton className="h-7 w-16 align-middle" />}
       </dt>
       <dd className="mt-2 text-[14px] text-dim">{label}</dd>
+      {sub && <dd className="mt-1 text-[13px] text-faint">{sub}</dd>}
     </div>
   );
 }

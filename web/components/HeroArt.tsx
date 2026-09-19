@@ -1,78 +1,91 @@
+"use client";
+
+import { useMotionPrefs } from "@/lib/motion";
 import { basePath } from "@/lib/chain";
 
-/// The scene on the right of the landing page.
+/// The scene on the right of the landing page — now a loop rather than a still.
 ///
-/// It is one image, and everything in it — the three people, the dashed triangle, the light at each
-/// corner, the speech bubbles, the three labels — is part of that image rather than drawn on top.
-/// An earlier version built the triangle and the labels in SVG and HTML and left a slot underneath
-/// for artwork that did not exist; overlaying them on the real artwork would mean two coordinate
-/// systems that have to agree about where a chip sits, and they only agree at one aspect ratio.
+/// One continuous shot: two people stand with their backs to camera at a venue, a green point rises
+/// out of one of their phones, splits, and falls across the room onto other people. Nobody turns
+/// round, nothing cuts. That is the product in four seconds, and it is the reason the four-beat SVG
+/// sequence that used to sit over this is gone: its card, its arcs and its closing line were drawn
+/// against the old still's ring and phone coordinates, and over a different scene they would point
+/// at nothing. The clip says the same thing and says it with the room rather than over it.
 ///
-/// Cropped from the design itself, so this is the design's own picture rather than an approximation
-/// of it. One repair was needed on the way in: the "REAL PEOPLE" label carried a second line of
-/// broken glyphs — a rendering fault in the mockup, not a design decision — and it is painted out
-/// by tiling a clean row of the chip's own background over it.
+/// Why a video is affordable here, when the still it replaces was 62KB: the camera barely moves and
+/// only one small object travels, so VP9 has almost nothing to encode. 188KB for four seconds — a
+/// third of the MP4, and close enough to the still that the trade stops being a trade.
 ///
-/// WebP, and two of them. As a PNG this one image was 877KB of a 1316KB page — two thirds of
-/// everything the landing page downloads, on a product whose first real use is somebody opening a
-/// link on mobile data at a venue door. The same picture is 65KB as WebP q86: mean per-channel
-/// difference 0.69, and the largest difference anywhere is inside the brightest glow.
+/// Three things it must never do, each learned somewhere in this repo:
+///   · autoplay with sound — `muted` is what makes autoplay legal on every browser
+///   · play on a phone at a venue door — the mobile band stays a still image
+///   · play for somebody who asked for less motion — `prefers-reduced-motion` gets the poster
 ///
-/// The phone gets its own 900px copy at 31KB rather than the full one, because there it is a
-/// cropped band about 390px wide and the extra pixels are downloaded to be thrown away.
-///
-/// Not translatable, and that is the trade. The three labels are set in English inside the picture.
-/// Lifting them back out into HTML would make them translatable and would also reintroduce the
-/// alignment problem, so it is worth doing only if the labels have to speak Chinese.
+/// `poster` is the clip's own first frame, so a slow connection shows the picture the video will
+/// start from rather than a different image that then jumps.
 export default function HeroArt() {
+  const { reduced } = useMotionPrefs();
+
+  // Bleeds off the right edge of the viewport, not the container. `right: calc(50% - 50vw)` measures
+  // the element's own containing block against the viewport, which reaches the screen edge from
+  // inside a centred max-width column — and the page carries `overflow-x-hidden`, so it cannot start
+  // a sideways scroll.
+  const frame =
+    "pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] md:block";
+
+  // Fades on the left into the text column and at the bottom into the page, so the picture has no
+  // edge anywhere it meets something that is not a picture. In element space, as a CSS mask: an SVG
+  // mask inside the artwork would be scaled and cropped with it, which is how the listing banner
+  // lost its fade entirely.
+  // A fade at the top as well. The still had a hard top edge too and nobody minded, because its
+  // top was dark; this clip opens on stage lights, and a bright horizontal cut across the page is
+  // the one edge that reads as "an image was pasted here".
+  // The bottom fade starts at 86%, not 62%. The still it replaced had nothing important down
+  // there; this clip has the two people and the phone the whole animation comes out of, sitting at
+  // 87–100% of the frame — a fade from 62% made the origin of the story almost invisible. 86% still
+  // softens the edge against the page without eating the subject.
+  const mask = {
+    WebkitMaskImage:
+      "linear-gradient(to right, transparent 0%, #000 26%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to right, transparent 0%, #000 26%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
+    WebkitMaskComposite: "source-in" as const,
+    maskComposite: "intersect" as const,
+    aspectRatio: "1024 / 576",
+  };
+
   return (
     <>
-      {/* Bleeds off the right edge of the viewport, not the container.
-          `right: calc(50% - 50vw)` measures the element's own containing block against the viewport,
-          which reaches the screen edge from inside a centred max-width column — and the page already
-          carries `overflow-x-hidden`, so it cannot start a sideways scroll.
-          The fade is a CSS mask, in element space: an SVG mask inside the artwork would be scaled
-          and cropped along with it, which is how the listing banner lost its fade entirely.
-          Left edge at 53% of the column, which is where the design puts it — measured, not judged:
-          its scene starts at x=806 of 1536 with a 1216 content column, so 646/1216. At 38% the two
-          entry cards sat on top of the artwork, which is the thing that was covering it.
-          Left edge at 38%, not 46%. The artwork is 1.74 wide to tall; at 46% the box came out at
-          1.54, so `cover` scaled to the height and took the difference off the width — which is the
-          side the fourth figure stands on. Matching the box to the picture is what keeps everyone
-          in frame.
-          Anchored to the right, not the centre. `cover` has to crop something, and centred it
-          took the crop off both ends — which cut the top label in half. Pinned to the top, the whole
-          crop lands on the bottom of the frame, where the design already cuts the nearest figure
-          off at the shoulders. */}
-      <div
-        aria-hidden
-        className="pp-hero-push pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] bg-cover bg-center md:block"
-        style={{
-          // The box takes the picture's own proportions, so `cover` has nothing to crop. Sized off
-          // the width and given the aspect, rather than stretched to the section's height: the left
-          // column decides that height, and every time it changed — a longer headline, a taller
-          // card — `cover` re-cropped the artwork and took a different figure out of frame.
-          aspectRatio: "1460 / 838",
-          // Absolute, via basePath. The relative form resolves against the *document*, so this
-          // component works on "/" and silently loads nothing on any nested route — which is
-          // exactly what happened the first time the scene was reused on /events.
-          backgroundImage: `url(${basePath}/hero.webp)`,
-          // Fades on the left into the text column and on the bottom into the page, so the
-          // picture has no edge anywhere it meets something that is not a picture.
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, #000 28%), linear-gradient(to bottom, #000 62%, transparent 100%)",
-          maskImage:
-            "linear-gradient(to right, transparent 0%, #000 28%), linear-gradient(to bottom, #000 62%, transparent 100%)",
-          WebkitMaskComposite: "source-in",
-          maskComposite: "intersect",
-        }}
-      />
+      {reduced ? (
+        <div
+          aria-hidden
+          className={`${frame} bg-cover bg-center`}
+          style={{ ...mask, backgroundImage: `url(${basePath}/hero.webp)` }}
+        />
+      ) : (
+        <video
+          aria-hidden
+          className={`${frame} h-auto object-cover`}
+          style={mask}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={`${basePath}/hero.webp`}
+        >
+          <source src={`${basePath}/hero-loop.webm`} type="video/webm" />
+          <source src={`${basePath}/hero-loop.mp4`} type="video/mp4" />
+        </video>
+      )}
 
-      {/* On a phone there is no room beside the words, so it becomes a band under them — still
-          edge to edge, because a picture of a room inset in a card reads as a screenshot of one. */}
+      {/* On a phone there is no room beside the words, so it becomes a band under them — still edge
+          to edge, because a picture of a room inset in a card reads as a screenshot of one. A still,
+          not the clip: this product's first real use is a link opened on mobile data at a venue
+          door, and 188KB of video is 188KB somebody did not ask for while queuing. */}
       <div
         aria-hidden
-        className="relative -mx-4 mt-8 h-[260px] bg-cover bg-center sm:-mx-6 md:hidden"
+        className="relative -mx-4 mt-8 h-[240px] bg-cover bg-center sm:-mx-6 md:hidden"
         style={{ backgroundImage: `url(${basePath}/hero-sm.webp)` }}
       />
     </>

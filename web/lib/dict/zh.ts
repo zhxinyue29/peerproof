@@ -35,6 +35,8 @@ export const zh: Dict = {
   "me.myHosted": "我主办的活动",
   "me.noneHosted": "你还没有办过活动。",
   "me.nRegistered": "{n} 人已报名",
+  "me.vsLastMonth": "较上月 {delta}",
+  "me.approxUsd": "≈ {amount} USD",
   "me.impact": "我的影响力",
   "me.reach": "总参与者(我主办的活动)",
   "me.places": "城市 / 地区",

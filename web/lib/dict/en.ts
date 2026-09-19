@@ -34,6 +34,8 @@ export const en = {
   "me.myHosted": "Events you host",
   "me.noneHosted": "You have not hosted an event yet.",
   "me.nRegistered": "{n} registered",
+  "me.vsLastMonth": "{delta} on last month",
+  "me.approxUsd": "≈ {amount} USD",
   "me.impact": "Your impact",
   "me.reach": "People across your events",
   "me.places": "Cities and regions",

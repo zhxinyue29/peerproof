@@ -50,9 +50,77 @@ contract EventDirectory {
         /// Free text and not validated, on purpose. The escrow decides where money goes and this
         /// contract decides nothing — the worst a bad venue string can do is make a card read badly.
         string venue;
+        /// Comma-separated labels — "Monad,AI,Developers". Stored as one string rather than a
+        /// `string[]` because the only consumer is a chip row and a filter, and an array of short
+        /// strings costs a slot each to store and a loop to read back. Split on the client.
+        string tags;
         /// Zero until described. Lets a reader tell "no description" from "described with empty
         /// strings", which a caller is free to do.
         uint64 updatedAt;
+    }
+
+    /// What an account says about itself.
+    ///
+    /// Here rather than on a server because there is no server: this app is a static export, and
+    /// adding a backend would put a party back into a product whose whole argument is that there
+    /// is not one. Here rather than in the escrow for the same reason the listings are — that
+    /// contract holds deposits and must stay unable to be reached into. The worst anyone can do by
+    /// filling this with nonsense is make their own page read badly.
+    ///
+    /// Anyone can write their own and nobody can write anybody else's: the key is msg.sender.
+    /// Reading is free, which is the whole point — the cost falls on the one person who edits,
+    /// never on the people who look.
+    struct Profile {
+        string name;
+        string bio;
+        string city;
+        /// Handles, not URLs. "@alice" and "alice" are what people know; the link is the client's
+        /// job to assemble, and storing a full URL invites a link to anywhere.
+        string x;
+        string github;
+        string website;
+        uint64 updatedAt;
+    }
+
+    mapping(address => Profile) private _profiles;
+
+    event ProfileSet(address indexed account, string name);
+
+    uint256 public constant MAX_NAME = 40;
+    uint256 public constant MAX_BIO = 280;
+    uint256 public constant MAX_HANDLE = 40;
+    uint256 public constant MAX_WEBSITE = 120;
+
+    /// No admin, no moderation, no owner. Same as everything else here.
+    function setProfile(
+        string calldata name,
+        string calldata bio,
+        string calldata city,
+        string calldata x,
+        string calldata github,
+        string calldata website
+    ) external {
+        if (bytes(name).length > MAX_NAME) revert TooLong();
+        if (bytes(bio).length > MAX_BIO) revert TooLong();
+        if (bytes(city).length > MAX_NAME) revert TooLong();
+        if (bytes(x).length > MAX_HANDLE) revert TooLong();
+        if (bytes(github).length > MAX_HANDLE) revert TooLong();
+        if (bytes(website).length > MAX_WEBSITE) revert TooLong();
+
+        _profiles[msg.sender] = Profile({
+            name: name,
+            bio: bio,
+            city: city,
+            x: x,
+            github: github,
+            website: website,
+            updatedAt: uint64(block.timestamp)
+        });
+        emit ProfileSet(msg.sender, name);
+    }
+
+    function profileOf(address account) external view returns (Profile memory) {
+        return _profiles[account];
     }
 
     IAttendanceEscrow public immutable escrow;
@@ -71,6 +139,7 @@ contract EventDirectory {
     uint256 public constant MAX_BLURB = 600;
     uint256 public constant MAX_URL = 300;
     uint256 public constant MAX_VENUE = 160;
+    uint256 public constant MAX_TAGS = 200;
 
     constructor(address escrowAddress) {
         escrow = IAttendanceEscrow(escrowAddress);
@@ -83,7 +152,8 @@ contract EventDirectory {
         string calldata title,
         string calldata blurb,
         string calldata url,
-        string calldata venue
+        string calldata venue,
+        string calldata tags
     ) external {
         if (eventId == 0 || eventId >= escrow.nextEventId()) revert NoSuchEvent();
         if (escrow.getEvent(eventId).organizer != msg.sender) revert NotOrganizer();
@@ -91,12 +161,14 @@ contract EventDirectory {
         if (bytes(blurb).length > MAX_BLURB) revert TooLong();
         if (bytes(url).length > MAX_URL) revert TooLong();
         if (bytes(venue).length > MAX_VENUE) revert TooLong();
+        if (bytes(tags).length > MAX_TAGS) revert TooLong();
 
         _listings[eventId] = Listing({
             title: title,
             blurb: blurb,
             url: url,
             venue: venue,
+            tags: tags,
             updatedAt: uint64(block.timestamp)
         });
 

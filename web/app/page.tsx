@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useMotionPrefs } from "@/lib/motion";
-import HeroProofAnimation from "@/components/HeroProofAnimation";
 import TopNav from "@/components/TopNav";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import Link from "next/link";
@@ -203,18 +202,11 @@ export default function HomePage() {
               className="pointer-events-none absolute bottom-[1%] right-[-2%] hidden h-[160px] w-auto lg:block"
             />
 
-            {/* The four beats, over the scene and in the scene's own coordinates. The artwork's
-                handwriting was painted out of the middle of the ring to make room: the checklist and
-                the closing line both land there, and it is the one large area of the picture that is
-                empty and fully opaque under the two masks. */}
-            <HeroProofAnimation
-              label={t("proof.label")}
-              detected={t("proof.detected")}
-              rows={[t("proof.location"), t("proof.wallet"), t("proof.peer")]}
-              line={t("proof.line")}
-              verified={t("proof.verified")}
-              className="pp-hero-push pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden aspect-[1460/838] w-[calc(47%+50vw-50%)] lg:block"
-            />
+            {/* The four-beat sequence used to live here. It is gone with the still it was drawn
+                against: its card, its arcs and its closing line were pinned to that picture's ring
+                and phone coordinates, and the scene behind them is a different room now. The clip
+                tells the same story — a proof leaving one phone and landing on other people — from
+                inside the room rather than on top of it. */}
 
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
                 and where it reads as a caption on the scene rather than a fourth thing in the column. */}
