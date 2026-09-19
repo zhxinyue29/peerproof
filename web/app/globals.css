@@ -361,3 +361,30 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .pp-hero-push { animation: none; }
 }
+
+/* The air in the room: haze drifting, and one stage beam breathing through it.
+   Deliberately off the sequence's clock — 13s, 17s and 9s against the beats' 8s, so the two never
+   line up and the hero never resolves into a single repeating mechanism. Transform and opacity
+   only, which the compositor handles without touching layout or paint. */
+@keyframes pp-hero-haze1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-126px, 44px) scale(1.24); }
+}
+@keyframes pp-hero-haze2 {
+  0%, 100% { transform: translate(0, 0) scale(1.06); }
+  50%      { transform: translate(104px, -54px) scale(0.86); }
+}
+@keyframes pp-hero-beam {
+  0%, 100% { opacity: 0.22; transform: translateX(0) skewX(0deg); }
+  50%      { opacity: 1;    transform: translateX(-30px) skewX(2.6deg); }
+}
+.pp-hero-haze1 { transform-box: fill-box; transform-origin: center; animation: pp-hero-haze1 13s ease-in-out infinite; }
+.pp-hero-haze2 { transform-box: fill-box; transform-origin: center; animation: pp-hero-haze2 17s ease-in-out infinite; }
+.pp-hero-beam  { transform-box: fill-box; transform-origin: 50% 0%;  animation: pp-hero-beam  9s ease-in-out infinite; }
+
+/* Atmosphere is the first thing to go under reduced motion, not the last: it is the one layer here
+   that moves continuously and carries no information at all. */
+@media (prefers-reduced-motion: reduce) {
+  .pp-hero-haze1, .pp-hero-haze2, .pp-hero-beam { animation: none; }
+  .pp-hero-beam { opacity: 0.3; }
+}

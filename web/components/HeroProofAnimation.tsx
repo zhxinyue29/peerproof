@@ -157,7 +157,41 @@ export default function HeroProofAnimation({
               <rect width="1460" height="838" fill="url(#pp-fade-x)" />
               <rect width="1460" height="838" fill="url(#pp-fade-y)" style={{ mixBlendMode: "multiply" }} />
             </mask>
+
+            {/* Haze, and the beam it hangs in. Soft radial falloffs rather than a noise filter:
+                `feTurbulence` with an animated `baseFrequency` re-renders the filter every frame and
+                costs more than everything else on this page put together, while two blurred blobs
+                drifting across each other are indistinguishable from smoke at this size. */}
+            <radialGradient id="pp-haze">
+              <stop offset="0%" stopColor="#8f7ce8" stopOpacity="0.42" />
+              <stop offset="60%" stopColor="#6a57bb" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#000" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="pp-beam" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#cdbcff" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#cdbcff" stopOpacity="0" />
+            </linearGradient>
+            {/* A beam is a solid of light in smoke; a polygon is a shape with edges. Unblurred, this
+                one drew a hard pale quadrilateral straight across the stage banner and read as a
+                rendering fault rather than as a lamp. 30 units of blur is roughly 14px on screen,
+                which is wider than any real edge in the artwork. */}
+            <filter id="pp-soften" x="-30%" y="-20%" width="160%" height="150%">
+              <feGaussianBlur stdDeviation="30" />
+            </filter>
           </defs>
+
+          {/* Beat 1's room, kept alive. Underneath everything, because it is air.
+              This is what the video was for and did not deliver: the clip that came back had a
+              0.14 mean frame difference over the whole stage third — less motion than the rest of
+              the frame, for 250KB. Drawn, it is free, it never stops, and it is slow enough to be
+              deniable, which is what atmosphere has to be.
+              Periods of 13s and 17s against the sequence's 8s. Anything that divides evenly would
+              re-align with the beats every few cycles and start reading as one mechanism. */}
+          <g mask="url(#pp-scene-fade)" style={{ mixBlendMode: "screen" }}>
+            <polygon className="pp-hero-beam" points="1338,258 1392,258 1250,690 1060,690" fill="url(#pp-beam)" filter="url(#pp-soften)" />
+            <ellipse className="pp-hero-haze1" cx="1120" cy="430" rx="300" ry="150" fill="url(#pp-haze)" />
+            <ellipse className="pp-hero-haze2" cx="900" cy="330" rx="240" ry="120" fill="url(#pp-haze)" />
+          </g>
 
           {/* Beat 3 — under everything, because the card and the closing line both sit inside the
               ring these arcs draw. */}
