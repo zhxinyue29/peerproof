@@ -178,7 +178,10 @@ export const zh: Dict = {
   "nav.about": "关于",
   "home.searchPlaceholder": "搜索活动、地点或主办方…",
   "home.signIn": "登录 / 注册",
-  "home.headlineLead": "不需要相信主办方的",
+  // 断行写在值里。中文没有词间空格，CSS 无从知道「主办方」是一个词——13ch 宽度下它被
+  // 断成「主办 / 方的」，把词劈开了。标题在哪里换行是每种语言自己的排版决定，所以它属于
+  // 字典，不属于 className。英文串里没有 \n，渲染完全不受影响。
+  "home.headlineLead": "不需要相信\n主办方的",
   "home.headlineAccent": "出席证明",
   "home.headlineTail": "。",
   "home.joinTitle": "我要参加活动",
@@ -187,12 +190,6 @@ export const zh: Dict = {
   "home.hostBody": "创建一个无需信任的活动，让出席和结算自动发生。",
   "home.watchMinute": "1 分钟了解 PeerProof",
   "home.howLink": "这是如何工作的？",
-  "scene.realPeople": "真实的人",
-  "scene.onchain": "链上证据",
-  "scene.fairPayouts": "公平结算",
-  "scene.proofFromPeers": "证明来自同伴",
-  "scene.imHere": "我到了！",
-  "scene.meToo": "我也在！",
   "strip.custodyTitle": "主办方不保管资金",
   "strip.custodyBody": "押金由智能合约托管",
   "strip.peerTitle": "同伴互证",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import StepFigure from "@/components/StepFigure";
-import HeroScene from "@/components/HeroScene";
+import HeroArt from "@/components/HeroArt";
 import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
@@ -60,18 +60,22 @@ export default function HomePage() {
         <TopBar />
 
         <main>
-          <section className="relative grid items-center gap-10 pb-10 pt-8 md:grid-cols-[1.02fr_0.98fr] md:gap-10 md:pt-12">
+          <section className="relative pb-10 pt-8 md:pb-16 md:pt-12">
+            <HeroArt />
+
+            {/* The glow sits behind the artwork's left edge, where the picture fades out, so the
+                two hand over to each other instead of meeting at a line. */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -z-10 -left-[15%] -right-[15%] -top-[22%] h-[150%]"
+              className="pointer-events-none absolute -z-10 -left-[15%] -top-[22%] right-0 h-[150%]"
               style={{
                 background:
-                  "radial-gradient(52rem 32rem at 76% 46%, rgba(118,91,255,0.30), transparent 66%)," +
-                  "radial-gradient(34rem 24rem at 10% 12%, rgba(77,183,255,0.12), transparent 62%)",
+                  "radial-gradient(40rem 26rem at 58% 46%, rgba(118,91,255,0.22), transparent 66%)," +
+                  "radial-gradient(34rem 24rem at 8% 12%, rgba(77,183,255,0.12), transparent 62%)",
               }}
             />
 
-            <div className="relative min-w-0 space-y-6">
+            <div className="relative max-w-[600px] space-y-6">
               <p className="text-[15px] font-medium tracking-[0.02em] text-accent-2">
                 {t("home.eyebrow")}
               </p>
@@ -79,29 +83,19 @@ export default function HomePage() {
               {/* The accent lands on the object of the sentence — the thing you would otherwise have
                   to take somebody's word for. Three keys rather than one string with markup in it,
                   because where the emphasis falls is a decision each language makes for itself. */}
-              <h1 className="max-w-[16ch] text-[40px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[58px]">
+              <h1 className="max-w-[16ch] whitespace-pre-line text-[40px] font-semibold leading-[1.12] tracking-[-0.035em] md:text-[56px]">
                 {t("home.headlineLead")}
                 <span className="text-accent-2">{t("home.headlineAccent")}</span>
                 {t("home.headlineTail")}
               </h1>
 
-              <p className="max-w-[44ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
+              <p className="max-w-[40ch] text-[17px] leading-relaxed text-dim md:text-[18px]">
                 {t("home.sub")}
               </p>
 
               <div className="grid gap-4 pt-1 sm:grid-cols-2">
-                <Door
-                  href="/events"
-                  title={t("home.joinTitle")}
-                  body={t("home.joinBody")}
-                  tone="join"
-                />
-                <Door
-                  href="/organizer"
-                  title={t("home.hostTitle")}
-                  body={t("home.hostBody")}
-                  tone="host"
-                />
+                <Door href="/events" title={t("home.joinTitle")} body={t("home.joinBody")} tone="join" />
+                <Door href="/organizer" title={t("home.hostTitle")} body={t("home.hostBody")} tone="host" />
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-1">
@@ -125,8 +119,6 @@ export default function HomePage() {
                 </a>
               </div>
             </div>
-
-            <HeroScene />
           </section>
         </main>
       </div>
