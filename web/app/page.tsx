@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ProofArt from "@/components/ProofArt";
+import StepFigure from "@/components/StepFigure";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
 import { PeerProofMark } from "@/components/NavIcons";
@@ -96,7 +97,11 @@ export default function HomePage() {
               </ul>
             </div>
 
-            <ProofArt className="h-[220px] w-full md:h-[340px]" />
+            {/* Taller than it looks like it needs to be. The drawing is close to square and the
+                card is not, so `meet` scales it to the *height*: at 340px it rendered 380px wide
+                inside a 507px card and sat in 63px of empty gradient on either side. Height is the
+                constraint, so height is the lever. */}
+            <ProofArt className="h-[240px] w-full md:h-[420px]" />
           </section>
 
           <HowItWorks />
@@ -270,31 +275,52 @@ function HowItWorks() {
 
       <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
         {steps.map((s, i) => (
-          /* The numeral is the decoration. Set large and nearly transparent behind the text it
-             belongs to, it gives three identical panels a reading order at a glance — which a
-             14px accent-coloured digit in the corner never did. */
+          /* The picture is the decoration now, and it is also the explanation. The three cards
+             share one drawing and differ only in its state, so reading across them is the
+             mechanism: deposits go down into the contract, the room draws lines across itself,
+             the contract pays back along them — and the fourth person, who never got a line, is
+             the reason any of it is worth doing. The large ghost numeral this replaces gave the
+             panels a reading order and nothing else. */
           <li
             key={s.title}
             className="relative min-w-0 overflow-hidden rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-line-2 md:p-6"
           >
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -right-2 -top-6 select-none text-[112px] font-semibold leading-none text-white/[0.045]"
-            >
-              {i + 1}
-            </span>
-            <span className="relative text-[14px] font-medium tabular-nums text-accent-2">
+            <div className="rounded-xl border border-line bg-ink/40 px-3 py-4">
+              <StepFigure step={(i + 1) as 1 | 2 | 3} />
+            </div>
+            <span className="mt-4 block text-[14px] font-medium tabular-nums text-accent-2">
               {String(i + 1).padStart(2, "0")}
             </span>
-            <h3 className="relative mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
-            <p className="relative mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
+            <h3 className="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
+            <p className="mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
           </li>
         ))}
       </ol>
 
-      <div className="space-y-3 border-t border-line pt-6">
-        <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.custodyNote")}</p>
-        <p className="max-w-[70ch] text-[16px] leading-relaxed text-dim">{t("home.bothRoles")}</p>
+      {/* Two claims, not two paragraphs.
+          These were a pair of loose grey blocks under a rule, which is how a footnote looks — and
+          the first of them is the strongest thing on the page: there is no function that can pay
+          the organizer. A claim that carries the whole product should not be set like an aside. */}
+      <div className="grid gap-4 border-t border-line pt-6 md:grid-cols-2 md:gap-5">
+        {[
+          { key: "home.custodyNote", tone: "ok" as const },
+          { key: "home.bothRoles", tone: "accent" as const },
+        ].map(({ key, tone }) => (
+          <div
+            key={key}
+            className="relative overflow-hidden rounded-xl border border-line bg-panel/60 p-5"
+          >
+            {/* A rule down the left edge rather than an icon: it marks the block as a statement
+                without adding a symbol somebody has to decode. */}
+            <span
+              aria-hidden
+              className={`absolute inset-y-4 left-0 w-[3px] rounded-r-full ${
+                tone === "ok" ? "bg-ok/60" : "bg-accent/60"
+              }`}
+            />
+            <p className="pl-3 text-[16px] leading-relaxed text-dim">{t(key)}</p>
+          </div>
+        ))}
       </div>
 
       {/* The close.
