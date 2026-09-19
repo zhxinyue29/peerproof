@@ -10,8 +10,9 @@ import { useIdentity } from "@/components/IdentityProvider";
 import { Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
-import { ESCROW_ADDRESS, explorerAddressUrl, hasDeployment, publicClient } from "@/lib/chain";
+import { basePath, ESCROW_ADDRESS, explorerAddressUrl, hasDeployment, publicClient } from "@/lib/chain";
 import { readAllEvents, type EventSummary } from "@/lib/events";
+import { readProfile, type Profile } from "@/lib/directory";
 import { mon, shortAddress } from "@/lib/format";
 
 /// Everything this account can prove, and nothing it cannot.
@@ -35,15 +36,58 @@ import { mon, shortAddress } from "@/lib/format";
 type Row = { event: EventSummary; registered: boolean; confirmed: boolean };
 type Tab = "overview" | "joined" | "hosted" | "settings";
 
+/// A handle as typed, reduced to the handle. People write "@alice", "alice", and the whole profile
+/// URL into a box labelled X — pasting any of those into `https://x.com/` gives a dead link two
+/// times out of three, and the one thing a link on a profile has to do is go somewhere.
+function strip(handle: string) {
+  return handle.trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?(x\.com|twitter\.com|github\.com)\//i, "").replace(/\/+$/, "");
+}
+
+/// `example.com` is what people type and is not a URL a browser will follow as written — without a
+/// scheme the href resolves against our own origin and lands on a 404 inside PeerProof.
+function withScheme(url: string) {
+  return /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
+}
+
+function ProfileLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      // `noreferrer noopener` on every outbound link from a page that knows an address: the
+      // referrer would carry this account's own URL to whatever the person linked to.
+      rel="noreferrer noopener me"
+      className="underline decoration-line-2 underline-offset-4 hover:text-fg"
+    >
+      {label}
+    </a>
+  );
+}
+
 export default function MePage() {
   const t = useT();
-  const { signer } = useIdentity();
+  const { signer, setUpPrivy, useDevKey, devMode, busy } = useIdentity();
   const address = signer?.address ?? null;
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [hosted, setHosted] = useState<EventSummary[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [tab, setTab] = useState<Tab>("overview");
+  /// What this account wrote about itself, from the directory contract. `null` while reading, and
+  /// an empty profile when it has never written one — the two look the same on screen but not to
+  /// the code, so a slow read does not flash "no name" before the name arrives.
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (!address) return;
+    let dropped = false;
+    void readProfile(address)
+      .then((pr) => !dropped && setProfile(pr))
+      .catch(() => {});
+    return () => {
+      dropped = true;
+    };
+  }, [address]);
 
   useEffect(() => {
     if (!hasDeployment || !address) return;
@@ -107,12 +151,35 @@ export default function MePage() {
           <h1 className="mt-5 text-[24px] font-semibold tracking-[-0.02em]">{t("nav.myProof")}</h1>
           <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("me.signedOutBody")}</p>
           <p className="mt-2 text-[15px] leading-relaxed text-faint">{t("me.signInFirst")}</p>
-          <Link
-            href="/events"
-            className="mt-6 inline-flex min-h-[48px] items-center rounded-xl bg-accent px-6 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
-          >
-            {t("me.findOne")}
-          </Link>
+          {/* Signing in is the action this page is missing, so it is the button on it. It used to
+              send you to the events list to "sign in at an event" — the account page being the one
+              screen in the product you could not sign in from, while the bar above it offered a
+              sign-in button the whole time. Browsing events is still here, as the second thing. */}
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={setUpPrivy}
+              disabled={!!busy}
+              className="inline-flex min-h-[48px] items-center rounded-xl bg-accent px-6 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985] disabled:opacity-60"
+            >
+              {busy ?? t("home.signIn")}
+            </button>
+            <Link
+              href="/events"
+              className="inline-flex min-h-[44px] items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4 hover:text-fg"
+            >
+              {t("me.findOne")}
+            </Link>
+            {devMode && (
+              <button
+                type="button"
+                onClick={useDevKey}
+                className="inline-flex min-h-[44px] items-center text-[14px] text-faint underline decoration-line-2 underline-offset-4"
+              >
+                Throwaway local key (dev)
+              </button>
+            )}
+          </div>
         </div>
       </Frame>
     );
@@ -154,12 +221,18 @@ export default function MePage() {
               aria-hidden
               className="pointer-events-none absolute inset-y-0 right-0 hidden w-[46%] bg-cover bg-center opacity-50 lg:block"
               style={{
-                backgroundImage: "url(../hero.webp)",
+                // `basePath`, not `../hero.webp`. The relative form happens to resolve here and
+                // does not on a route one level deeper — the same mistake already shipped once on
+                // the events page, where it silently loaded nothing.
+                backgroundImage: `url(${basePath}/hero.webp)`,
                 WebkitMaskImage: "linear-gradient(to right, transparent, #000 55%)",
                 maskImage: "linear-gradient(to right, transparent, #000 55%)",
               }}
             />
-            <div className="relative flex flex-wrap items-center gap-5">
+            {/* `items-start`, not `items-center`. Centring was right when the block beside the
+                square was two lines; with a bio and a link row it is five, and centring floated the
+                name clear above the top of the avatar. */}
+            <div className="relative flex flex-wrap items-start gap-5">
               <span
                 aria-hidden
                 className="h-20 w-20 shrink-0 rounded-2xl border border-line-2"
@@ -176,8 +249,26 @@ export default function MePage() {
                       "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
                   }}
                 >
-                  {signer?.label ?? shortAddress(address)}
+                  {/* The name this account gave itself, when it gave itself one. The page was
+                      showing the address even to somebody who had filled in the profile form —
+                      the form wrote to the chain and nothing on the page ever read it back, which
+                      is the same "only you can see it" problem that put profiles on chain in the
+                      first place. */}
+                  {profile?.name || signer?.label || shortAddress(address)}
                 </h1>
+                {profile?.bio && (
+                  <p className="mt-2 max-w-[56ch] text-[16px] leading-relaxed text-dim">{profile.bio}</p>
+                )}
+                {(profile?.city || profile?.x || profile?.github || profile?.website) && (
+                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-faint">
+                    {profile.city && <span>{profile.city}</span>}
+                    {profile.x && <ProfileLink href={`https://x.com/${strip(profile.x)}`} label={`@${strip(profile.x)}`} />}
+                    {profile.github && (
+                      <ProfileLink href={`https://github.com/${strip(profile.github)}`} label={`github.com/${strip(profile.github)}`} />
+                    )}
+                    {profile.website && <ProfileLink href={withScheme(profile.website)} label={profile.website} />}
+                  </p>
+                )}
                 <a
                   href={explorerAddressUrl(address)}
                   target="_blank"
@@ -258,7 +349,7 @@ export default function MePage() {
                   the section is not there. */}
               <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
                 <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("profile.title")}</h2>
-                <EditProfile />
+                <EditProfile onSaved={setProfile} />
               </section>
               <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
                 <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.tabSettings")}</h2>

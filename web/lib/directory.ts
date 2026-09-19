@@ -1,7 +1,6 @@
 import { getCreate2Address, keccak256, pad, type Address, type Hex } from "viem";
 import { ESCROW_ADDRESS, hasDeployment, publicClient } from "@/lib/chain";
 import { eventDirectoryAbi, eventDirectoryBytecode } from "@/lib/directoryArtifact";
-import { walletSendTransaction } from "@/lib/wallet";
 
 /// Reads and writes event descriptions.
 ///
@@ -74,13 +73,23 @@ export function directoryReady(): boolean {
   return deployed === true;
 }
 
-/// Monad bills the gas limit rather than the amount used, so this cannot pad generously. Fitted to
-/// three measurements of `describe` against input size (contracts/test/DirectoryGas.t.sol):
+/// Monad bills the gas limit rather than the amount used, so this is fitted rather than padded.
 ///
-///   32 bytes → 143,809 · 300 → 331,496 · 1020 → 777,169
+/// Fitted to `setProfile`/`describe` measurements taken against the deployed contract on
+/// 2026-09-20, after `venue` and `tags` joined the struct:
 ///
-/// 140k + 700/byte sits 6–13% above each, which is margin without being a surcharge. A short
-/// listing costs a fraction of a long one instead of everyone paying for the longest.
+///   describe · 2 fields / 27 bytes → 123,297 · 5 fields / 132 bytes → 229,253
+///
+/// The previous fit was `140,000 + 700/byte`, measured when the struct had three strings. It was
+/// 31% over on a short listing and **5,253 short** on an ordinary one — a listing with a title, a
+/// blurb, a link, a venue and tags could not be saved at all, and on Monad the failed attempt was
+/// charged in full. Bytes alone cannot model this: every non-empty field costs a length slot of
+/// its own, so a one-word venue is far more than one word's worth of gas.
+///
+/// `PAD` is the margin over the fit. Twenty percent, because the alternative to over-paying is a
+/// write that runs out of gas and costs exactly the same.
+const PAD = 12n;
+
 export function describeGas(
   title: string,
   blurb: string,
@@ -88,8 +97,15 @@ export function describeGas(
   venue = "",
   tags = "",
 ): bigint {
-  const bytes = new TextEncoder().encode(title + blurb + url + venue + tags).length;
-  return 140_000n + BigInt(bytes) * 700n;
+  const parts = [title, blurb, url, venue, tags];
+  return (fit(83_000n, 11_000n, parts) * PAD) / 10n;
+}
+
+/// Shared shape: a flat cost, a cost per field that has anything in it, and a cost per byte.
+function fit(base: bigint, perField: bigint, parts: string[]): bigint {
+  const fields = BigInt(parts.filter((v) => v.length > 0).length);
+  const bytes = BigInt(new TextEncoder().encode(parts.join("")).length);
+  return base + perField * fields + 700n * bytes;
 }
 
 export async function readListing(eventId: bigint): Promise<Listing> {
@@ -117,16 +133,37 @@ export async function readListings(from: bigint, to: bigint): Promise<Listing[]>
 /// Deploys through the CREATE2 factory, which is a plain call: salt followed by the init code. The
 /// wallet already holds the key, so this replaces a keystore file and a password that has to be
 /// remembered months later — which is exactly what stopped this getting deployed the first time.
-export async function deployDirectory(from: Address): Promise<{ hash: Hex; address: Address }> {
+/// Whatever the signed-in account uses to send a transaction — `Signer["sendRaw"]`, taken as a
+/// function so this module does not have to import the signer and close a cycle.
+type RawSender = (args: { to: Address; data: Hex; gas?: bigint }) => Promise<Hex>;
+
+/// Never lower than this, whatever an estimate says, and used unchanged when estimation fails.
+/// A deploy that runs out of gas costs the same as one that succeeds — Monad bills the limit —
+/// so the floor is set above the largest figure this contract has ever needed rather than at it.
+const DEPLOY_GAS_FLOOR = 1_900_000n;
+
+export async function deployDirectory(send: RawSender): Promise<{ hash: Hex; address: Address }> {
   const expected = directoryAddress();
-  const hash = await walletSendTransaction({
-    from,
-    to: CREATE2_FACTORY,
-    data: `${SALT}${initCode(ESCROW_ADDRESS).slice(2)}` as Hex,
-    // Measured by simulating the plain deployment against the live testnet: 1,196,705, most of it
-    // the 200-gas-per-byte code deposit for 4,107 bytes. The factory adds a little on top.
-    gas: 1_400_000n,
-  });
+  const data = `${SALT}${initCode(ESCROW_ADDRESS).slice(2)}` as Hex;
+
+  // Estimated, not hardcoded. It was 1,400,000 — a figure measured when the contract was 4,107
+  // bytes, and the contract has since grown a venue field, a tags field and the whole profile
+  // struct. It now needs 1,689,094. Every press of the deploy button ran out of gas and reverted,
+  // which is a failure mode that looks exactly like "this product cannot deploy its own contract",
+  // and the number would have gone stale again the next time the contract grew.
+  let gas = DEPLOY_GAS_FLOOR;
+  try {
+    const estimate = await publicClient.estimateGas({ to: CREATE2_FACTORY, data });
+    // A fifth over: the estimate is against the current state, and the deploy lands a block or two
+    // later. Cheap insurance against a refund of nothing.
+    const padded = (estimate * 120n) / 100n;
+    if (padded > gas) gas = padded;
+  } catch {
+    // An RPC that will not estimate. The floor is a real measurement, so this is still a deploy
+    // worth attempting rather than an error to show somebody.
+  }
+
+  const hash = await send({ to: CREATE2_FACTORY, data, gas });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error("Deployment reverted.");
 
@@ -176,13 +213,16 @@ export async function readProfile(account: `0x${string}`): Promise<Profile> {
   })) as Profile;
 }
 
-/// Monad bills the gas limit rather than the amount used, so this is fitted rather than padded —
-/// same shape as `describeGas`, since it is the same kind of write: one struct of short strings.
+/// The same shape as `describeGas`, fitted to its own measurements — a profile is six separate
+/// strings rather than one struct, so it is not the same curve:
+///
+///   setProfile · 1 field / 9 bytes → 85,887 · 5 fields / 93 bytes → 231,771
+///
+/// The old shared fit sent 211,764 for that second case. It was the reason saving a filled-in
+/// profile failed while saving just a name worked.
 export function profileGas(p: Omit<Profile, "updatedAt">): bigint {
-  const bytes = new TextEncoder().encode(
-    p.name + p.bio + p.city + p.x + p.github + p.website,
-  ).length;
-  return 140_000n + BigInt(bytes) * 700n;
+  const parts = [p.name, p.bio, p.city, p.x, p.github, p.website];
+  return (fit(58_000n, 21_800n, parts) * PAD) / 10n;
 }
 
 /// True when nothing the user typed differs from what is already on chain.

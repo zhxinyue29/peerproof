@@ -14,7 +14,7 @@ import { useT } from "@/lib/i18n";
 /// what actually blocked this from being deployed. The wallet already holds the key; deploying is
 /// just a transaction with no `to` address, so a click does the same job as a password, without
 /// the key ever leaving the wallet.
-export default function DeployDirectory() {
+export default function DeployDirectory({ onDeployed }: { onDeployed?: () => void } = {}) {
   const { signer } = useIdentity();
   const t = useT();
   const [busy, setBusy] = useState(false);
@@ -61,8 +61,11 @@ export default function DeployDirectory() {
             onClick={() => {
               setBusy(true);
               setError(null);
-              void deployDirectory(signer.address)
-                .then(setResult)
+              void deployDirectory(signer.sendRaw)
+                .then((r) => {
+                  setResult(r);
+                  onDeployed?.();
+                })
                 .catch((e) => setError(shortenError(e, t)))
                 .finally(() => setBusy(false));
             }}

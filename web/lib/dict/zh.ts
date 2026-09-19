@@ -22,7 +22,7 @@ export const zh: Dict = {
 
   "nav.myProof": "我的证明",
   "me.signedOutBody": "这里是你自己的出席记录:报名过哪些活动、哪些被现场的人确认过、押金累计多少。全部从合约读,别人用同一个地址也能算出同样的结果。",
-  "me.signInFirst": "先在任意一场活动里登录,这里才知道你是谁。",
+  "me.signInFirst": "先登录，这里才知道你是谁。",
   "me.eventsJoined": "报名过的活动",
   "me.turnout": "到场率",
   "me.staked": "累计押金",
@@ -70,6 +70,7 @@ export const zh: Dict = {
   "common.close": "关闭",
   "common.copy": "复制",
   "common.copied": "已复制",
+  "common.tapToCopy": "点一下复制",
 
   // Not translated on purpose — see en.ts. Somebody stuck in the wrong language has to be able to
   // read their way out.
@@ -516,7 +517,7 @@ export const zh: Dict = {
   "deploy.dirBusy": "部署中…",
   "deploy.dirCta": "部署目录合约",
   "deploy.dirGas":
-    "大约 0.12 MON。gas 上限固定写死为 1,300,000，而不是估算出来的，因为 Monad 按上限收费，不按实际用量。",
+    "大约 0.2 MON。gas 上限是当场估出来再加两成的——合约一长，写死的数字就不够用，而 Monad 按上限收费，不够用就是白花一次。",
   "home.redirecting": "正在带你去这个活动…",
   "home.howItWorksSub": "一笔押金、一屋子人，以及一个照着这屋子自己给出的证据来结算的合约。",
   "home.step1Title": "先交一笔押金",

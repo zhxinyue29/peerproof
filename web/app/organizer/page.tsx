@@ -585,7 +585,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       const wantsWords = !!(title || blurb || url || venue);
       if (wantsWords && !(await checkDirectory())) {
         setBusyLabel(t("listing.settingUp"));
-        await deployDirectory(signer.address);
+        await deployDirectory(signer.sendRaw);
       }
       setBusyLabel(t("create.creating"));
       // The venue display's key. Generated fresh per event and handed to the device at the door;

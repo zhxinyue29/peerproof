@@ -21,7 +21,7 @@ export const en = {
 
   "nav.myProof": "My proof",
   "me.signedOutBody": "Your own attendance record: which events you joined, which ones the room confirmed you at, and what you have staked. All of it read from the contract — anyone with the same address computes the same answer.",
-  "me.signInFirst": "Sign in on any event first — this page has no idea who you are until then.",
+  "me.signInFirst": "Sign in first — this page has no idea who you are until then.",
   "me.eventsJoined": "Events joined",
   "me.turnout": "Turnout",
   "me.staked": "Staked in total",
@@ -69,6 +69,7 @@ export const en = {
   "common.close": "Close",
   "common.copy": "Copy",
   "common.copied": "Copied",
+  "common.tapToCopy": "tap to copy",
 
   // A language's own name is never translated — somebody who cannot read the current UI has to be
   // able to find their way out of it. So these two values are identical in every dictionary.
@@ -540,7 +541,7 @@ export const en = {
   "deploy.dirBusy": "Deploying…",
   "deploy.dirCta": "Deploy the directory",
   "deploy.dirGas":
-    "About 0.12 MON. The gas limit is pinned at 1,300,000 rather than estimated, because Monad charges the limit and not the amount used.",
+    "About 0.2 MON. The limit is estimated at the time of the press and padded by a fifth — a pinned number goes stale the moment the contract grows, and Monad charges the limit either way.",
   "home.redirecting": "Taking you to the event…",
   "home.howItWorksSub": "A deposit, a room, and a contract that settles from what the room proves about itself.",
   "home.step1Title": "Put a deposit down",

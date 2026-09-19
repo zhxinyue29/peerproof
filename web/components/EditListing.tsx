@@ -66,7 +66,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
       // contract, so this happens without being announced as anything other than saving.
       if (!(await checkDirectory())) {
         setBusy(t("listing.settingUp"));
-        await deployDirectory(signer.address);
+        await deployDirectory(signer.sendRaw);
       }
       setBusy(t("listing.saving"));
       await signer.write({

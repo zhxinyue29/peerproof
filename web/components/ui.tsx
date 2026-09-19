@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 /// Shared chrome for all five screens, so the visual language changes in one place.
 ///
@@ -412,6 +413,7 @@ export function Progress({ value, max }: { value: number; max: number }) {
 
 /// Copy-to-clipboard for addresses and keys, with the confirmation people expect.
 export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg" | "ok" }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -425,7 +427,7 @@ export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg
     >
       {value}
       <span className="mt-1.5 block font-sans text-[14px] text-faint">
-        {copied ? "copied" : "tap to copy"}
+        {copied ? t("common.copied") : t("common.tapToCopy")}
       </span>
     </button>
   );

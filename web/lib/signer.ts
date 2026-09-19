@@ -39,6 +39,15 @@ export type Signer = {
     to?: Address;
     abi?: Abi;
   }) => Promise<Hex>;
+  /// A transaction with calldata and no ABI. Deploying the directory goes through a CREATE2
+  /// factory, so there is no function to name — and routing it through `write` would mean
+  /// inventing an ABI for a factory whose interface is "the calldata is the init code".
+  ///
+  /// It exists because deploying used to reach for `window.ethereum` directly, which made the one
+  /// step that unlocks titles, venues and profiles reachable only from a browser extension. The
+  /// email and passkey routes — the two this product tells people to use — could see the button
+  /// and got "No browser wallet found."
+  sendRaw: (args: { to: Address; data: Hex; gas?: bigint; value?: bigint }) => Promise<Hex>;
 };
 
 export function passkeySigner(account: LocalAccount): Signer {
@@ -59,6 +68,8 @@ export function passkeySigner(account: LocalAccount): Signer {
       } as never);
       return walletClientFor(account).writeContract(request as never);
     },
+    sendRaw: ({ to, data, gas, value }) =>
+      walletClientFor(account).sendTransaction({ to, data, gas, value } as never),
   };
 }
 
@@ -104,6 +115,12 @@ export function walletSigner(
         },
         opts?.provider,
       );
+    },
+    sendRaw: ({ to, data, gas, value }) => {
+      if (opts?.kind === "privy" && !opts.provider) {
+        throw new Error("This email session lost its connection. Reload the page to restore it.");
+      }
+      return walletSendTransaction({ from: owner, to, data, gas, value }, opts?.provider);
     },
   };
 }

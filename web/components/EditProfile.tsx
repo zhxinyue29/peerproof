@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Field, Notice } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
+import DeployDirectory from "@/components/DeployDirectory";
 import { directoryAddress, directoryReady } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import {
@@ -32,7 +33,7 @@ type Draft = Omit<Profile, "updatedAt">;
 
 const BLANK: Draft = { name: "", bio: "", city: "", x: "", github: "", website: "" };
 
-export default function EditProfile() {
+export default function EditProfile({ onSaved }: { onSaved?: (p: Profile) => void } = {}) {
   const t = useT();
   const { signer } = useIdentity();
   const [onChain, setOnChain] = useState<Profile | null>(null);
@@ -40,6 +41,10 @@ export default function EditProfile() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  /// Flipped by the deploy block below. `directoryReady()` is a module-level cache written when
+  /// somebody asks the chain, and nothing re-asks after a successful deploy — so the warning
+  /// stayed on screen above a green "deployed" notice, on the same screen, at the same time.
+  const [justDeployed, setJustDeployed] = useState(false);
 
   useEffect(() => {
     if (!signer?.address) return;
@@ -80,8 +85,14 @@ export default function EditProfile() {
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") throw new Error(t("event.revertedOnChain"));
-      setOnChain({ ...draft, updatedAt: BigInt(Math.floor(Date.now() / 1000)) });
+      const fresh = { ...draft, updatedAt: BigInt(Math.floor(Date.now() / 1000)) };
+      setOnChain(fresh);
       setSaved(true);
+      // The page around this form shows the name and bio in its banner, and it read them once on
+      // mount. Without this, saving worked, said so, and the banner above it kept showing the
+      // address — you had to reload to see your own name, which reads as the save not having
+      // taken.
+      onSaved?.(fresh);
     } catch (e) {
       setError(shortenError(e, t));
     } finally {
@@ -89,10 +100,20 @@ export default function EditProfile() {
     }
   }
 
-  if (!directoryReady()) {
+  if (!directoryReady() && !justDeployed) {
     // The directory has never been deployed, so there is nowhere to put this yet. Said plainly
     // rather than rendering a form whose save button could only fail.
-    return <Notice tone="warn">{t("profile.noDirectory")}</Notice>;
+    //
+    // With the way out attached. The notice on its own named a thing that had to happen and gave
+    // no means of making it happen — the deploy button existed, on the organizer dashboard, which
+    // is not a page somebody filling in their own profile has any reason to visit. The component
+    // renders nothing once the contract is there, so this costs an ordinary reader nothing.
+    return (
+      <div className="space-y-4">
+        <Notice tone="warn">{t("profile.noDirectory")}</Notice>
+        <DeployDirectory onDeployed={() => setJustDeployed(true)} />
+      </div>
+    );
   }
 
   return (
