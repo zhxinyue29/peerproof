@@ -66,7 +66,7 @@ export default function HomePage() {
     // `overflow-x-hidden` is a floor, not a layout tool — the headline is set large enough that one
     // long word in a language we have not seen yet must not be able to take the page sideways.
     <div className="min-h-dvh overflow-x-hidden">
-      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[26px]">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
         <TopBar />
 
         <main>
@@ -163,10 +163,26 @@ export default function HomePage() {
                 />
               )}
 
-              <motion.div variants={m.item} className="max-w-[600px] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
-                <p>{t("home.subA")}</p>
-                <p>{t("home.subB")}</p>
-              </motion.div>
+              {/* Where the two lines of body copy were.
+                  They restated the headline in longer words — a stake, proven by the people in the
+                  room — and the headline had already said it. This is the thing somebody actually
+                  wants at that point in the column, and as a button rather than a grey line it can
+                  be found: the version tucked under the stats panel was a link nobody saw, which is
+                  the only way a link can fail. */}
+              <motion.button
+                variants={m.item}
+                type="button"
+                onClick={() => setHowOpen(true)}
+                // `flex w-fit`, not `inline-flex`. The line above it is an inline-block — it has to be, so the
+                // underline SVG can size to the text — and an inline-flex button next to an inline-block
+                // paragraph is simply the next word on the same line, which is where this landed.
+                className="group flex w-fit min-h-[48px] items-center gap-2.5 rounded-xl border border-line-2 bg-panel/60 px-5 text-[16px] text-fg transition-colors hover:border-accent/70"
+              >
+                {t("home.howLink")}
+                <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+                  →
+                </span>
+              </motion.button>
 
               <motion.div variants={m.item} className="grid max-w-[700px] gap-4 pt-2 sm:grid-cols-2">
                 <IdentityChoiceCard href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
@@ -183,7 +199,7 @@ export default function HomePage() {
               aria-hidden
               width={344}
               height={324}
-              className="pointer-events-none absolute bottom-[2%] right-[1%] hidden h-[150px] w-auto lg:block"
+              className="pointer-events-none absolute bottom-[1%] right-[-2%] hidden h-[160px] w-auto lg:block"
             />
 
             {/* Low and left of the figures, in the darkest part of the scene — over their faces it
@@ -206,22 +222,12 @@ export default function HomePage() {
                   straight across made the panel 67px short. */}
               <LiveStats />
 
-              {/* The way into the mechanism, under the numbers it explains. Small on purpose: most
-                  people do not need it, and the ones who do are already looking for it. */}
-              <button
-                type="button"
-                onClick={() => setHowOpen(true)}
-                className="mt-3 flex min-h-[44px] items-center gap-1.5 text-[14px] text-dim transition-colors hover:text-fg"
-              >
-                {t("home.howLink")}
-                <span aria-hidden>→</span>
-              </button>
             </div>
           </section>
         </main>
       </div>
 
-      <div className="mx-auto w-full max-w-[1380px] px-4 pt-12 sm:px-6 md:px-8 md:pt-16">
+      <div className="mx-auto w-full max-w-[1380px] px-4 pt-12 sm:px-6 md:px-[17px] md:pt-16">
         <FeaturedEvents />
       </div>
 
@@ -269,7 +275,11 @@ function TopBar() {
 
   return (
     <header
-      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-8 md:gap-5 md:px-8 md:py-5 ${
+      // The negative margin has to match the padding exactly — it exists only to let the bar's
+      // background bleed to the container's edges while its contents stay on the same left edge as
+      // everything below. They were -32 against +17 after the column padding changed, which pulled
+      // the whole header 15px left of the cards under it.
+      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-[17px] md:gap-5 md:px-[17px] md:py-5 ${
         scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
       }`}
     >
@@ -386,7 +396,7 @@ function SiteFooter() {
   const t = useT();
   return (
     <footer className="mt-16 border-t border-line md:mt-24">
-      <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between md:px-8">
+      <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between md:px-[17px]">
         <div className="flex min-w-0 items-center gap-3">
           <PeerProofMark />
           <span className="text-[17px] font-semibold tracking-[-0.01em]">PeerProof</span>

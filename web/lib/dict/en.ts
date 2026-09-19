@@ -198,8 +198,6 @@ export const en = {
   "home.headline1": "Real People.",
   "home.headline2": "Real Attendance.",
   "home.script": "No organizers to trust. Just peers.",
-  "home.subA": "Put a stake on showing up. Prove it with each other.",
-  "home.subB": "Built for real-world events, powered by blockchain.",
   "home.joinSub": "Find events near you",
   "home.hostSub": "Create an event",
   "stats.title": "Monad makes it real-time.",

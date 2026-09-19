@@ -50,7 +50,7 @@ export default function ValueStrip() {
 
   return (
     <section className="border-y border-line bg-panel/45">
-      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-8">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
         {/* `divide-x` rather than a border on each item: a trailing rule on the last column is the
             kind of thing that only shows up once it is on a projector. */}
         <ul className="grid gap-y-7 py-8 sm:grid-cols-2 md:grid-cols-4 md:gap-y-0 md:divide-x md:divide-line">

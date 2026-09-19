@@ -60,7 +60,7 @@ export default function FeaturedEvents() {
       {featured === null ? (
         /* Four placeholders at the height a card settles to, so the row does not collapse and then
            shove the footer down the page once the reads land. */
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <li key={i} className="h-[330px] animate-pulse rounded-2xl border border-line bg-panel/60" />
           ))}
@@ -73,7 +73,7 @@ export default function FeaturedEvents() {
             <p className="text-[15px] text-dim">{t("events.sampleNote")}</p>
           )}
         <motion.ul
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-4"
           variants={m.container}
           initial="hidden"
           whileInView="show"
