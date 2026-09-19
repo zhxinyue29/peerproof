@@ -214,6 +214,21 @@ export default function MePage() {
                   ))}
                 </ul>
               )}
+
+              {/* The public record, which lost its only entrance when the nav came out of the bar.
+                  It belongs here rather than in a menu: it answers "prove it" about the list
+                  directly above, and it is where somebody goes after reading their own figures and
+                  wanting to see the transactions they came from. Pointed at the newest event,
+                  because that is the one whose graph has anything in it. */}
+              {rows && rows.length > 0 && (
+                <Link
+                  href={`/verify?event=${rows[0].event.id}`}
+                  className="mt-6 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] text-accent-2 transition-colors hover:text-fg"
+                >
+                  {t("verify.title")}
+                  <span aria-hidden>→</span>
+                </Link>
+              )}
             </>
           )}
         </main>
