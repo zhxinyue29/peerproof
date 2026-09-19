@@ -244,16 +244,21 @@ function Stage({ right, children }: { right: string; children: React.ReactNode }
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
         }}
       >
+        {/* The label sits with the logo, not after the language switch.
+            On a phone the wordmark hides below `sm`, so the old order left the mark alone on the
+            left and pushed "会场信标屏" hard against the switcher on the right — two things that
+            belong together, separated by the full width of the screen, with the one piece of text
+            that says what this screen is looking like an afterthought. */}
         <header className="flex items-center gap-3 py-3">
-          <span className="flex min-h-[44px] shrink-0 items-center gap-2.5">
+          <span className="flex min-h-[44px] min-w-0 items-center gap-2.5">
             <PeerProofMark />
             <span className="hidden text-[17px] font-semibold tracking-[-0.01em] sm:inline">
               PeerProof
             </span>
+            <span className="min-w-0 truncate text-[16px] text-dim md:text-[18px]">{right}</span>
           </span>
           <span className="flex-1" />
           <LanguageSwitcher />
-          <span className="min-w-0 truncate text-[16px] text-dim md:text-[18px]">{right}</span>
         </header>
 
         {children}

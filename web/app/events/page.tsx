@@ -178,6 +178,15 @@ export default function EventsPage() {
               </button>
             </div>
 
+            {/* On a phone the scene becomes a band under the words, the same as the landing page —
+                without it this screen is text on a dark rectangle, while the one it was reached
+                from opens on a room. */}
+            <div
+              aria-hidden
+              className="relative -mx-4 mt-6 h-[180px] bg-cover bg-center sm:-mx-6 lg:hidden"
+              style={{ backgroundImage: `url(${basePath}/hero-sm.webp)` }}
+            />
+
             {/* The scene, bleeding off the right edge exactly as it does on the landing page. */}
             <div
               aria-hidden

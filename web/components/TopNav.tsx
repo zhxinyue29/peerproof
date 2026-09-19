@@ -105,9 +105,14 @@ export default function TopNav() {
           type="button"
           onClick={setUpPrivy}
           disabled={!!busy}
-          className="hidden h-11 shrink-0 items-center rounded-full bg-white px-5 text-[15px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] disabled:opacity-60 sm:inline-flex"
+          // Visible on a phone too. It was `sm:inline-flex`, so below 640px the bar had no way to
+          // sign in at all — on the screen this product is actually opened on, at a venue door.
+          // Narrower padding and a shorter label there rather than hiding it: a control that only
+          // exists on desktop is a control that does not exist.
+          className="inline-flex h-11 shrink-0 items-center rounded-full bg-white px-3.5 text-[14px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] disabled:opacity-60 sm:px-5 sm:text-[15px]"
         >
-          {busy ? t("common.loading") : t("home.signIn")}
+          <span className="sm:hidden">{busy ? t("common.loading") : t("common.signIn")}</span>
+          <span className="hidden sm:inline">{busy ? t("common.loading") : t("home.signIn")}</span>
         </button>
       )}
     </header>
