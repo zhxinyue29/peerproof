@@ -238,9 +238,12 @@ export default function MePage() {
                 square was two lines; with a bio and a link row it is five, and centring floated the
                 name clear above the top of the avatar. */}
             <div className="relative flex flex-wrap items-start gap-5">
+              {/* Round, as the profile sheet draws it. Everywhere else in this product a rounded
+                  square is a *thing* — an event cover, a contract, a QR card. A person is the one
+                  subject that gets a circle, and the sheet is consistent about it. */}
               <span
                 aria-hidden
-                className="h-20 w-20 shrink-0 rounded-2xl border border-line-2"
+                className="h-20 w-20 shrink-0 rounded-full border border-line-2"
                 style={{
                   background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
                 }}
@@ -293,6 +296,16 @@ export default function MePage() {
                   </p>
                 )}
               </div>
+              {/* "Edit profile", top right of the banner, which is where the sheet puts it. It was
+                  only reachable by finding the Settings tab and scrolling — on the one screen
+                  whose whole subject is what this account says about itself. */}
+              <button
+                type="button"
+                onClick={() => setTab("settings")}
+                className="ml-auto inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+              >
+                {t("profile.edit")}
+              </button>
             </div>
           </section>
 

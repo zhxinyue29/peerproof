@@ -38,6 +38,7 @@ export const zh: Dict = {
   "me.vsLastMonth": "较上月 {delta}",
   "me.approxUsd": "≈ {amount} USD",
   "profile.title": "个人资料",
+  "profile.edit": "编辑资料",
   "profile.intro": "这些会写进一个不持有任何资金的合约,谁都读得到,只有你能改自己的。全部可选——不填也不影响任何功能。",
   "profile.name": "昵称",
   "profile.nameHint": "别人在这个产品里看到的名字。",
@@ -83,6 +84,7 @@ export const zh: Dict = {
   "events.openNow": "正在进行",
   "events.upcoming": "即将开始",
   "events.thisWeek": "本周",
+  "events.allCategories": "全部",
   "events.myRegistrations": "我的报名",
   // Sits after a count: 「12 人已报名」.
   "events.registered": "人已报名",

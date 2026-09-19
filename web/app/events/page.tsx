@@ -48,6 +48,9 @@ export default function EventsPage() {
   const t = useT();
   const { signer } = useIdentity();
   const [events, setEvents] = useState<EventSummary[] | null>(null);
+  /// A category chip, when one is pressed. Lower-cased, matched against the listing's own tag
+  /// string. `null` is "no category filter", which is not the same as a category called "all".
+  const [tag, setTag] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choice, setChoice] = useState<Choice>(null);
   const [query, setQuery] = useState("");
@@ -108,8 +111,34 @@ export default function EventsPage() {
 
   const mine = useMyRegistrations(events, active === "mine" ? signer?.address ?? null : null);
 
+  // The category row on the design sheet is 全部 / 线下 / 线上 / Monad / AI / 开发者 / 社区 — a fixed
+  // list. A fixed list here would be a list of categories this product has decided exist, and the
+  // contract has no such concept: the tag field is free text an organizer types. So the chips are
+  // whatever tags the listings on this chain actually carry, most common first. An empty chain
+  // shows no category row at all, which is honest — there are no categories yet because there is
+  // nothing to categorise.
+  const tagCounts = new Map<string, number>();
+  for (const e of events ?? []) {
+    for (const raw of e.listing.tags.split(",")) {
+      const k = raw.trim().toLowerCase();
+      if (k) tagCounts.set(k, (tagCounts.get(k) ?? 0) + 1);
+    }
+  }
+  const tags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    // Eight, as the sheet draws, and the row scrolls rather than wraps to three lines on a phone.
+    .slice(0, 8)
+    .map(([k]) => k);
+
   const q = query.trim().toLowerCase();
   const visible = (events ?? []).filter((e) => {
+    if (tag) {
+      const has = e.listing.tags
+        .split(",")
+        .map((v) => v.trim().toLowerCase())
+        .includes(tag);
+      if (!has) return false;
+    }
     if (q) {
       // Venue and tags are in here because they are the two things somebody types into a search
       // box that is sitting above a list of events — "Singapore", "workshop" — and until they were
@@ -264,6 +293,15 @@ export default function EventsPage() {
           }}
         />
 
+        {tags.length > 0 && (
+          <div className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:px-0">
+            <TagChip label={t("events.allCategories")} on={tag === null} onPick={() => setTag(null)} />
+            {tags.map((k) => (
+              <TagChip key={k} label={k} on={tag === k} onPick={() => setTag(tag === k ? null : k)} />
+            ))}
+          </div>
+        )}
+
         {/* The row's own heading, from the sheet. "See all" is a filter reset rather than another
             route: there is one listing and this is it, so a link to a second page would be a lie
             about how much there is. It only appears when a filter is actually narrowing something,
@@ -369,6 +407,24 @@ const ORDER: Filter[] = ["open", "upcoming", "week", "mine"];
 /// Wrapping, not a horizontal scroller. There are four of them and they fit two-and-two on a
 /// 390px phone, which is what `01-events-mobile.png` shows — and a filter you have to discover by
 /// swiping is a filter nobody uses.
+/// One category. Smaller and quieter than the phase chips above it: what is happening right now
+/// is a more urgent question than what kind of thing it is, and two rows of equally loud pills
+/// would make neither readable.
+function TagChip({ label, on, onPick }: { label: string; on: boolean; onPick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={on}
+      className={`flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-[14px] transition-colors ${
+        on ? "border-accent bg-accent/15 text-fg" : "border-line text-faint hover:text-fg"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Chips({
   active,
   onPick,
