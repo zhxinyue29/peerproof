@@ -35,7 +35,7 @@ const NAV: { key: NavKey; label: string; href: string }[] = [
 export default function TopNav({ active }: { active: NavKey }) {
   const t = useT();
   const router = useRouter();
-  const { signer } = useIdentity();
+  const { signer, setUpPrivy, busy } = useIdentity();
 
   // Transparent over the artwork, solid once the artwork has scrolled away. Watched with a
   // passive listener and a boolean rather than a scroll-linked value: this needs to change twice,
@@ -120,13 +120,23 @@ export default function TopNav({ active }: { active: NavKey }) {
 
       {/* Only when there is nobody signed in. With a session the token to its left is the account,
           and a button inviting you to sign in next to it is a screen arguing with itself. */}
+      {/* This signs you in. It used to be `<Link href="/events">` — a signpost wearing the word
+          "Sign in", which on the landing page at least moved you somewhere and on /events linked to
+          the page you were already standing on, so pressing it did nothing at all. A control that
+          names an action and does not perform it is worse than no control; it is the product
+          telling you it is broken.
+          `setUpPrivy` is the same call the identity sheet makes when you join an event, so this is
+          not a second sign-in path — it is the existing one, reachable before you have picked an
+          event. */}
       {!signer && (
-        <Link
-          href="/events"
-          className="hidden h-11 shrink-0 items-center rounded-full bg-white px-5 text-[15px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] sm:inline-flex"
+        <button
+          type="button"
+          onClick={setUpPrivy}
+          disabled={!!busy}
+          className="hidden h-11 shrink-0 items-center rounded-full bg-white px-5 text-[15px] font-medium text-[#1b1436] transition-transform duration-100 active:scale-[0.985] disabled:opacity-60 sm:inline-flex"
         >
-          {t("home.signIn")}
-        </Link>
+          {busy ? t("common.loading") : t("home.signIn")}
+        </button>
       )}
     </header>
   );
@@ -145,15 +155,32 @@ function IdentityToken() {
   const label = signer.label ?? shortAddress(signer.address);
   const hue = Number.parseInt(signer.address.slice(2, 6), 16) % 360;
   return (
-    <span
-      role="img"
+    // A link, not an ornament. The design reaches the profile by tapping the avatar in the corner,
+    // which is where everybody looks for their own account — and this token had been sitting there
+    // looking exactly like that control while doing nothing when pressed. The nav item stays: one
+    // of them is a habit and the other is a signpost, and the page is reachable signed out, which
+    // an avatar cannot be.
+    <Link
+      href="/me"
       aria-label={label}
       title={label}
-      className="h-8 w-8 shrink-0 rounded-full border border-line-2"
-      // Generated per account, so it cannot come from the token palette.
-      style={{
-        background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
-      }}
-    />
+      className="flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-full border border-transparent px-1.5 transition-colors hover:border-line-2 sm:pr-3"
+    >
+      <span
+        aria-hidden
+        className="h-8 w-8 shrink-0 rounded-full border border-line-2"
+        // Generated per account, so it cannot come from the token palette.
+        style={{
+          background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
+        }}
+      />
+      {/* The design puts a name beside the avatar. There is no name in this system — no profiles,
+          no display names, nothing to edit — so what sits here is whatever identified this account
+          at sign-in: the email for an email login, the short address for a wallet. Inventing an
+          "Alice" would be a lie about what the product knows.
+          Hidden on a phone, where the bar is already carrying a logo, a language switch and a menu,
+          and the avatar alone is the control people reach for anyway. */}
+      <span className="hidden max-w-[140px] truncate text-[15px] text-dim sm:block">{label}</span>
+    </Link>
   );
 }

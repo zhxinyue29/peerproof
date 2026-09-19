@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Hex } from "viem";
 import Link from "next/link";
-import AppShell from "@/components/AppShell";
+import TopNav from "@/components/TopNav";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
@@ -77,17 +77,13 @@ export default function EventPage() {
 
   if (!hasDeployment) {
     return (
-      <AppShell
-        nav="participant"
-        active="events"
-        title={t("common.noContract")}
-        langSwitcher={<LanguageSwitcher />}
-      >
+      <Frame>
+        <h1 className="mb-4 text-[28px] font-semibold tracking-[-0.02em]">{t("common.noContract")}</h1>
         <Notice>
           {t("event.runDevChain")} <code className="text-fg">scripts/dev-chain.sh</code>
           {t("event.runDevChainEnd")}
         </Notice>
-      </AppShell>
+      </Frame>
     );
   }
 
@@ -97,7 +93,7 @@ export default function EventPage() {
   // do, on the one page that exists to say it doesn't.
   if (missing) {
     return (
-      <AppShell nav="participant" active="events" langSwitcher={<LanguageSwitcher />}>
+      <Frame>
         <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-9">
           <span
             aria-hidden
@@ -119,24 +115,24 @@ export default function EventPage() {
             </div>
           </div>
         </section>
-      </AppShell>
+      </Frame>
     );
   }
 
   const surplus = ev ? projectedPayout(ev) - ev.deposit : 0n;
 
   return (
-    <AppShell
-      nav="participant"
-      // Not a nav destination of its own. An event belongs to the directory you reached it from,
-      // and leaving every item unlit on a screen you arrived at by tapping "Events" reads as
-      // having fallen out of the app.
-      active="events"
-      aside={<Details ev={ev} />}
-      langSwitcher={<LanguageSwitcher />}
-    >
-      {/* AppShell's own column spacing stops at the edge of the aside grid — inside it, children
-          are a plain block. The rhythm below is this page's to keep. */}
+    // The last participant screen still wearing the sidebar. An event belongs to the directory you
+    // reached it from — "Events" stays lit, because leaving every item unlit on a screen you arrived
+    // at by tapping it reads as having fallen out of the app.
+    //
+    // The two-column grid is lifted from AppShell rather than reinvented: same breakpoint, same
+    // 320px rail, same sticky offset, so the detail panel sits where it always did.
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
+        <TopNav active="events" />
+
+        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {/* Said once, at the top, before anything below it is read.
             Everything on this screen — the deposit, the count, the window, the rules — is a literal
@@ -351,7 +347,12 @@ export default function EventPage() {
           </IdentityGate>
         </Sheet>
       )}
-    </AppShell>
+          <div className="min-w-0 lg:sticky lg:top-9">
+            <Details ev={ev} />
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }
 
@@ -448,6 +449,19 @@ function Details({ ev }: { ev: EventInfo | null }) {
 function pct(n: number, of: number) {
   if (!of) return 0;
   return Math.max(0, Math.min(100, (n / of) * 100));
+}
+
+/// Top bar plus the page's container, for the branches that render before there is an event to
+/// show. Written once because three branches need it and three hand-written copies drift.
+function Frame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
+        <TopNav active="events" />
+        <main className="pb-16 pt-6 md:pt-8">{children}</main>
+      </div>
+    </div>
+  );
 }
 
 function DetailRow({ term, detail }: { term: React.ReactNode; detail: React.ReactNode }) {
