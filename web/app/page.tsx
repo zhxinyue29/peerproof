@@ -152,7 +152,7 @@ export default function HomePage() {
                     preserveAspectRatio="none"
                     className="absolute inset-x-0 bottom-0 h-[9px] w-full text-accent/70"
                   >
-                    <path d="M2 8C58 3 121 2 176 5c40 2 78 4 121 1" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                    <path className="pp-underline" d="M2 8C58 3 121 2 176 5c40 2 78 4 121 1" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                   </svg>
                 </motion.p>
               ) : (
@@ -210,7 +210,6 @@ export default function HomePage() {
                 competed with the artwork, and over the painted badge it repeated it. */}
             <HeroProofAnimation
               label={t("proof.label")}
-              verifiedLabel={t("proof.verified")}
               className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden aspect-[1460/838] w-[calc(47%+50vw-50%)] lg:block"
             />
 

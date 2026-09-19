@@ -190,7 +190,6 @@ export const zh: Dict = {
   "strip.fastTitle": "快速高效",
   "strip.fastBody": "通常几秒内完成确认",
   "nav.forOrganizers": "面向主办方",
-  "proof.verified": "已验证",
   "proof.label": "一次作证在两个同伴之间传递",
   "home.builtOn": "基于 Monad",
   "home.fastFair": "快、公平、链上可查。",

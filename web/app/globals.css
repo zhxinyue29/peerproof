@@ -172,3 +172,23 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .pp-live-ring { animation: none; opacity: 0; }
 }
+
+/* The hand-drawn underline, redrawing itself.
+   You asked whether the line above it could fade in and out on a loop. It should not: text that
+   disappears while somebody is reading it is text fighting its reader, and this line is the claim
+   the page is making. The stroke under it can loop instead — the gesture repeats, the words stay
+   legible the whole time.
+   `stroke-dashoffset` is a compositor-friendly property and this is one 2px path, so it costs
+   nothing. CSS rather than Motion so it runs before React hydrates, like the live ring. */
+@keyframes pp-underline {
+  0%        { stroke-dashoffset: 340; }
+  28%, 72%  { stroke-dashoffset: 0; }
+  100%      { stroke-dashoffset: -340; }
+}
+.pp-underline {
+  stroke-dasharray: 340;
+  animation: pp-underline 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-underline { animation: none; stroke-dasharray: none; }
+}
