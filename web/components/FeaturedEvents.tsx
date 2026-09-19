@@ -7,6 +7,7 @@ import Link from "next/link";
 import EventCard from "@/components/EventCard";
 import { hasDeployment } from "@/lib/chain";
 import { readAllEvents, splitByActionable, type EventSummary } from "@/lib/events";
+import { sampleEvents } from "@/lib/sampleEvents";
 import { useT } from "@/lib/i18n";
 
 /// The four cards under the hero, read from the chain.
@@ -64,22 +65,13 @@ export default function FeaturedEvents() {
             <li key={i} className="h-[330px] animate-pulse rounded-2xl border border-line bg-panel/60" />
           ))}
         </ul>
-      ) : featured.length === 0 ? (
-        <div className="rounded-2xl border border-line bg-panel/60 p-6 md:p-8">
-          <p className="text-[18px] font-semibold">{t("home.noneYet")}</p>
-          <p className="mt-2 max-w-[56ch] text-[16px] leading-relaxed text-dim">
-            {t("home.noneYetBody")}
-          </p>
-          <Link
-            href="/organizer"
-            className="mt-5 inline-flex min-h-[44px] items-center rounded-xl bg-accent px-5 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
-          >
-            {t("events.createFirst")}
-          </Link>
-        </div>
       ) : (
-        /* Arrive on the way past, once. `once` matters: a row that re-animates every time it
-           scrolls back into view turns reading the page into watching it. */
+        <>
+          {/* Samples when the chain is empty, and said so above the row rather than inside it —
+              the caveat has to be readable without hovering, tapping, or reading a card. */}
+          {featured.length === 0 && (
+            <p className="text-[15px] text-dim">{t("events.sampleNote")}</p>
+          )}
         <motion.ul
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
           variants={m.container}
@@ -87,12 +79,25 @@ export default function FeaturedEvents() {
           whileInView="show"
           viewport={{ once: true, amount: 0.2 }}
         >
-          {featured.map((e) => (
+          {(featured.length === 0 ? sampleEvents() : featured).map((e) => (
             <motion.li key={e.id.toString()} variants={m.inView} className="min-w-0">
-              <EventCard event={e} />
+              <EventCard event={e} sample={featured.length === 0} />
             </motion.li>
           ))}
-        </motion.ul>
+          </motion.ul>
+
+          {featured.length === 0 && (
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Link
+                href="/organizer"
+                className="inline-flex min-h-[44px] items-center rounded-xl bg-accent px-5 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
+              >
+                {t("events.createFirst")}
+              </Link>
+              <span className="text-[15px] text-dim">{t("home.noneYetBody")}</span>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

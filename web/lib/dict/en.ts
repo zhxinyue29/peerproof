@@ -118,6 +118,8 @@ export const en = {
   "events.cancelled": "Cancelled",
   "events.settled": "Settled",
   "events.vouchesNeeded": "{k} vouches to count as present",
+  "events.sample": "Sample",
+  "events.sampleNote": "Examples of how events will appear. No event has been opened on this contract yet.",
   "events.createFirst": "Create the first event",
   "events.noMatchTitle": "Nothing here yet",
   "events.noMatchBody": "No event matches that filter right now.",

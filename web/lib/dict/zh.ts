@@ -119,6 +119,8 @@ export const zh: Dict = {
   "events.cancelled": "已取消",
   "events.settled": "已结算",
   "events.vouchesNeeded": "需要 {k} 个人作证才算到场",
+  "events.sample": "示例",
+  "events.sampleNote": "以下是活动展示出来的样子。这个合约上还没有人开过活动。",
   "events.createFirst": "创建第一个活动",
   "events.noMatchTitle": "这里还没有",
   "events.noMatchBody": "现在没有活动符合这个筛选。",

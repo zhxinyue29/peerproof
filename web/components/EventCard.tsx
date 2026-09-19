@@ -59,7 +59,22 @@ const PHASE_TONE: Record<Phase, string> = {
   settled: "text-dim",
 };
 
-export default function EventCard({ event: e }: { event: EventSummary }) {
+/// A link when there is something to link to, a plain box when there is not.
+const Root = ({ href, ...rest }: { href?: string } & React.ComponentPropsWithoutRef<"div">) =>
+  href ? <Link href={href} {...(rest as React.ComponentPropsWithoutRef<"a">)} /> : <div {...rest} />;
+
+export default function EventCard({
+  event: e,
+  sample = false,
+}: {
+  event: EventSummary;
+  /// Renders the card as a marked example and stops it pretending to be a destination.
+  ///
+  /// A sample card must not be a link: there is no event behind it, so following it would land on
+  /// a page that either invents one or reports it missing. Both are worse than a card that plainly
+  /// is not clickable.
+  sample?: boolean;
+}) {
   const t = useT();
   const { lang } = useLang();
   const locale = lang === "zh" ? "zh-Hans" : "en";
@@ -89,12 +104,25 @@ export default function EventCard({ event: e }: { event: EventSummary }) {
     // The whole card is the link and "View" is a span inside it. Two nested controls pointing at
     // the same page would be two tab stops and two announcements for one destination; a card you
     // can only enter through a 70px button is worse on a phone.
-    <Link
-      href={`/event?event=${e.id}`}
-      aria-label={e.listing.title || t("common.eventNumber", { id: e.id.toString() })}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-panel transition-colors hover:border-line-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    <Root
+      {...(sample
+        ? { "aria-hidden": true as const }
+        : {
+            href: `/event?event=${e.id}`,
+            "aria-label": e.listing.title || t("common.eventNumber", { id: e.id.toString() }),
+          })}
+      className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-panel transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        sample ? "border-line-2/70" : "border-line hover:border-line-2"
+      }`}
     >
       <div className="relative h-[112px] md:h-[128px]">
+        {sample && (
+          /* On the picture, not tucked under the title. Somebody scanning the row reads the band
+             before the text, and this has to be read before the numbers under it are believed. */
+          <span className="absolute left-3 top-3 z-10 rounded-full bg-[#0d1626]/85 px-2.5 py-1 text-[12px] font-medium text-faint backdrop-blur-sm">
+            {t("events.sample")}
+          </span>
+        )}
         {/* Only the picture moves, and only by 2.5%. Scaling the whole card would shift the text
             inside it, and text that grows under the cursor is harder to read, not more alive. The
             band already clips, so nothing escapes the card. */}
@@ -159,7 +187,7 @@ export default function EventCard({ event: e }: { event: EventSummary }) {
           </span>
         </div>
       </div>
-    </Link>
+    </Root>
   );
 }
 
