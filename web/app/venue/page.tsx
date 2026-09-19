@@ -215,7 +215,9 @@ export default function VenuePage() {
             setAccount(null);
             setInput("");
           }}
-          className="shrink-0 underline decoration-line-2"
+          // 44px。这是会场门口站着单手按的按钮,而且按下去密钥就没了——全页最不该
+          // 按错、也最容易按错的一个。
+          className="inline-flex min-h-[44px] shrink-0 items-center underline decoration-line-2"
         >
           {t("venue.forgetKey")}
         </button>

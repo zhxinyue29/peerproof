@@ -191,7 +191,10 @@ export default function MePage() {
     <Frame>
       <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start">
         {/* The rail, minus the three sections that would lead nowhere. */}
-        <nav className="rounded-2xl border border-line bg-panel p-2 lg:sticky lg:top-6">
+        {/* A row on a phone, a column on a desktop. As a column it was four stacked rows — about
+            250px of navigation above the first thing anybody came here to read, on the screen with
+            the least room. The same four items scroll sideways in 56px. */}
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:sticky lg:top-6 lg:block lg:rounded-2xl lg:border lg:border-line lg:bg-panel lg:p-2 lg:px-2">
           {(
             [
               ["overview", t("me.tabOverview")],
@@ -204,8 +207,10 @@ export default function MePage() {
               key={key}
               type="button"
               onClick={() => setTab(key)}
-              className={`flex min-h-[44px] w-full items-center rounded-xl px-3.5 text-left text-[15px] transition-colors ${
-                tab === key ? "bg-accent/15 font-medium text-fg" : "text-dim hover:text-fg"
+              className={`flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-left text-[15px] transition-colors lg:w-full lg:rounded-xl lg:border-0 lg:px-3.5 ${
+                tab === key
+                  ? "border-accent bg-accent/15 font-medium text-fg"
+                  : "border-line-2 bg-panel text-dim hover:text-fg lg:bg-transparent"
               }`}
             >
               {label}

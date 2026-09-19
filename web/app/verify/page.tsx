@@ -217,7 +217,10 @@ export default function VerifyPage() {
             <p>{history.source === "envio" ? t("verify.viaEnvio") : t("verify.viaLogs")}</p>
           )}
           <p>{t("verify.noPayoutFunction")}</p>
-          <Link href="/event" className="inline-block text-dim underline decoration-line-2">
+          <Link
+            href="/event"
+            className="inline-flex min-h-[44px] items-center text-dim underline decoration-line-2"
+          >
             {t("verify.backToEvent")}
           </Link>
         </div>

@@ -65,14 +65,17 @@ export default function IdentityGate({
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}
-              className="font-mono underline decoration-line-2"
+              className="-my-3 inline-block py-3 font-mono underline decoration-line-2"
               title={signer.address}
             >
               {copied ? t("common.copied") : shortAddress(signer.address)}
             </button>
           )}
           {" · "}
-          <button onClick={signOut} className="underline decoration-line-2">
+          <button
+            onClick={signOut}
+            className="-my-3 inline-block py-3 underline decoration-line-2"
+          >
             {t("event.useDifferentAccount")}
           </button>
         </p>
@@ -85,7 +88,7 @@ export default function IdentityGate({
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}
-              className="font-mono underline decoration-line-2"
+              className="-my-3 inline-block py-3 font-mono underline decoration-line-2"
               title={signer.address}
             >
               {copied ? t("common.copied") : shortAddress(signer.address)}

@@ -90,7 +90,7 @@ export default function OrganizerEventCards({
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`min-h-[40px] rounded-full border px-4 text-[14px] transition-colors ${
+              className={`min-h-[44px] rounded-full border px-4 text-[14px] transition-colors ${
                 filter === key
                   ? "border-accent bg-accent/15 text-fg"
                   : "border-line-2 text-dim hover:text-fg"

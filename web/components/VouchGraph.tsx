@@ -113,7 +113,9 @@ export default function VouchGraph({
         <p className="text-center text-[14px] text-dim">{t("graph.noVouchesYet")}</p>
       )}
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-faint">
+      {/* 14px,不是 12px。这张图是在会场里、光线不好的时候看的,而 text-xs 在那种
+          条件下基本读不出来——整个产品别处的最小字号也是 14。 */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[14px] text-faint">
         <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded-full bg-ok" /> {t("graph.confirmed")}
         </span>

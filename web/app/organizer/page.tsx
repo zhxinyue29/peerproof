@@ -452,12 +452,21 @@ function SelectedEvent({
 
         {/* The display has to be reachable from here. It used to be a URL you typed from memory, on
             the one screen where the organizer is already standing. */}
+        {/* `py-2.5 -my-2.5` on the two links: the hit box reaches 44px without the sentence
+            growing a line. A link inside prose cannot be a 44px block without wrecking the
+            paragraph, and these two are pressed standing up at a venue door. */}
         <p className="text-[14px] leading-relaxed text-faint">
-          <Link href="/venue" className="underline decoration-line-2 underline-offset-4">
+          <Link
+            href="/venue"
+            className="-my-3 inline-block py-3 underline decoration-line-2 underline-offset-4"
+          >
             {t("venue.openDisplay")}
           </Link>{" "}
           {t("organizer.venueNote")}{" "}
-          <Link href="/verify" className="underline decoration-line-2 underline-offset-4">
+          <Link
+            href="/verify"
+            className="-my-3 inline-block py-3 underline decoration-line-2 underline-offset-4"
+          >
             {t("organizer.publicRecord")}
           </Link>
           {t("organizer.venueNoteEnd")}
