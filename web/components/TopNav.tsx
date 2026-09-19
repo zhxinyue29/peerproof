@@ -22,11 +22,12 @@ import { useT } from "@/lib/i18n";
 ///
 /// `active` marks where "here" is. Everything else in this bar is a way out, and without the mark
 /// the bar gives no sign of which page you are on.
-export type NavKey = "home" | "events" | "verify" | "organizer";
+export type NavKey = "home" | "events" | "me" | "verify" | "organizer";
 
 const NAV: { key: NavKey; label: string; href: string }[] = [
   { key: "home", label: "nav.home", href: "/" },
   { key: "events", label: "nav.events", href: "/events" },
+  { key: "me", label: "nav.myProof", href: "/me" },
   { key: "verify", label: "nav.verify", href: "/verify" },
   { key: "organizer", label: "nav.forOrganizers", href: "/organizer" },
 ];
