@@ -105,14 +105,18 @@ export default function EventCard({
     // the same page would be two tab stops and two announcements for one destination; a card you
     // can only enter through a 70px button is worse on a phone.
     <Root
-      {...(sample
-        ? { "aria-hidden": true as const }
-        : {
-            href: `/event?event=${e.id}`,
-            "aria-label": e.listing.title || t("common.eventNumber", { id: e.id.toString() }),
-          })}
+      // Sample cards are links now too. They were inert because there was nothing behind them and
+      // a card that navigates to "no such event" is worse than one that does not navigate — but
+      // the detail page reads samples as well, so the destination exists and it is the same screen
+      // a real event uses. That matters more than it sounds: the screen carrying the deposit, the
+      // rules and the join button is the one that most needs looking at, and it could not be
+      // looked at while the only way in was to have opened a real event first.
+      {...{
+        href: `/event?event=${e.id}`,
+        "aria-label": e.listing.title || t("common.eventNumber", { id: e.id.toString() }),
+      }}
       className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-panel transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-        sample ? "border-line-2/70" : "border-line hover:border-line-2"
+        sample ? "border-line-2/70 hover:border-line-2" : "border-line hover:border-line-2"
       }`}
     >
       <div className="relative h-[112px] md:h-[128px]">

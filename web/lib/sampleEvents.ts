@@ -81,3 +81,44 @@ export function sampleEvents(): EventSummary[] {
     },
   ];
 }
+
+/// The same four events, in the shape the detail page reads.
+///
+/// `/events` could show samples and `/event` could not, so the listing was designable and the screen
+/// it leads to was a permanent "no such event" — which is the screen somebody spends the most time
+/// on and the one carrying the deposit, the rules and the join button. Designing the cards while
+/// their destination stayed unbuildable is backwards for the same reason the row itself was.
+///
+/// Reached only by a negative id, which nothing on chain can produce, and the page it feeds says
+/// "sample" across the top. A real event is a different id and takes a different path through
+/// `useEvent` entirely — so the day one exists, none of this is in the way.
+export function sampleEventInfo(id: bigint) {
+  const e = sampleEvents().find((s) => s.id === id);
+  if (!e) return null;
+  return {
+    organizer: e.organizer,
+    k: e.k,
+    deposit: e.deposit,
+    capacity: e.capacity,
+    minQuorum: e.minQuorum,
+    registerDeadline: e.registerDeadline,
+    attestOpen: e.attestOpen,
+    attestClose: e.attestClose,
+    registered: e.registered,
+    confirmed: e.confirmed,
+    peerConfirmed: e.confirmed,
+    status: e.status,
+    // Nothing has settled, so the per-head share of the forfeited pot is not a number yet. Zero is
+    // the truth here rather than a placeholder — the same value a real open event reports.
+    sharePerAttendee: 0n,
+  };
+}
+
+/// Sample ids are negative; the escrow's are 1 and up.
+export function isSampleId(id: bigint) {
+  return id < 0n;
+}
+
+export function sampleListing(id: bigint) {
+  return sampleEvents().find((s) => s.id === id)?.listing ?? null;
+}

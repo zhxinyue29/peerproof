@@ -73,7 +73,10 @@ export async function resolveEventId(): Promise<bigint> {
   // arrives on the next tick.
   if (typeof window !== "undefined") {
     const fromUrl = new URLSearchParams(window.location.search).get("event");
-    if (fromUrl && /^\d+$/.test(fromUrl) && BigInt(fromUrl) > 0n) {
+    // Negatives are allowed, and they are how the sample events reach their own detail page.
+    // The escrow numbers from 1 upwards, so a negative id cannot collide with anything real and
+    // cannot be produced by any contract read — it only ever comes from a link this app wrote.
+    if (fromUrl && /^-?\d+$/.test(fromUrl) && BigInt(fromUrl) !== 0n) {
       currentEventId = BigInt(fromUrl);
       return currentEventId;
     }

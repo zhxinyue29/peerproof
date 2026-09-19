@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+const OUT=process.argv[2];
+const b=await chromium.launch();
+const ctx=await b.newContext({viewport:{width:1440,height:1100}});
+await ctx.addInitScript(()=>localStorage.setItem("peerproof.lang","zh"));
+const p=await ctx.newPage();
+await p.goto("http://127.0.0.1:8779/event/?event=-1",{waitUntil:"networkidle"});
+await p.waitForTimeout(1800);
+await p.screenshot({path:OUT+"/样例详情.png"});
+console.log("标题:", await p.locator('h1').first().innerText());
+await b.close();

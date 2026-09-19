@@ -6,6 +6,7 @@ import type { Address } from "viem";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import { shortenError } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { isSampleId, sampleEventInfo } from "@/lib/sampleEvents";
 import {
   ESCROW_ADDRESS,
   eventId,
@@ -172,6 +173,14 @@ export function useEvent(address: Address | null, pollMs = 4000) {
   /// because a caller that shows nothing and says nothing is how a misconfigured address looks
   /// exactly like an event nobody has joined.
   const refresh = useCallback(async () => {
+    // Guarded here rather than at the call sites, because a call site guard has to know whether
+    // this is a sample before it can skip — and that answer arrives asynchronously. On the first
+    // render the flag was still false while the startup effect had already fired, so a sample page
+    // sent id -1 to the RPC and painted viem's complaint across the top:
+    //   Number "-1" is not in safe 256-bit unsigned integer range
+    // `eventId()` is synchronous and current, so asking it inside the read closes the race for
+    // every caller at once, including the poll.
+    if (isSampleId(eventId())) return;
     try {
       await read();
       setError(null);
@@ -180,19 +189,37 @@ export function useEvent(address: Address | null, pollMs = 4000) {
     }
   }, [read]);
 
+  // A sample event, reached by a negative id. It short-circuits everything below: no contract
+  // read, no polling, no wallet state. The page renders from a literal so the screen behind the
+  // listing can be designed before anybody has opened a real event — and it says so across the top,
+  // because an unlabelled invented event on a page arguing that nothing here is invented would be
+  // the worst single thing in this codebase.
+  const [sample, setSample] = useState(false);
+
   useEffect(() => {
-    if (!hasDeployment) return;
+    void resolveEventId().then((id) => {
+      if (!isSampleId(id)) return;
+      const info = sampleEventInfo(id);
+      if (!info) return;
+      setSample(true);
+      setEv(info);
+      setMe(null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hasDeployment || sample) return;
     // Resolve which event before the first read, or the page renders event 1 for a moment and
     // then swaps — which on a screen showing a deposit is not a flicker anyone should have to
     // interpret.
     void Promise.all([syncChainClock(), resolveEventId()])
       .then(refresh)
       .catch((e) => setError(shortenError(e, tRef.current)));
-  }, [refresh]);
+  }, [refresh, sample]);
 
   useVisiblePoll(() => {
-    if (hasDeployment) void refresh();
+    if (hasDeployment && !sample) void refresh();
   }, pollMs);
 
-  return { ev, me, refresh, error, missing };
+  return { ev, me, refresh, error, missing: sample ? false : missing, sample };
 }

@@ -32,7 +32,7 @@ import { useEventMeta } from "@/lib/eventMeta";
 /// actually know.
 export default function EventPage() {
   const { signer, signOut } = useIdentity();
-  const { ev, me, refresh, error: readError, missing } = useEvent(signer?.address ?? null);
+  const { ev, me, refresh, error: readError, missing, sample } = useEvent(signer?.address ?? null);
   const router = useRouter();
   const { t, lang } = useLang();
   // The app's language, not the browser's: somebody who switched to Chinese on an
@@ -138,6 +138,13 @@ export default function EventPage() {
       {/* AppShell's own column spacing stops at the edge of the aside grid — inside it, children
           are a plain block. The rhythm below is this page's to keep. */}
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
+        {/* Said once, at the top, before anything below it is read.
+            Everything on this screen — the deposit, the count, the window, the rules — is a literal
+            from lib/sampleEvents. None of it is on any chain. On a product whose whole argument is
+            that you do not have to take anyone's word for it, an invented event that does not admit
+            it would be the worst thing here; an admitted one is a mockup, which is what every empty
+            state in every product is. */}
+        {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
         {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
         {/* The sidebar and the mobile pill row both lead back to the directory, so this is a

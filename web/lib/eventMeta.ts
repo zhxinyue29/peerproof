@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { sampleListing } from "@/lib/sampleEvents";
 import { readListing } from "@/lib/directory";
 
 /// Where an event's words come from.
@@ -30,6 +31,15 @@ export function useEventMeta(eventId: bigint): EventMeta {
   const [meta, setMeta] = useState<EventMeta>(fallbackMeta);
 
   useEffect(() => {
+    // A sample's words come from the literal, not from a contract that has never heard of it.
+    // Without this the page would spend four retries asking about an event with a negative id and
+    // then settle on the generic fallback title.
+    const fromSample = sampleListing(eventId);
+    if (fromSample) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMeta({ title: fromSample.title, blurb: fromSample.blurb, url: fromSample.url });
+      return;
+    }
     let live = true;
     // Retried, because one read is one chance. A single failed request left the event titled
     // "PeerProof event" for as long as the page stayed open, with the real title on chain and
