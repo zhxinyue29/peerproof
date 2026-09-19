@@ -61,8 +61,24 @@ export default function HomePage() {
           className="flex flex-col gap-16 md:gap-24"
           style={{ paddingBottom: "max(3rem, env(safe-area-inset-bottom))" }}
         >
-          <section className="grid items-center gap-10 pt-10 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-16">
-            <div className="min-w-0 space-y-5">
+          {/* The first screen had no light in it.
+              The app-wide wash in globals.css is a fixed layer at 0.16 across the whole viewport,
+              which is atmosphere for every page and a focal point for none — so the screen somebody
+              lands on was one flat slab of navy with a headline on it. This is local: a large soft
+              source sitting behind the figure, falling off before it reaches the text, so the hero
+              has a near and a far rather than a single plane. It is `-z-10` inside the section
+              rather than another fixed layer, so it scrolls away with the thing it lights. */}
+          <section className="relative grid items-center gap-10 pt-10 md:grid-cols-[1.12fr_0.88fr] md:gap-14 md:pt-16">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -z-10 -left-[15%] -right-[15%] -top-[22%] h-[145%]"
+              style={{
+                background:
+                  "radial-gradient(52rem 32rem at 74% 44%, rgba(118,91,255,0.30), transparent 66%)," +
+                  "radial-gradient(34rem 24rem at 12% 14%, rgba(77,183,255,0.13), transparent 62%)",
+              }}
+            />
+            <div className="relative min-w-0 space-y-5">
               <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
                 {t("home.eyebrow")}
               </p>

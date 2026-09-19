@@ -39,9 +39,20 @@ export default function ProofArt({ className = "" }: { className?: string }) {
   }
 
   return (
+    /* Light, not a box.
+       This was a hard-bordered panel with a flat corner-to-corner gradient — a frame around a
+       diagram, which is what it read as. The figure is supposed to be a room seen from above with
+       nothing at its centre, so the panel is now a pool of light the constellation sits inside:
+       the glow is strongest behind the middle and falls off before it reaches the edge, and the
+       border is barely there. Same drawing, an object rather than a container. */
     <div
       aria-hidden
-      className={`relative overflow-hidden rounded-[28px] border border-line-2 bg-gradient-to-br from-panel to-raised ${className}`}
+      className={`relative overflow-hidden rounded-[28px] border border-white/[0.06] ${className}`}
+      style={{
+        background:
+          "radial-gradient(118% 96% at 50% 42%, rgba(109,85,255,0.26) 0%, rgba(38,52,92,0.42) 42%, rgba(17,27,48,0.55) 72%, rgba(13,22,38,0.35) 100%)",
+        boxShadow: "0 0 80px -28px rgba(118,91,255,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}
     >
       <svg viewBox="0 0 400 336" className="absolute inset-0 h-full w-full">
         <defs>
