@@ -77,7 +77,7 @@ export default function HomePage() {
                 the claim, the line under them, the body, then the two things you can do about it.
                 Nothing overshoots — a headline that bounces is a headline nobody reads twice. */}
             <motion.div
-              className="relative max-w-[790px] space-y-3"
+              className="relative space-y-3 md:max-w-[52%]"
               variants={m.container}
               initial="hidden"
               animate="show"
@@ -99,14 +99,18 @@ export default function HomePage() {
                 <span className="text-[15px]" style={{ color: "#7972a9" }}>{t("home.fastFair")}</span>
               </motion.div>
 
-              {/* Weight and colour are measured off the design rather than picked.
+              {/* Sized in vw, not in pixels.
+                  74px was measured at a 1536 viewport and then stayed 74px everywhere, so on a
+                  1280 laptop it needed more room than the column had. 4.82vw is the same 74px at
+                  1536 and shrinks with everything else; the clamp stops it going below 44.
+                  Weight and colour are measured off the design rather than picked.
                   Its headline strokes are 15–16px on a 60px cap height — a quarter of the cap, which
                   is 800-class, not the 600 this was. And the second line is not a flat purple: it
                   runs #cfc2fa at the top of the letters through #e0d5fc across the middle to #dbd0fb
                   at the foot, a highlight band that reads as light falling on the type. The flat
                   #9a88ff it had was both darker and deader than any point in that ramp. */}
               <h1
-                className="text-[46px] font-extrabold leading-[0.98] tracking-[-0.035em] md:text-[74px] md:leading-[0.92]"
+                className="text-[46px] font-extrabold leading-[0.98] tracking-[-0.035em] md:text-[clamp(44px,4.82vw,74px)] md:leading-[0.92]"
                 style={{ fontFamily: '"Montserrat", var(--font-sans)' }}
               >
                 <motion.span variants={m.item} className="block">
@@ -184,7 +188,7 @@ export default function HomePage() {
                 </span>
               </motion.button>
 
-              <motion.div variants={m.item} className="grid max-w-[700px] gap-4 pt-2 sm:grid-cols-2">
+              <motion.div variants={m.item} className="grid gap-4 pt-2 sm:grid-cols-2">
                 <IdentityChoiceCard href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
                 <IdentityChoiceCard href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
               </motion.div>
@@ -213,7 +217,13 @@ export default function HomePage() {
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
                 and where it reads as a caption on the scene rather than a fourth thing in the column. */}
             <div className="relative mt-8 md:absolute md:left-[52.6%] md:top-[calc(100%+1.15rem)] md:mt-0 md:w-[37.4%] md:-translate-y-full">
-              {/* Placed where the design puts it, not where it fits: its panel spans x 802→1299 of
+              {/* Both edges now come from the same basis.
+                  The panel was positioned at 52.6% of the container while the cards beside it were
+                  a fixed 700px, so as the viewport narrowed the panel walked left and the cards did
+                  not: 8px of clearance at 1440, 45px of overlap at 1280, 179px at 1024. The text
+                  column is 52% and the panel starts at 52.6%, which is 0.6% of clearance at every
+                  width rather than at one.
+                  Placed where the design puts it, not where it fits: its panel spans x 802→1299 of
                   a 1536 canvas — 52.2% to 84.6% — sitting over the lower left of the scene with the
                   handwriting clear to its right. Measured off the sheet rather than nudged until it
                   looked settled — and the width is 37.4% of the content column rather than the
