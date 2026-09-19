@@ -43,7 +43,7 @@ import VenueHandoff from "@/components/VenueHandoff";
 /// settles itself, sitting where a product with an escape hatch would put the button.
 export default function OrganizerPage() {
   const t = useT();
-  const { signer, devMode } = useIdentity();
+  const { signer } = useIdentity();
   const { ev, refresh } = useEvent(signer?.address ?? null);
   const [tab, goTo] = useUrlTab();
   const [all, setAll] = useState<EventSummary[] | null>(null);
@@ -193,10 +193,15 @@ export default function OrganizerPage() {
           </div>
         )}
 
-        {/* Dev only. Creating an event deploys this on demand, so an organizer never meets it —
-            "deploy a contract" is our infrastructure problem, not something to put in front of
-            somebody who wanted to invite people to a reading group. */}
-        {devMode && <DeployDirectory />}
+        {/* Creating an event deploys this on demand, so most organizers never meet it — "deploy a
+            contract" is our infrastructure problem, not something to put in front of somebody who
+            wanted to invite people to a reading group.
+            But it is no longer only about listings: the profile form writes to this contract too,
+            and somebody who wants a profile before they want an event had no way to get one. The
+            component already renders nothing unless the directory is genuinely missing, so the
+            `devMode` gate around it was redundant — and it was what kept the button off production
+            entirely, which is why this had been stuck. */}
+        <DeployDirectory />
       </IdentityGate>
 
       <p className="text-[14px] leading-relaxed text-faint md:max-w-[70ch]">
