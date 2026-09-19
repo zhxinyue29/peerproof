@@ -30,6 +30,9 @@ export function sampleEvents(): EventSummary[] {
     k: 3,
   };
 
+  // `tags: ""` throughout. These four are placeholders shown before a chain answers, and nothing
+  // on any screen renders a tag — giving them English tag strings put untranslatable prose into
+  // the bundle to satisfy a type. The field exists; the sample does not need to fill it.
   return [
     {
       ...base,
@@ -40,7 +43,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(30),
       attestOpen: at(30),
       attestClose: at(34),
-      listing: { title: "Monad Builders Meetup", blurb: "", url: "", tags: "meetup, in person", venue: "Tokyo, Japan", updatedAt: 0n },
+      listing: { title: "Monad Builders Meetup", blurb: "", url: "", tags: "", venue: "Tokyo, Japan", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -52,7 +55,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(74),
       attestOpen: at(74),
       attestClose: at(77),
-      listing: { title: "DeFi x AI Workshop", blurb: "", url: "", tags: "workshop, defi, ai", venue: "Singapore", updatedAt: 0n },
+      listing: { title: "DeFi x AI Workshop", blurb: "", url: "", tags: "", venue: "Singapore", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -64,7 +67,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(122),
       attestOpen: at(122),
       attestClose: at(125),
-      listing: { title: "RWA & Onchain Finance", blurb: "", url: "", tags: "talk, rwa, finance", venue: "Seoul, Korea", updatedAt: 0n },
+      listing: { title: "RWA & Onchain Finance", blurb: "", url: "", tags: "", venue: "Seoul, Korea", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -76,7 +79,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(170),
       attestOpen: at(170),
       attestClose: at(172),
-      listing: { title: "ZK Proofs 101", blurb: "", url: "", tags: "workshop, zk, online", venue: "Online", updatedAt: 0n },
+      listing: { title: "ZK Proofs 101", blurb: "", url: "", tags: "", venue: "Online", updatedAt: 0n },
       phase: "registering",
     },
   ];

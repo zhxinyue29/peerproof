@@ -61,7 +61,11 @@ export default function IdentityGate({
           ) : (
             <button
               onClick={() => {
-                void navigator.clipboard?.writeText(signer.address);
+                // Caught: the clipboard API rejects on a non-secure origin and wherever the user
+                // has denied it, and an uncaught rejection here surfaced as a page error. The
+                // confirmation is shown either way — this button's job is to make the address
+                // available, and it is on screen in full whether or not the copy succeeded.
+                void Promise.resolve(navigator.clipboard?.writeText(signer.address)).catch(() => {});
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}
@@ -84,7 +88,11 @@ export default function IdentityGate({
             {t("identity.wallet")}{" "}
             <button
               onClick={() => {
-                void navigator.clipboard?.writeText(signer.address);
+                // Caught: the clipboard API rejects on a non-secure origin and wherever the user
+                // has denied it, and an uncaught rejection here surfaced as a page error. The
+                // confirmation is shown either way — this button's job is to make the address
+                // available, and it is on screen in full whether or not the copy succeeded.
+                void Promise.resolve(navigator.clipboard?.writeText(signer.address)).catch(() => {});
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}

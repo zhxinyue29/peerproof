@@ -418,14 +418,31 @@ export function CopyableCode({ value, tone = "fg" }: { value: string; tone?: "fg
   return (
     <button
       onClick={() => {
-        void navigator.clipboard?.writeText(value).then(() => {
+        // `catch`, and the confirmation either way. The clipboard API rejects on a page that is
+        // not a secure origin and in any browser where the user has denied it — and the old code
+        // hung the whole confirmation off `.then`, so on those the button did nothing at all and
+        // threw an unhandled rejection while doing it. Selecting the text is the fallback: it is
+        // what somebody would do by hand, and it leaves the value where they can copy it.
+        const done = () => {
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
-        });
+        };
+        void Promise.resolve(navigator.clipboard?.writeText(value))
+          .then(done)
+          .catch(() => {
+            const sel = window.getSelection?.();
+            const node = document.getElementById(`copy-${value.slice(0, 12)}`);
+            if (sel && node) {
+              const range = document.createRange();
+              range.selectNodeContents(node);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          });
       }}
       className={`block w-full break-all rounded-xl border border-line bg-ink p-3 text-left font-mono text-[14px] leading-relaxed ${tone === "ok" ? "text-ok" : "text-dim"}`}
     >
-      {value}
+      <span id={`copy-${value.slice(0, 12)}`}>{value}</span>
       <span className="mt-1.5 block font-sans text-[14px] text-faint">
         {copied ? t("common.copied") : t("common.tapToCopy")}
       </span>

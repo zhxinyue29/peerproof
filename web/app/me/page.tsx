@@ -274,14 +274,24 @@ export default function MePage() {
                     {profile.website && <ProfileLink href={withScheme(profile.website)} label={profile.website} />}
                   </p>
                 )}
-                <a
-                  href={explorerAddressUrl(address)}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 break-all font-mono text-[13px] text-dim hover:text-fg md:text-[14px]"
-                >
-                  {address} <span aria-hidden>↗</span>
-                </a>
+                {/* A link only when there is somewhere to go. `explorerAddressUrl` returns "" on
+                    a chain with no explorer, and `href=""` is a link to the current page — it
+                    opened a blank tab. The address still has to be readable either way, so the
+                    fallback is the same line without the anchor. */}
+                {explorerAddressUrl(address) ? (
+                  <a
+                    href={explorerAddressUrl(address)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 break-all font-mono text-[13px] text-dim hover:text-fg md:text-[14px]"
+                  >
+                    {address} <span aria-hidden>↗</span>
+                  </a>
+                ) : (
+                  <p className="mt-1 break-all font-mono text-[13px] text-dim md:text-[14px]">
+                    {address}
+                  </p>
+                )}
               </div>
             </div>
           </section>
