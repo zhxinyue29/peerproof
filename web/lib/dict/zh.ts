@@ -208,6 +208,7 @@ export const zh: Dict = {
   "stats.costLabel": "一次作证，按当前 gas 价",
   "stats.onchain": "链上",
   "stats.onchainLabel": "你可以自己查",
+  "home.howLink": "它如何工作？",
   "home.featured": "精选活动",
   "home.viewAll": "查看全部",
   "home.noneYet": "这个合约上还没有活动。",

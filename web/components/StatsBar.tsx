@@ -26,7 +26,7 @@ export default function StatsBar() {
   ];
 
   return (
-    <div className="rounded-[18px] border border-line-2 bg-[#0f1729]/80 p-5 backdrop-blur-sm md:p-6">
+    <div className="rounded-[18px] border border-line-2 bg-[#0f1729]/88 p-4 backdrop-blur-sm md:p-5">
       <p className="flex items-center gap-2.5 text-[16px] font-semibold tracking-[-0.01em]">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-white">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -36,13 +36,13 @@ export default function StatsBar() {
         {t("stats.title")}
       </p>
 
-      <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-line">
+      <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-line">
         {cells.map(({ value, label }, i) => (
-          <div key={value} className={`min-w-0 ${i === 0 ? "sm:pr-5" : i === 1 ? "sm:px-5" : "sm:pl-5"}`}>
-            <dt className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-accent-2 md:text-[30px]">
+          <div key={value} className={`min-w-0 ${i === 0 ? "sm:pr-3.5" : i === 1 ? "sm:px-3.5" : "sm:pl-3.5"}`}>
+            <dt className="whitespace-nowrap text-[22px] font-semibold leading-none tracking-[-0.02em] text-accent-2 md:text-[24px]">
               {t(value)}
             </dt>
-            <dd className="mt-2 text-[15px] leading-snug text-dim">{t(label)}</dd>
+            <dd className="mt-1.5 text-[13px] leading-snug text-dim">{t(label)}</dd>
           </div>
         ))}
       </dl>

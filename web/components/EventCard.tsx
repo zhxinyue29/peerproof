@@ -117,9 +117,12 @@ export default function EventCard({
     >
       <div className="relative h-[112px] md:h-[128px]">
         {sample && (
-          /* On the picture, not tucked under the title. Somebody scanning the row reads the band
-             before the text, and this has to be read before the numbers under it are believed. */
-          <span className="absolute left-3 top-3 z-10 rounded-full bg-[#0d1626]/85 px-2.5 py-1 text-[12px] font-medium text-faint backdrop-blur-sm">
+          /* Top-right, because top-left is where the phase pill already lives — both were pinned
+             to `left-3 top-3` and rendered on top of each other, which put "Sample" over "Ongoing"
+             and left the word "ng" poking out from behind it. On the picture either way: somebody
+             scanning the row reads the band before the text, and this has to be read before the
+             numbers under it are believed. */
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-[#0d1626]/85 px-2.5 py-1 text-[12px] font-medium text-faint backdrop-blur-sm">
             {t("events.sample")}
           </span>
         )}

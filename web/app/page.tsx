@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useMotionPrefs } from "@/lib/motion";
 import HeroProofAnimation from "@/components/HeroProofAnimation";
+import HowItWorksModal from "@/components/HowItWorksModal";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -37,6 +38,7 @@ import { useT } from "@/lib/i18n";
 export default function HomePage() {
   const t = useT();
   const m = useMotionPrefs();
+  const [howOpen, setHowOpen] = useState(false);
 
   // Links of the form /?event=12 were handed out before the event page moved, and somebody's phone
   // still has one. Sending them on is cheaper than breaking them, and it happens before paint.
@@ -80,13 +82,20 @@ export default function HomePage() {
               animate="show"
             >
               <motion.div variants={m.item} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-semibold" style={{ background: "linear-gradient(100deg, #2f2792 0%, #2a2480 100%)", color: "#dcd8fc" }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <span
+                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-semibold"
+                  style={{ background: "linear-gradient(100deg, #2f2792 0%, #2a2480 100%)", color: "#c9c4f6" }}
+                >
+                  {/* The bolt is near-white in the design (#fcfaff), brighter than the words beside
+                      it — it reads as lit rather than as another glyph in the same ink. */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#fcfaff" aria-hidden>
                     <path d="M13.4 2.8 5.6 13.4h5.3l-.9 7.8 8-10.8h-5.4l.8-7.6Z" />
                   </svg>
                   {t("home.builtOn")}
                 </span>
-                <span className="text-[15px] text-dim">{t("home.fastFair")}</span>
+                {/* #7972a9, measured. `text-dim` is #cdd7e5 — a light blue-grey where the design has a
+                    muted violet, which is the single largest colour error on this screen. */}
+                <span className="text-[15px]" style={{ color: "#7972a9" }}>{t("home.fastFair")}</span>
               </motion.div>
 
               {/* Weight and colour are measured off the design rather than picked.
@@ -106,35 +115,34 @@ export default function HomePage() {
                   variants={m.item}
                   className="mt-1 block bg-clip-text text-transparent"
                   style={{
+                    // Horizontal, not vertical. Sampled on a grid across the design's own letters:
+                    // vertically it barely moves, but across the line it runs #c4b6fc at the left
+                    // through a bright #e2d8fd band around 43%, dips, and lifts again at the end.
+                    // A 180deg ramp — which is what this was — cannot produce that at all, which is
+                    // why it read as a flat colour instead of light lying across the words.
                     backgroundImage:
-                      "linear-gradient(180deg, #cfc2fa 0%, #e2d9fd 46%, #d6cbfb 78%, #c9bcf8 100%)",
+                      "linear-gradient(97deg, #c4b6fc 0%, #d3c8fb 22%, #e2d8fd 43%, #d0c3fb 63%, #dccdfb 84%, #e3d8fc 100%)",
                   }}
                 >
                   {t("home.headline2")}
                 </motion.span>
               </h1>
 
-              {/* The design sets this line as handwriting with a drawn underline. There is no
-                  handwritten face to load — the CSP blocks font CDNs and a webfont would be the
-                  page's only outbound request — so it is italic with the stroke drawn in SVG, which
-                  keeps the gesture and keeps the line translatable. */}
-              <motion.p variants={m.item} className="relative inline-block pb-3 text-[19px] italic leading-snug text-accent-2 md:text-[22px]">
-                {t("home.script")}
-                <svg
-                  aria-hidden
-                  viewBox="0 0 300 12"
-                  preserveAspectRatio="none"
-                  className="absolute inset-x-0 bottom-0 h-[10px] w-full text-accent/70"
-                >
-                  <path
-                    d="M2 8C58 3 121 2 176 5c40 2 78 4 121 1"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </motion.p>
+              {/* The handwriting is the design's own, lifted from the sheet with its underline and
+                  cut to transparency, rather than italic type pretending to be handwriting. There
+                  is no handwritten face to load — the CSP blocks font CDNs — and one line does not
+                  justify shipping a second family even if there were. It is decorative: the same
+                  sentence is not load-bearing anywhere, so it carries no alt text and the layout
+                  does not depend on it. */}
+              <motion.img
+                variants={m.item}
+                src="script-peers.webp"
+                alt=""
+                aria-hidden
+                width={844}
+                height={116}
+                className="h-[42px] w-auto md:h-[58px]"
+              />
 
               <motion.div variants={m.item} className="max-w-[600px] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
                 <p>{t("home.subA")}</p>
@@ -148,6 +156,17 @@ export default function HomePage() {
             </motion.div>
 
             {/* The proof itself, playing over the scene. */}
+            {/* The second piece of the design's handwriting, low on the right where the scene has
+                room for it. Cut from the sheet with the arrow and the smiley, same as the other. */}
+            <img
+              src="script-showup.webp"
+              alt=""
+              aria-hidden
+              width={344}
+              height={324}
+              className="pointer-events-none absolute bottom-[2%] right-[1%] hidden h-[150px] w-auto lg:block"
+            />
+
             {/* Low and left of the figures, in the darkest part of the scene — over their faces it
                 competed with the artwork, and over the painted badge it repeated it. */}
             <HeroProofAnimation
@@ -158,8 +177,19 @@ export default function HomePage() {
 
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
                 and where it reads as a caption on the scene rather than a fourth thing in the column. */}
-            <div className="relative mt-8 md:absolute md:-bottom-2 md:right-0 md:mt-0 md:w-[min(28rem,40%)]">
+            <div className="relative mt-8 md:absolute md:bottom-[2%] md:right-[16%] md:mt-0 md:w-[min(26rem,34%)]">
               <StatsBar />
+
+              {/* The way into the mechanism, under the numbers it explains. Small on purpose: most
+                  people do not need it, and the ones who do are already looking for it. */}
+              <button
+                type="button"
+                onClick={() => setHowOpen(true)}
+                className="mt-3 flex min-h-[44px] items-center gap-1.5 text-[14px] text-dim transition-colors hover:text-fg"
+              >
+                {t("home.howLink")}
+                <span aria-hidden>→</span>
+              </button>
             </div>
           </section>
         </main>
@@ -171,11 +201,9 @@ export default function HomePage() {
 
       <ValueStrip />
 
-      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-8">
-        <HowItWorks />
-      </div>
-
       <SiteFooter />
+
+      <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} />
     </div>
   );
 }
@@ -359,118 +387,5 @@ function SiteFooter() {
         </div>
       </div>
     </footer>
-  );
-}
-
-/// Everything the first viewport deliberately leaves out.
-///
-/// V3 keeps mechanism off the hero, which is right — but "How it works" in the top bar has to land
-/// somewhere, and a nav link that scrolls to nothing is worse than no nav link. So the explanation
-/// that used to crowd the headline lives here, one anchor down, in the order it actually happens.
-function HowItWorks() {
-  const t = useT();
-  const steps = [
-    { title: t("home.step1Title"), body: t("home.step1Body") },
-    { title: t("home.step2Title"), body: t("home.step2Body") },
-    { title: t("home.step3Title"), body: t("home.step3Body") },
-  ];
-
-  return (
-    <section id="how-it-works" className="scroll-mt-8 space-y-6 pb-4 pt-14 md:pt-20">
-      <div className="space-y-2">
-        <h2 className="text-[28px] font-semibold tracking-[-0.025em] md:text-[34px]">
-          {t("home.howItWorks")}
-        </h2>
-        <p className="max-w-[60ch] text-[16px] leading-relaxed text-dim md:text-[17px]">
-          {t("home.howItWorksSub")}
-        </p>
-      </div>
-
-      <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
-        {steps.map((s, i) => (
-          /* The picture is the decoration now, and it is also the explanation. The three cards
-             share one drawing and differ only in its state, so reading across them is the
-             mechanism: deposits go down into the contract, the room draws lines across itself,
-             the contract pays back along them — and the fourth person, who never got a line, is
-             the reason any of it is worth doing. The large ghost numeral this replaces gave the
-             panels a reading order and nothing else. */
-          <li
-            key={s.title}
-            className="relative min-w-0 overflow-hidden rounded-2xl border border-line bg-panel p-5 transition-colors hover:border-line-2 md:p-6"
-          >
-            <div className="rounded-xl border border-line bg-ink/40 px-3 py-4">
-              <StepFigure step={(i + 1) as 1 | 2 | 3} />
-            </div>
-            <span className="mt-4 block text-[14px] font-medium tabular-nums text-accent-2">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <h3 className="mt-2 text-[18px] font-semibold tracking-[-0.01em]">{s.title}</h3>
-            <p className="mt-2 text-[16px] leading-relaxed text-dim">{s.body}</p>
-          </li>
-        ))}
-      </ol>
-
-      {/* Two claims, not two paragraphs.
-          These were a pair of loose grey blocks under a rule, which is how a footnote looks — and
-          the first of them is the strongest thing on the page: there is no function that can pay
-          the organizer. A claim that carries the whole product should not be set like an aside. */}
-      <div className="grid gap-4 border-t border-line pt-6 md:grid-cols-2 md:gap-5">
-        {[
-          { key: "home.custodyNote", tone: "ok" as const },
-          { key: "home.bothRoles", tone: "accent" as const },
-        ].map(({ key, tone }) => (
-          <div
-            key={key}
-            className="relative overflow-hidden rounded-xl border border-line bg-panel/60 p-5"
-          >
-            {/* A rule down the left edge rather than an icon: it marks the block as a statement
-                without adding a symbol somebody has to decode. */}
-            <span
-              aria-hidden
-              className={`absolute inset-y-4 left-0 w-[3px] rounded-r-full ${
-                tone === "ok" ? "bg-ok/60" : "bg-accent/60"
-              }`}
-            />
-            <p className="pl-3 text-[16px] leading-relaxed text-dim">{t(key)}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* The close.
-          The page used to end on two grey paragraphs and an underlined link, which is how a
-          document ends, not a product. And the strongest thing this project can say last is not a
-          slogan — it is an address. Everything above is a claim; this is the thing a sceptic can
-          go and check, so it gets the weight. */}
-      <section className="relative overflow-hidden rounded-2xl border border-line-2 bg-panel p-6 md:p-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(38rem 20rem at 88% -6rem, rgba(118,91,255,0.16), transparent 62%)",
-          }}
-        />
-        <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0 space-y-2">
-            <h2 className="text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
-              {t("home.closeTitle")}
-            </h2>
-            <p className="max-w-[54ch] text-[16px] leading-relaxed text-dim">{t("home.closeBody")}</p>
-            <p className="break-all pt-1 font-mono text-[14px] text-faint">{ESCROW_ADDRESS}</p>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-3">
-            <LinkButton href="/verify">{t("home.readPublicRecord")}</LinkButton>
-            {explorerAddressUrl(ESCROW_ADDRESS) && (
-              <a
-                href={explorerAddressUrl(ESCROW_ADDRESS)}
-                className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
-              >
-                {t("verify.openOnExplorer")} ↗
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
-    </section>
   );
 }

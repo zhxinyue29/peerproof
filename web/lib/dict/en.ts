@@ -209,6 +209,7 @@ export const en = {
   "stats.costLabel": "per vouch, at today's gas price",
   "stats.onchain": "On-chain",
   "stats.onchainLabel": "check it yourself",
+  "home.howLink": "How does this work?",
   "home.featured": "Featured events",
   "home.viewAll": "View all",
   "home.noneYet": "No events on this contract yet.",
