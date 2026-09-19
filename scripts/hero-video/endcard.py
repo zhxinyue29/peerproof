@@ -104,11 +104,15 @@ def main():
     # 等比放进画面,留出边距
     # 占满画面,这是用户的原话。0.86/0.62 那一版字只占中间一小块,读起来是「画面上
     # 有一行字」,不是「这一秒属于这句话」。
-    scale = min(w * 0.96 / art.shape[1], h * 0.82 / art.shape[0])
+    scale = min(w * 0.80 / art.shape[1], h * 0.70 / art.shape[0])
     art = cv2.resize(art, (int(art.shape[1] * scale), int(art.shape[0] * scale)),
                      interpolation=cv2.INTER_LANCZOS4)
+    # 往右偏,不居中。首屏那条视频的左侧有一道 107° 的斜向渐隐(为了让画面能挪到
+    # 标语句号旁边而不压到入口卡上),居中的字卡左半边正好落在渐隐里,"Real
+    # Participation," 的开头会糊掉。右移 9% 之后整句都在看得见的区域内。
     canvas = np.zeros((h, w, 4), np.uint8)
-    ox, oy = (w - art.shape[1]) // 2, (h - art.shape[0]) // 2
+    ox = (w - art.shape[1]) // 2 + int(w * 0.09)
+    oy = (h - art.shape[0]) // 2
     canvas[oy:oy + art.shape[0], ox:ox + art.shape[1]] = art
 
     xs = np.arange(w, dtype=np.float32)[None, :]

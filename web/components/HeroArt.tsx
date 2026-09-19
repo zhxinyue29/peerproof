@@ -30,8 +30,17 @@ export default function HeroArt() {
   // the element's own containing block against the viewport, which reaches the screen edge from
   // inside a centred max-width column — and the page carries `overflow-x-hidden`, so it cannot start
   // a sideways scroll.
+  // Wider, and the left fade runs at 107° rather than straight down.
+  //
+  // The ask was to bring the room left until it nearly touches the tagline's full stop. Straight
+  // widening cannot do that: the tagline sits at about y=335 with empty page to its right, but the
+  // two entry cards below reach x≈745, so anything wide enough to close the gap at the tagline
+  // runs underneath the cards.
+  //
+  // An angled fade closes it where the gap is and stays out of the way where it is not — the
+  // clip's top-left reaches in beside the words, its bottom-left keeps clear of the cards.
   const frame =
-    "pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] md:block";
+    "pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(64%+50vw-50%)] md:block";
 
   // Fades on the left into the text column and at the bottom into the page, so the picture has no
   // edge anywhere it meets something that is not a picture. In element space, as a CSS mask: an SVG
@@ -46,9 +55,9 @@ export default function HeroArt() {
   // softens the edge against the page without eating the subject.
   const mask = {
     WebkitMaskImage:
-      "linear-gradient(to right, transparent 0%, #000 26%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
+      "linear-gradient(107deg, transparent 0%, transparent 14%, #000 34%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
     maskImage:
-      "linear-gradient(to right, transparent 0%, #000 26%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
+      "linear-gradient(107deg, transparent 0%, transparent 14%, #000 34%), linear-gradient(to bottom, transparent 0%, #000 7%, #000 86%, transparent 100%)",
     WebkitMaskComposite: "source-in" as const,
     maskComposite: "intersect" as const,
     aspectRatio: "1024 / 576",
