@@ -10,6 +10,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import StepFigure from "@/components/StepFigure";
 import HeroArt from "@/components/HeroArt";
 import StatsBar from "@/components/StatsBar";
+import IdentityChoiceCard from "@/components/IdentityChoiceCard";
 import FeaturedEvents from "@/components/FeaturedEvents";
 import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
@@ -141,8 +142,8 @@ export default function HomePage() {
               </motion.div>
 
               <motion.div variants={m.item} className="grid max-w-[700px] gap-4 pt-2 sm:grid-cols-2">
-                <Door href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
-                <Door href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
+                <IdentityChoiceCard href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
+                <IdentityChoiceCard href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
               </motion.div>
             </motion.div>
 
@@ -151,6 +152,7 @@ export default function HomePage() {
                 competed with the artwork, and over the painted badge it repeated it. */}
             <HeroProofAnimation
               label={t("proof.label")}
+              verifiedLabel={t("proof.verified")}
               className="pointer-events-none absolute bottom-[6%] left-[52%] hidden h-[150px] w-[270px] lg:block"
             />
 
@@ -320,79 +322,6 @@ function IdentityToken() {
 /* ------------------------------------------------------------------ */
 /*                              Pieces                                */
 /* ------------------------------------------------------------------ */
-
-/// One of the two ways in.
-///
-/// A picture of a person, then what you are here for, then the arrow. The figures are cropped from
-/// the design and carry its own lighting, so the card's tint is set to meet them rather than to a
-/// palette value — the seam between a lit render and a flat gradient is the thing that gives a
-/// pasted-in asset away.
-///
-/// The image is masked out on its right rather than ending at an edge, so the character stands in
-/// the card instead of sitting in a rectangle inside it.
-function Door({
-  href,
-  title,
-  body,
-  tone,
-}: {
-  href: string;
-  title: string;
-  body: string;
-  tone: "join" | "host";
-}) {
-  const join = tone === "join";
-  const m = useMotionPrefs();
-  return (
-    /* Transform and opacity only, and the height never changes — the card must not be able to push
-       anything below it, on a page whose first screen is what somebody is reading while it settles.
-       `whileTap` is here because a phone has no hover: without it the two controls that matter most
-       would give no feedback at all on the device this product is used on. */
-    <motion.div
-      whileHover={m.reduced ? undefined : { y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-    >
-    <Link
-      href={href}
-      className={`group relative flex min-h-[132px] items-center gap-3 overflow-hidden rounded-[18px] border pr-4 transition-colors duration-200 ${
-        join ? "border-accent/30 hover:border-accent/70" : "border-ok/30 hover:border-ok/60"
-      }`}
-      style={{
-        background: join
-          ? "linear-gradient(105deg, rgba(41,38,92,0.95) 0%, rgba(20,28,48,0.92) 58%)"
-          : "linear-gradient(105deg, rgba(16,48,40,0.95) 0%, rgba(16,30,34,0.92) 58%)",
-      }}
-    >
-      <span
-        aria-hidden
-        className="h-[132px] w-[104px] shrink-0 self-end bg-cover bg-bottom transition-transform duration-200 group-hover:translate-x-[3px]"
-        style={{
-          backgroundImage: `url(${join ? "door-join.webp" : "door-host.webp"})`,
-          WebkitMaskImage: "linear-gradient(to right, #000 62%, transparent 100%)",
-          maskImage: "linear-gradient(to right, #000 62%, transparent 100%)",
-        }}
-      />
-
-      <span className="min-w-0 flex-1 py-4">
-        <span className={`block text-[19px] font-semibold leading-tight tracking-[-0.015em] ${join ? "text-accent-2" : "text-fg"}`}>
-          {title}
-        </span>
-        <span className="mt-1.5 block text-[15px] text-dim">{body}</span>
-      </span>
-
-      <span
-        aria-hidden
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[17px] transition-transform duration-200 group-hover:translate-x-0.5 ${
-          join ? "bg-accent text-white" : "bg-ok text-[#08261a]"
-        }`}
-      >
-        →
-      </span>
-    </Link>
-    </motion.div>
-  );
-}
 
 /// The last thing on the page, and the only one that is an address rather than a claim.
 ///

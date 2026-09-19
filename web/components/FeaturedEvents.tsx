@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { useMotionPrefs } from "@/lib/motion";
 import Link from "next/link";
-import EventCard from "@/components/EventCard";
+import AnimatedEventCard from "@/components/AnimatedEventCard";
 import { hasDeployment } from "@/lib/chain";
 import { readAllEvents, splitByActionable, type EventSummary } from "@/lib/events";
 import { sampleEvents } from "@/lib/sampleEvents";
@@ -80,9 +80,7 @@ export default function FeaturedEvents() {
           viewport={{ once: true, amount: 0.2 }}
         >
           {(featured.length === 0 ? sampleEvents() : featured).map((e) => (
-            <motion.li key={e.id.toString()} variants={m.inView} className="min-w-0">
-              <EventCard event={e} sample={featured.length === 0} />
-            </motion.li>
+            <AnimatedEventCard key={e.id.toString()} event={e} sample={featured.length === 0} />
           ))}
           </motion.ul>
 

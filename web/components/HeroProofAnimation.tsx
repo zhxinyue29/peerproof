@@ -43,10 +43,13 @@ type Phase = "idle" | "sending" | "arrived";
 export default function HeroProofAnimation({
   className = "",
   label,
+  verifiedLabel,
 }: {
   className?: string;
   /// Described by the caller, which is the component that has `t`.
   label: string;
+  /// The word on the badge that closes each cycle.
+  verifiedLabel: string;
 }) {
   const { reduced } = useMotionPrefs();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -155,6 +158,21 @@ export default function HeroProofAnimation({
         )}
       </svg>
 
+      {/* The verdict, at the end of the cycle. HTML rather than SVG text so it wraps and takes the
+          app's font. Bottom-left of the frame — the one part of the scene the artwork leaves empty;
+          an earlier build put it top-centre, directly over one of the three "You were here" cards
+          painted into the picture, which said the same thing twice forty pixels apart. */}
+      <motion.span
+        className="pointer-events-none absolute bottom-0 left-0 inline-flex items-center gap-1.5 rounded-xl border border-ok/35 bg-[#0f2620]/90 px-3 py-2 text-[13px] font-medium text-ok backdrop-blur-sm"
+        initial={false}
+        animate={arrived ? { opacity: 1, y: 0 } : { opacity: 0, y: reduced ? 0 : 6 }}
+        transition={{ duration: reduced ? 0.15 : 0.3, ease: "easeOut" }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {verifiedLabel}
+      </motion.span>
       </div>
     </div>
   );

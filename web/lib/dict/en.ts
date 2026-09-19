@@ -191,6 +191,7 @@ export const en = {
   "strip.fastTitle": "Fast",
   "strip.fastBody": "Confirmation usually lands in seconds",
   "nav.forOrganizers": "For organizers",
+  "proof.verified": "Verified",
   "proof.label": "One attestation travelling between two peers",
   "home.builtOn": "Built on Monad",
   "home.fastFair": "Fast. Fair. On-chain.",
