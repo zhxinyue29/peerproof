@@ -128,3 +128,65 @@ export async function deployDirectory(from: Address): Promise<{ hash: Hex; addre
   deployed = true;
   return { hash, address: expected };
 }
+
+/// What an account says about itself. Lives in this contract for the same reason the listings do:
+/// it holds no money, so the worst anyone can do by writing nonsense is make their own page read
+/// badly.
+///
+/// On chain rather than in localStorage because a profile only its owner can see is decoration on a
+/// page whose entire subject is what other people can check. On chain rather than on a server
+/// because there is no server — adding one would put back the party this product argues you should
+/// not need.
+export type Profile = {
+  name: string;
+  bio: string;
+  city: string;
+  x: string;
+  github: string;
+  website: string;
+  updatedAt: bigint;
+};
+
+export const EMPTY_PROFILE: Profile = {
+  name: "",
+  bio: "",
+  city: "",
+  x: "",
+  github: "",
+  website: "",
+  updatedAt: 0n,
+};
+
+export async function readProfile(account: `0x${string}`): Promise<Profile> {
+  if (!(await checkDirectory())) return EMPTY_PROFILE;
+  return (await publicClient.readContract({
+    address: directoryAddress(),
+    abi: eventDirectoryAbi,
+    functionName: "profileOf",
+    args: [account],
+  })) as Profile;
+}
+
+/// Monad bills the gas limit rather than the amount used, so this is fitted rather than padded —
+/// same shape as `describeGas`, since it is the same kind of write: one struct of short strings.
+export function profileGas(p: Omit<Profile, "updatedAt">): bigint {
+  const bytes = new TextEncoder().encode(
+    p.name + p.bio + p.city + p.x + p.github + p.website,
+  ).length;
+  return 140_000n + BigInt(bytes) * 700n;
+}
+
+/// True when nothing the user typed differs from what is already on chain.
+///
+/// Checked before sending, because every save costs gas and a save that changes nothing costs it
+/// for nothing. The usual failure is a form that fires on every press of a button regardless.
+export function profileUnchanged(a: Omit<Profile, "updatedAt">, b: Profile): boolean {
+  return (
+    a.name === b.name &&
+    a.bio === b.bio &&
+    a.city === b.city &&
+    a.x === b.x &&
+    a.github === b.github &&
+    a.website === b.website
+  );
+}

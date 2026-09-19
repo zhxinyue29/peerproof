@@ -5,6 +5,7 @@ import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import EventCover from "@/components/EventCover";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import EditProfile from "@/components/EditProfile";
 import { useIdentity } from "@/components/IdentityProvider";
 import { Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
