@@ -195,7 +195,11 @@ export default function VerifyPage() {
           </div>
 
           {history ? (
-            <VouchGraph participants={history.participants} vouches={history.vouches} />
+            <VouchGraph
+              participants={history.participants}
+              vouches={history.vouches}
+              settled={!!history.settlement}
+            />
           ) : (
             <div className="flex flex-col items-center gap-3 py-6">
               <Skeleton className="h-40 w-40 rounded-full" />

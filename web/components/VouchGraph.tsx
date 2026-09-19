@@ -9,10 +9,14 @@ import { useT } from "@/lib/i18n";
 export default function VouchGraph({
   participants,
   vouches,
+  settled = false,
   size = 320,
 }: {
   participants: Participant[];
   vouches: Vouch[];
+  /// Whether the contract has already split the money. Nothing is forfeited before that moment,
+  /// and a room still filling up is not a room full of people who lost their deposits.
+  settled?: boolean;
   size?: number;
 }) {
   const t = useT();
@@ -131,11 +135,17 @@ export default function VouchGraph({
           <li key={p.address} className="flex items-center gap-2">
             <span className={p.confirmed ? "text-fg" : ""}>{shortAddress(p.address)}</span>
             <span className="text-faint">
+              {/* "Deposit forfeited" is a claim about money that has already moved. Before
+                  settlement it has not, and this said it about everybody who had not yet reached
+                  quorum — including people standing in the room at that moment, collecting
+                  vouches, on the page that exists to prove nothing here is invented. */}
               {p.confirmed
                 ? p.viaOrganizer
                   ? t("graph.presentFallback")
                   : t("graph.present")
-                : t("graph.forfeited")}
+                : settled
+                  ? t("graph.forfeited")
+                  : t("graph.notYet")}
             </span>
           </li>
         ))}

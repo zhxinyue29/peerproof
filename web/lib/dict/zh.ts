@@ -571,6 +571,7 @@ export const zh: Dict = {
   "graph.present": "到场",
   "graph.presentFallback": "到场（主办方兜底判定）",
   "graph.forfeited": "押金没收",
+  "graph.notYet": "还没被确认",
   "floor.alreadyCheckedIn": "你已经签到过了——继续找人的二维码就行。",
   "floor.checkedInFlash": "签到完成。现在去扫人吧，不用急，这个整晚有效。",
   "deploy.dirBody": "在这个部署之前，活动只能显示编号。标题和简介存在第二个合约里，这样保管押金的那个合约永远不必为了存文字而改动。谁部署都一样，之后所有人共用同一个——它的地址是从押金合约算出来的，和部署者是谁无关。部署完之后，这一块就不再出现了。",
