@@ -26,7 +26,7 @@ export function useMotionPrefs() {
       show: {
         transition: reduced
           ? { staggerChildren: 0, delayChildren: 0 }
-          : { staggerChildren: 0.08, delayChildren: 0.05 },
+          : { staggerChildren: 0.09, delayChildren: 0.1 },
       },
     },
 
@@ -44,7 +44,7 @@ export function useMotionPrefs() {
             y: 0,
             // Ease out, no overshoot. A spring here would bounce the headline, and a headline that
             // bounces is a headline nobody reads twice.
-            transition: { duration: 0.42, ease: [0.22, 0.61, 0.36, 1] as const },
+            transition: { duration: 0.5, ease: [0.22, 0.61, 0.36, 1] as const },
           },
         },
 

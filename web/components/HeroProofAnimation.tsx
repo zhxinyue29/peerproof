@@ -21,16 +21,24 @@ import { useMotionPrefs } from "@/lib/motion";
 /// forty pixels apart. What the still picture cannot do is show the signal crossing between two
 /// people, so that is the only thing left here.
 
-const A = { x: 62, y: 128 };
-const B = { x: 196, y: 58 };
-const C = { x: 292, y: 140 };
-const PATH = `M ${A.x} ${A.y} Q ${(A.x + B.x) / 2 - 6} ${A.y - 62}, ${B.x} ${B.y}`;
+/// Positioned on the artwork, not beside it.
+///
+/// The first version was a 270×150 panel tucked below-left of the picture, with 13px translucent
+/// nodes — on top of a rendered 3D scene that already contains a glowing proof circle and three
+/// "Verified" cards. It was competing with a photograph of the same idea and losing: instrumented,
+/// it animated; looked at, nothing moved. So the viewBox now matches the artwork's own 1460×838 and
+/// the three nodes sit where the three phones are, which means the signal travels between the
+/// people rather than in a box next to them.
+const A = { x: 430, y: 560 };   // left figure's phone
+const B = { x: 655, y: 235 };   // top figure's phone
+const C = { x: 950, y: 545 };   // right figure's phone
+const PATH = `M ${A.x} ${A.y} Q ${(A.x + B.x) / 2 - 40} ${A.y - 230}, ${B.x} ${B.y}`;
 
 /// Where the travelling dot is at a given fraction of the path. Evaluating the quadratic directly
 /// beats `offsetPath`, which Safari still disagrees with about units.
 function pointAt(t: number) {
-  const cx = (A.x + B.x) / 2 - 6;
-  const cy = A.y - 62;
+  const cx = (A.x + B.x) / 2 - 40;
+  const cy = A.y - 230;
   const u = 1 - t;
   return {
     x: u * u * A.x + 2 * u * t * cx + t * t * B.x,
@@ -65,7 +73,10 @@ export default function HeroProofAnimation({
       timers.push(setTimeout(() => setPhase("idle"), 2200));
       timers.push(setTimeout(run, 7000));
     };
-    timers.push(setTimeout(run, 1400));
+    // 400ms, not 1400. The whole argument of this page is a thing that happens between two people,
+    // and the first thing somebody should see is it happening. A second and a half of stillness on
+    // arrival is a second and a half of a page that looks like a picture.
+    timers.push(setTimeout(run, 400));
     return () => {
       timers.forEach(clearTimeout);
       timers = [];
@@ -87,7 +98,7 @@ export default function HeroProofAnimation({
   return (
     <div className={className}>
       <div className="relative h-full w-full">
-      <svg viewBox="0 0 360 200" className="h-full w-full" role="img" aria-label={label}>
+      <svg viewBox="0 0 1460 838" className="h-full w-full" role="img" aria-label={label}>
         <defs>
           <radialGradient id="hp-node">
             <stop offset="0%" stopColor="#ffffff" />
@@ -102,8 +113,8 @@ export default function HeroProofAnimation({
           d={PATH}
           fill="none"
           stroke="#9a88ff"
-          strokeWidth="1.6"
-          strokeDasharray="5 7"
+          strokeWidth="3.5"
+          strokeDasharray="12 16"
           animate={{ strokeOpacity: reduced ? 0.4 : sending ? 0.85 : 0.32 }}
           transition={{ duration: 0.3 }}
         />
@@ -127,7 +138,7 @@ export default function HeroProofAnimation({
               <motion.circle
                 cx={p.x}
                 cy={p.y}
-                r="13"
+                r="34"
                 fill="url(#hp-node)"
                 animate={{
                   opacity: reduced ? 0.55 : (isA && sending) || (isB && arrived) ? 0.9 : 0.5,
@@ -136,7 +147,7 @@ export default function HeroProofAnimation({
                 transition={{ duration: 0.34, ease: "easeOut" }}
                 style={{ originX: `${p.x}px`, originY: `${p.y}px` }}
               />
-              <circle cx={p.x} cy={p.y} r="5" fill="#ffffff" fillOpacity="0.95" />
+              <circle cx={p.x} cy={p.y} r="9" fill="#ffffff" fillOpacity="0.98" />
             </motion.g>
           );
         })}
@@ -145,15 +156,16 @@ export default function HeroProofAnimation({
             between cycles. */}
         {!reduced && sending && (
           <motion.circle
-            r="3.6"
+            r="11"
             fill="#ffffff"
+            style={{ filter: "drop-shadow(0 0 14px rgba(200,188,255,0.95))" }}
             initial={{ cx: A.x, cy: A.y, opacity: 0 }}
             animate={{
               cx: [A.x, pointAt(0.5).x, B.x],
               cy: [A.y, pointAt(0.5).y, B.y],
               opacity: [0, 1, 1],
             }}
-            transition={{ duration: 0.82, ease: "easeInOut", times: [0, 0.5, 1] }}
+            transition={{ duration: 1.1, ease: "easeInOut", times: [0, 0.5, 1] }}
           />
         )}
       </svg>

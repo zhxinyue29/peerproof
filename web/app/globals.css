@@ -154,3 +154,21 @@ textarea {
     stroke-dasharray: none;
   }
 }
+
+/* The live indicator's ring, in CSS rather than in JS.
+   Everything else on this page animates through Motion, which cannot start until React hydrates —
+   on a cold load that is about two seconds, and measuring the first 3.6s of the landing page showed
+   a 1.7-second hole where nothing at all moved. A keyframe animation runs from the first painted
+   frame, so the one element whose whole job is to say "this is live" is alive before the bundle
+   arrives. It is also the only thing on the page that repeats without being asked, which is why it
+   is 10px and one second rather than anything larger. */
+@keyframes pp-live-ring {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.pp-live-ring {
+  animation: pp-live-ring 1.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-live-ring { animation: none; opacity: 0; }
+}

@@ -207,7 +207,7 @@ export default function HomePage() {
             <HeroProofAnimation
               label={t("proof.label")}
               verifiedLabel={t("proof.verified")}
-              className="pointer-events-none absolute bottom-[6%] left-[52%] hidden h-[150px] w-[270px] lg:block"
+              className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden aspect-[1460/838] w-[calc(47%+50vw-50%)] lg:block"
             />
 
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,

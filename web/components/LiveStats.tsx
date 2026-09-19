@@ -66,6 +66,7 @@ function CountUp({ to, format }: { to: number; format: (n: number) => string }) 
 
 export default function LiveStats() {
   const t = useT();
+  const { reduced } = useMotionPrefs();
   const [stats, setStats] = useState<Stats | null>(null);
   const loading = useRef(false);
 
@@ -101,7 +102,12 @@ export default function LiveStats() {
       <p className="flex items-center gap-2.5 text-[15px] font-semibold tracking-[-0.01em]">
         {/* A dot rather than a lightning bolt. The bolt belonged to a claim about the chain's
             speed; this panel is about a room filling up. */}
+        {/* A live indicator that is actually live. The ring expands and fades once a second — the
+            conventional signal for "this figure is current", small enough to sit beside a heading
+            and the only thing on the page that moves without being asked. Off under reduced
+            motion, where the dot alone carries it. */}
         <span aria-hidden className="relative flex h-2.5 w-2.5 shrink-0">
+          <span className="pp-live-ring absolute inset-0 rounded-full bg-ok" />
           <span className="absolute inset-0 rounded-full bg-ok" />
         </span>
         {t("live.title")}
