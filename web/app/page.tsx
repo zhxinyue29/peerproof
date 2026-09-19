@@ -10,7 +10,7 @@ import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import StepFigure from "@/components/StepFigure";
 import HeroArt from "@/components/HeroArt";
-import StatsBar from "@/components/StatsBar";
+import LiveStats from "@/components/LiveStats";
 import IdentityChoiceCard from "@/components/IdentityChoiceCard";
 import FeaturedEvents from "@/components/FeaturedEvents";
 import ValueStrip from "@/components/ValueStrip";
@@ -20,7 +20,7 @@ import { PeerProofMark } from "@/components/NavIcons";
 import { useIdentity } from "@/components/IdentityProvider";
 import { shortAddress } from "@/lib/format";
 import { basePath } from "@/lib/chain";
-import { useT } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
 
 /// The door.
 ///
@@ -37,6 +37,7 @@ import { useT } from "@/lib/i18n";
 /// agreed to be in an application. The two doors are the navigation.
 export default function HomePage() {
   const t = useT();
+  const { lang } = useLang();
   const m = useMotionPrefs();
   const [howOpen, setHowOpen] = useState(false);
 
@@ -128,21 +129,39 @@ export default function HomePage() {
                 </motion.span>
               </h1>
 
-              {/* The handwriting is the design's own, lifted from the sheet with its underline and
-                  cut to transparency, rather than italic type pretending to be handwriting. There
-                  is no handwritten face to load — the CSP blocks font CDNs — and one line does not
-                  justify shipping a second family even if there were. It is decorative: the same
-                  sentence is not load-bearing anywhere, so it carries no alt text and the layout
-                  does not depend on it. */}
-              <motion.img
-                variants={m.item}
-                src="script-peers.webp"
-                alt=""
-                aria-hidden
-                width={844}
-                height={116}
-                className="h-[42px] w-auto md:h-[58px]"
-              />
+              {/* English gets the design's own handwriting, lifted from the sheet with its
+                  underline and cut to transparency. Chinese cannot: the image is English words, and
+                  showing them on a Chinese page would be the same mistake as an untranslated string
+                  — worse, because it looks deliberate. So Chinese gets the line as type, with the
+                  same drawn underline, and the sentence is its own rather than a translation of the
+                  English one. */}
+              {lang === "zh" ? (
+                <motion.p
+                  variants={m.item}
+                  className="relative inline-block pb-3 text-[19px] leading-snug md:text-[22px]"
+                  style={{ color: "#b9a9f7" }}
+                >
+                  {t("home.script")}
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 300 12"
+                    preserveAspectRatio="none"
+                    className="absolute inset-x-0 bottom-0 h-[9px] w-full text-accent/70"
+                  >
+                    <path d="M2 8C58 3 121 2 176 5c40 2 78 4 121 1" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                </motion.p>
+              ) : (
+                <motion.img
+                  variants={m.item}
+                  src="script-peers.webp"
+                  alt=""
+                  aria-hidden
+                  width={844}
+                  height={116}
+                  className="h-[42px] w-auto md:h-[58px]"
+                />
+              )}
 
               <motion.div variants={m.item} className="max-w-[600px] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
                 <p>{t("home.subA")}</p>
@@ -177,8 +196,15 @@ export default function HomePage() {
 
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
                 and where it reads as a caption on the scene rather than a fourth thing in the column. */}
-            <div className="relative mt-8 md:absolute md:bottom-[2%] md:right-[16%] md:mt-0 md:w-[min(26rem,34%)]">
-              <StatsBar />
+            <div className="relative mt-8 md:absolute md:left-[52.6%] md:top-[calc(100%+1.15rem)] md:mt-0 md:w-[37.4%] md:-translate-y-full">
+              {/* Placed where the design puts it, not where it fits: its panel spans x 802→1299 of
+                  a 1536 canvas — 52.2% to 84.6% — sitting over the lower left of the scene with the
+                  handwriting clear to its right. Measured off the sheet rather than nudged until it
+                  looked settled — and the width is 37.4% of the content column rather than the
+                  32.4% the sheet shows, because the sheet's percentage is of the 1536 viewport and
+                  this box is measured against the 1328 column inside it. Taking the number
+                  straight across made the panel 67px short. */}
+              <LiveStats />
 
               {/* The way into the mechanism, under the numbers it explains. Small on purpose: most
                   people do not need it, and the ones who do are already looking for it. */}

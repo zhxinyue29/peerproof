@@ -96,7 +96,25 @@ export default function HowItWorksModal({
           ))}
         </ol>
 
-        <div className="mt-6 grid gap-4 border-t border-line pt-5 md:grid-cols-2">
+        {/* The chain facts, moved here from the hero. They are true and they are not what somebody
+            deciding whether to turn up needs on the first screen — but they are exactly what
+            somebody who opened "how does this work" is asking about. */}
+        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-line bg-ink/30 p-4 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-line">
+          {[
+            { v: "stats.finality", l: "stats.finalityLabel" },
+            { v: "stats.cost", l: "stats.costLabel" },
+            { v: "stats.onchain", l: "stats.onchainLabel" },
+          ].map(({ v, l }, i) => (
+            <div key={v} className={`min-w-0 ${i === 0 ? "sm:pr-4" : i === 1 ? "sm:px-4" : "sm:pl-4"}`}>
+              <dt className="text-[20px] font-semibold leading-none tracking-[-0.02em] text-accent-2">
+                {t(v)}
+              </dt>
+              <dd className="mt-1.5 text-[13px] leading-snug text-dim">{t(l)}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-5 grid gap-4 border-t border-line pt-5 md:grid-cols-2">
           {[
             { key: "home.custodyNote", tone: "ok" as const },
             { key: "home.bothRoles", tone: "accent" as const },
