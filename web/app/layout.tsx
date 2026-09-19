@@ -2,6 +2,18 @@ import type { Metadata, Viewport } from "next";
 import { IdentityProvider } from "@/components/IdentityProvider";
 import { LanguageProvider } from "@/lib/i18n";
 import PrivyClientProvider from "@/components/PrivyClientProvider";
+// Montserrat ExtraBold, for the landing headline and nothing else.
+//
+// The design's headline is a geometric grotesque — double-storey `a`, straight-legged `R` — and the
+// system stack is a different animal at any weight; matching the measured 800 weight got the
+// heaviness right and left the letterforms visibly apart. Montserrat is the closest free face to
+// what the design used, and SIL OFL, so it can be self-hosted rather than fetched: the CSP blocks
+// font CDNs, and a landing page whose only outbound request is a font is a landing page that has a
+// blank headline when that host is slow.
+//
+// Latin 800 only — 19KB. No CJK: Montserrat has none, so a Chinese headline falls through to the
+// system CJK face, which is what should render it anyway.
+import "@fontsource/montserrat/latin-800.css";
 import "./globals.css";
 
 // The manifest is what makes "add to home screen" produce an icon and a standalone window rather

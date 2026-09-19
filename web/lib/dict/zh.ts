@@ -197,7 +197,7 @@ export const zh: Dict = {
   "home.headline2": "真实的到场。",
   "home.script": "不用信主办方，只看同伴。",
   "home.subA": "押一笔钱在到场上，再由在场的人互相证明。",
-  "home.subB": "为真正发生在一个房间里的活动而做。",
+  "home.subB": "为线下真实活动而做，跑在区块链上。",
   "home.joinSub": "找找附近的活动",
   "home.hostSub": "创建一个活动",
   "stats.title": "Monad 让它实时发生。",

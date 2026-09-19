@@ -62,24 +62,24 @@ export default function HomePage() {
     // `overflow-x-hidden` is a floor, not a layout tool — the headline is set large enough that one
     // long word in a language we have not seen yet must not be able to take the page sideways.
     <div className="min-h-dvh overflow-x-hidden">
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[26px]">
         <TopBar />
 
         <main>
-          <section className="relative pb-10 pt-6 md:min-h-[540px] md:pb-16 md:pt-10">
+          <section className="relative pb-10 pt-4 md:min-h-[540px] md:pb-16 md:pt-8">
             <HeroArt />
 
             {/* Arrival order is reading order: the badge that says what this is, the two lines of
                 the claim, the line under them, the body, then the two things you can do about it.
                 Nothing overshoots — a headline that bounces is a headline nobody reads twice. */}
             <motion.div
-              className="relative max-w-[620px] space-y-5"
+              className="relative max-w-[790px] space-y-3"
               variants={m.container}
               initial="hidden"
               animate="show"
             >
               <motion.div variants={m.item} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-accent/35 bg-accent/15 px-3.5 py-1.5 text-[14px] font-medium text-accent-2">
+                <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-semibold" style={{ background: "linear-gradient(100deg, #2f2792 0%, #2a2480 100%)", color: "#dcd8fc" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                     <path d="M13.4 2.8 5.6 13.4h5.3l-.9 7.8 8-10.8h-5.4l.8-7.6Z" />
                   </svg>
@@ -88,11 +88,27 @@ export default function HomePage() {
                 <span className="text-[15px] text-dim">{t("home.fastFair")}</span>
               </motion.div>
 
-              <h1 className="text-[42px] font-semibold leading-[1.06] tracking-[-0.04em] md:text-[62px]">
+              {/* Weight and colour are measured off the design rather than picked.
+                  Its headline strokes are 15–16px on a 60px cap height — a quarter of the cap, which
+                  is 800-class, not the 600 this was. And the second line is not a flat purple: it
+                  runs #cfc2fa at the top of the letters through #e0d5fc across the middle to #dbd0fb
+                  at the foot, a highlight band that reads as light falling on the type. The flat
+                  #9a88ff it had was both darker and deader than any point in that ramp. */}
+              <h1
+                className="text-[46px] font-extrabold leading-[0.98] tracking-[-0.035em] md:text-[74px] md:leading-[0.92]"
+                style={{ fontFamily: '"Montserrat", var(--font-sans)' }}
+              >
                 <motion.span variants={m.item} className="block">
                   {t("home.headline1")}
                 </motion.span>
-                <motion.span variants={m.item} className="mt-1 block text-accent-2">
+                <motion.span
+                  variants={m.item}
+                  className="mt-1 block bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(180deg, #cfc2fa 0%, #e2d9fd 46%, #d6cbfb 78%, #c9bcf8 100%)",
+                  }}
+                >
                   {t("home.headline2")}
                 </motion.span>
               </h1>
@@ -119,12 +135,12 @@ export default function HomePage() {
                 </svg>
               </motion.p>
 
-              <motion.div variants={m.item} className="max-w-[46ch] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
+              <motion.div variants={m.item} className="max-w-[600px] space-y-1 text-[17px] leading-relaxed text-dim md:text-[18px]">
                 <p>{t("home.subA")}</p>
                 <p>{t("home.subB")}</p>
               </motion.div>
 
-              <motion.div variants={m.item} className="grid gap-4 pt-2 sm:grid-cols-2">
+              <motion.div variants={m.item} className="grid max-w-[700px] gap-4 pt-2 sm:grid-cols-2">
                 <Door href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
                 <Door href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
               </motion.div>
@@ -147,13 +163,13 @@ export default function HomePage() {
         </main>
       </div>
 
-      <div className="mx-auto w-full max-w-[1280px] px-4 pt-12 sm:px-6 md:px-8 md:pt-16">
+      <div className="mx-auto w-full max-w-[1380px] px-4 pt-12 sm:px-6 md:px-8 md:pt-16">
         <FeaturedEvents />
       </div>
 
       <ValueStrip />
 
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-8">
         <HowItWorks />
       </div>
 
@@ -387,7 +403,7 @@ function SiteFooter() {
   const t = useT();
   return (
     <footer className="mt-16 border-t border-line md:mt-24">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between md:px-8">
+      <div className="mx-auto flex w-full max-w-[1380px] flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between md:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <PeerProofMark />
           <span className="text-[17px] font-semibold tracking-[-0.01em]">PeerProof</span>

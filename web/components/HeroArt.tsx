@@ -31,6 +31,9 @@ export default function HeroArt() {
           carries `overflow-x-hidden`, so it cannot start a sideways scroll.
           The fade is a CSS mask, in element space: an SVG mask inside the artwork would be scaled
           and cropped along with it, which is how the listing banner lost its fade entirely.
+          Left edge at 53% of the column, which is where the design puts it — measured, not judged:
+          its scene starts at x=806 of 1536 with a 1216 content column, so 646/1216. At 38% the two
+          entry cards sat on top of the artwork, which is the thing that was covering it.
           Left edge at 38%, not 46%. The artwork is 1.74 wide to tall; at 46% the box came out at
           1.54, so `cover` scaled to the height and took the difference off the width — which is the
           side the fourth figure stands on. Matching the box to the picture is what keeps everyone
@@ -41,7 +44,7 @@ export default function HeroArt() {
           off at the shoulders. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(62%+50vw-50%)] bg-cover bg-center md:block"
+        className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] bg-cover bg-center md:block"
         style={{
           // The box takes the picture's own proportions, so `cover` has nothing to crop. Sized off
           // the width and given the aspect, rather than stretched to the section's height: the left
