@@ -29,7 +29,19 @@ export default function PrivyInner({ children }: { children: React.ReactNode }) 
         // the one that has to come from viem.
         defaultChain: monadTestnet,
         supportedChains: [monadTestnet],
-        appearance: { theme: "dark", accentColor: "#6e54ff" },
+        appearance: {
+          theme: "dark",
+          accentColor: "#6e54ff",
+          // Spelled out, because without it the modal shows whatever the browser happens to have
+          // injected — and on a machine with no extension that is nothing, so "wallet" silently
+          // collapses to email only. Naming `wallet_connect` puts a QR code in the sheet, which is
+          // the one wallet path that works on a laptop with no extension and a phone wallet in
+          // your pocket. That is also the likeliest way somebody joins at a venue door.
+          //
+          // Note this list can only narrow what the Privy dashboard has enabled — it cannot turn
+          // a disabled method on. If wallets still do not appear, that is the dashboard, not here.
+          walletList: ["metamask", "wallet_connect", "rainbow", "coinbase_wallet", "detected_wallets"],
+        },
       }}
     >
       {children}

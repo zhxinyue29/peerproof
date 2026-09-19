@@ -30,10 +30,14 @@ function privyLabel(user: unknown): string | undefined {
 }
 
 export default function PrivyBridge({
+  openSignal,
   onSigner,
   onError,
   onBusy,
 }: {
+  /// Bumped once per press of the sign-in button. See the effect below for why the dialog is
+  /// opened off this rather than off a timer.
+  openSignal: number;
   onSigner: (s: Signer) => void;
   onError: (msg: string) => void;
   onBusy: (msg: string | null) => void;
@@ -61,15 +65,26 @@ export default function PrivyBridge({
     },
   });
 
+  // Opened once per `openSignal`, never on a timer.
+  //
+  // This used to release the one-shot guard after four seconds. The effect reruns on every render
+  // — `login` is a new function each time, as noted below — so four seconds after the dialog
+  // opened, the guard was clear and the next render called `login()` again. The dialog reopened
+  // itself for ever: pressing its close button worked and was undone within a frame, which reads
+  // as a dialog that cannot be closed, and it was reported as exactly that. Keying on a counter the
+  // button controls means it opens when asked and stays closed when dismissed.
+  const openedFor = useRef(-1);
+
   useEffect(() => {
-    if (!ready || authenticated || askedToLogIn.current) return;
+    if (!ready || authenticated || openedFor.current === openSignal) return;
+    openedFor.current = openSignal;
     askedToLogIn.current = true;
     onBusy(t("identity.openingSignIn"));
-    // Email only. The dashboard config lists wallet as well, and the shared modal offered both —
-    // so pressing "Continue with email" produced a wallet chooser, next to a button on our own page
-    // that already does wallets. Narrowing here, not in the config, keeps the wallet route
-    // available to anything that wants it.
-    login({ loginMethods: ["email"] });
+    // Email and wallet. This was email-only, which is why the dialog offered no wallet at all —
+    // not the dashboard, and not the absence of an extension. It was narrowed when the page
+    // carried its own separate wallet button beside this one and offering both produced two
+    // chooser dialogs; the bar is one control now, so this is the only place either route exists.
+    login({ loginMethods: ["email", "wallet"] });
 
     // "Opening sign-in…" describes opening the dialog, which takes a moment; it does not describe
     // the dialog being open, and the app has no business being frozen behind somebody else's modal.
@@ -85,12 +100,12 @@ export default function PrivyBridge({
     // render, so the effect reruns constantly; each rerun hit the guard above and returned early,
     // while the cleanup from the previous run had already cancelled the timer. It was scheduled and
     // killed, over and over, and the button stayed disabled.
+    // Clears the busy message only. Releasing the open-guard here is what made the dialog
+    // immortal; the guard is now the caller's counter and nothing on a clock touches it.
     expiry.current = setTimeout(() => {
-      askedToLogIn.current = false;
-      // Not if a key is being derived — that has its own message and finishes on its own.
       if (!derived.current) onBusy(null);
     }, 4000);
-  }, [ready, authenticated, login, onBusy]);
+  }, [ready, authenticated, login, onBusy, openSignal]);
 
   // The one place cancelling it is right: going away entirely.
   useEffect(() => () => clearTimeout(expiry.current), []);

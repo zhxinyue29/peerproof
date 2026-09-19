@@ -16,23 +16,19 @@ import { useT } from "@/lib/i18n";
 /// sidebar only on the organiser's side. Walking from the landing page into a sidebar was the
 /// moment the product stopped looking like one product.
 ///
-/// The nav lists only destinations that exist. The design sheet shows 社区 and 奖励 beside them;
-/// there is no community feature and no rewards feature, and a nav item that goes nowhere is worse
-/// than a missing one — it is a promise the product breaks on click.
+/// No nav links. The bar is the logo, the search, the language and the account — nothing else.
 ///
-/// `active` marks where "here" is. Everything else in this bar is a way out, and without the mark
-/// the bar gives no sign of which page you are on.
-export type NavKey = "home" | "events" | "me" | "verify" | "organizer";
+/// It briefly carried five destinations, and every one of them duplicated a route the page already
+/// offered better: the two entry cards on the landing page are the way to the listing and to the
+/// organiser side, and they say what each side is for, which a one-word tab cannot. Proof and the
+/// public record belong inside the account page, because that is what somebody is looking at when
+/// they want them.
+///
+/// A menu bar is what an application wears once you are inside it. This product's first real use is
+/// a link opened at a venue door by somebody who has not agreed to be inside anything yet, and five
+/// tabs across the top is the page asking them to navigate before it has told them what it is.
 
-const NAV: { key: NavKey; label: string; href: string }[] = [
-  { key: "home", label: "nav.home", href: "/" },
-  { key: "events", label: "nav.events", href: "/events" },
-  { key: "me", label: "nav.myProof", href: "/me" },
-  { key: "verify", label: "nav.verify", href: "/verify" },
-  { key: "organizer", label: "nav.forOrganizers", href: "/organizer" },
-];
-
-export default function TopNav({ active }: { active: NavKey }) {
+export default function TopNav() {
   const t = useT();
   const router = useRouter();
   const { signer, setUpPrivy, busy } = useIdentity();
@@ -71,30 +67,6 @@ export default function TopNav({ active }: { active: NavKey }) {
         <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
       </Link>
 
-      <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main">
-        {/* The current page is marked, not merely reachable. Everything else in this bar is a way
-            out of here, and without this the bar gives no sign of where "here" is. */}
-        {NAV.map((item) =>
-          item.key === active ? (
-            <span
-              key={item.key}
-              aria-current="page"
-              className="relative flex min-h-[44px] items-center px-3 text-[16px] font-medium text-fg"
-            >
-              {t(item.label)}
-              <span aria-hidden className="absolute inset-x-3 bottom-2 h-[2px] rounded-full bg-accent" />
-            </span>
-          ) : (
-            <Link
-              key={item.key}
-              href={item.href}
-              className="flex min-h-[44px] items-center rounded-xl px-3 text-[16px] text-dim transition-colors hover:text-fg"
-            >
-              {t(item.label)}
-            </Link>
-          ),
-        )}
-      </nav>
 
       <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
         <label className="relative flex items-center">

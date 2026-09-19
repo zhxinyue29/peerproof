@@ -64,7 +64,7 @@ export default function HomePage() {
     // long word in a language we have not seen yet must not be able to take the page sideways.
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav active="home" />
+        <TopNav />
 
         <main>
           <section className="relative pb-10 pt-4 md:min-h-[540px] md:pb-16 md:pt-8">

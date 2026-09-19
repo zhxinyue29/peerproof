@@ -130,7 +130,7 @@ export default function EventPage() {
     // 320px rail, same sticky offset, so the detail panel sits where it always did.
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav active="events" />
+        <TopNav />
 
         <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
@@ -457,7 +457,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav active="events" />
+        <TopNav />
         <main className="pb-16 pt-6 md:pt-8">{children}</main>
       </div>
     </div>

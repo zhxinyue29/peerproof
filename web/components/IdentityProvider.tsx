@@ -55,6 +55,10 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const privyGate = usePrivyGate();
+  // Incremented on every press of the sign-in button. The bridge opens the dialog once per
+  // value — which is what makes pressing the button again work after somebody has closed it,
+  // without the dialog reopening itself on a timer.
+  const [openSignal, setOpenSignal] = useState(0);
   /// Set the first time PrivyBridge reports anything. See the timeout in setUpPrivy.
   const privyReported = useRef(false);
 
@@ -146,6 +150,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   // Mounting Privy is the whole action: PrivyBridge opens the sign-in as soon as it renders.
   const setUpPrivy = useCallback(() => {
     setError(null);
+    setOpenSignal((n) => n + 1);
     // Feedback before anything else. This used to only flip the gate, and the gate's only visible
     // effect is 2.1MB of Privy beginning to download — so on a slow connection, or with an
     // extension blocking privy.io, pressing the button did nothing at all, for as long as you
@@ -203,6 +208,7 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
           place that can read Privy's hooks and hand the result back as a Signer. */}
       {privyGate.enabled && !signer && (
         <PrivyBridge
+          openSignal={openSignal}
           onSigner={setSigner}
           onError={setError}
           // The bridge reporting anything at all is what "Privy arrived" means, so record it here

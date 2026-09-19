@@ -142,7 +142,7 @@ export default function EventsPage() {
     // sign-in button and moves the language switch into a corner.
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav active="events" />
+        <TopNav />
 
         <main className="pb-16">
           {/* The page's own headline, set like the landing page's rather than like a document
