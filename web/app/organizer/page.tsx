@@ -30,7 +30,7 @@ import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
-import EventsTable from "@/components/EventsTable";
+import OrganizerEventCards from "@/components/OrganizerEventCards";
 import EventTimeline from "@/components/EventTimeline";
 import LivePulse from "@/components/LivePulse";
 import VenueHandoff from "@/components/VenueHandoff";
@@ -178,7 +178,7 @@ export default function OrganizerPage() {
                 full-bleed in `04-organizer-dashboard-desktop.png`, above both columns. */}
             <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6">
               <div className="min-w-0 space-y-5">
-                <EventsTable events={mine} selectedId={selectedId} onSelect={select} />
+                <OrganizerEventCards events={mine} selectedId={selectedId} onSelect={select} />
                 <SelectedEvent
                   ev={ev}
                   refresh={refresh}

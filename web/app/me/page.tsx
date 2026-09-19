@@ -251,13 +251,23 @@ export default function MePage() {
           )}
 
           {tab === "settings" && (
-            <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
-              <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.tabSettings")}</h2>
-              <div>
-                <p className="mb-2 text-[13px] text-faint">{t("lang.label")}</p>
-                <LanguageSwitcher />
-              </div>
-            </section>
+            <div className="space-y-6">
+              {/* The form was imported and never rendered — shipped, announced, and absent from the
+                  page. The i18n audit is what caught it: `profile.title` showed up as an unused
+                  key, which for a string that is supposed to be a section heading can only mean
+                  the section is not there. */}
+              <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
+                <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("profile.title")}</h2>
+                <EditProfile />
+              </section>
+              <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
+                <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.tabSettings")}</h2>
+                <div>
+                  <p className="mb-2 text-[13px] text-faint">{t("lang.label")}</p>
+                  <LanguageSwitcher />
+                </div>
+              </section>
+            </div>
           )}
 
           {rows && rows.length > 0 && (
