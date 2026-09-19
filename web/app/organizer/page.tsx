@@ -571,7 +571,10 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           setBusyLabel(t("create.savingDescription"));
           await signer.write({
             functionName: "describe",
-            args: [id, title, blurb, url],
+            // No venue field in the create flow yet — the listing editor on the event page
+            // has one, and an empty string here is what every listing described before tonight
+            // already reads as.
+            args: [id, title, blurb, url, ""],
             gas: describeGas(title, blurb, url),
             to: directoryAddress(),
             abi: eventDirectoryAbi,

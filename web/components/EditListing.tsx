@@ -31,6 +31,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
+  const [venue, setVenue] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         setTitle(l.title);
         setBlurb(l.blurb);
         setUrl(l.url);
+        setVenue(l.venue);
       })
       .catch(() => {})
       .finally(() => live && setLoaded(true));
@@ -67,8 +69,8 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
       setBusy(t("listing.saving"));
       await signer.write({
         functionName: "describe",
-        args: [id, title, blurb, url],
-        gas: describeGas(title, blurb, url),
+        args: [id, title, blurb, url, venue],
+        gas: describeGas(title, blurb, url, venue),
         to: directoryAddress(),
         abi: eventDirectoryAbi,
       });
@@ -112,6 +114,16 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
           className="mt-1.5 w-full resize-y rounded-xl border border-line-2 bg-ink px-3 py-2.5 text-[16px] outline-none placeholder:text-faint focus:border-accent"
         />
       </label>
+      {/* Where it happens. Added with the contract field: an attendance product that cannot say
+          where attendance happens is missing its subject, and it is the first question anybody has
+          before staking a deposit. Free text — "Kaiyuan Space, Singapore", "Online" — because the
+          contract decides nothing about it and the worst a bad string can do is read badly. */}
+      <Field
+        label={t("listing.venue")}
+        value={venue}
+        onChange={setVenue}
+        hint={t("listing.venueHint")}
+      />
       <Field
         label={t("listing.link")}
         value={url}

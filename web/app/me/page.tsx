@@ -42,6 +42,7 @@ export default function MePage() {
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [filter, setFilter] = useState<"all" | "verified" | "awaiting">("all");
 
   useEffect(() => {
     if (!hasDeployment || !address) return;
@@ -87,6 +88,9 @@ export default function MePage() {
   // Absent rather than 0% when nothing has been registered yet: "0% turnout" reads as a record of
   // failure, and having no record at all is not the same thing.
   const rate = rows && rows.length > 0 ? Math.round((attended / rows.length) * 100) : null;
+  const shown = (rows ?? []).filter((r) =>
+    filter === "all" ? true : filter === "verified" ? r.confirmed : !r.confirmed,
+  );
 
   return (
     <div className="min-h-dvh overflow-x-hidden">
@@ -146,7 +150,11 @@ export default function MePage() {
                 </div>
               </header>
 
-              <dl className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* Four tiles, as the sheet has. Its four are 12 events, 8 projects, 98% turnout and
+                  1,250 reputation; two of those do not exist, so the fourth here is the total
+                  staked — which was a grey footnote under the row and is as much a fact about this
+                  account as the other three. */}
+              <dl className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <Stat value={rows ? String(rows.length) : null} label={t("me.eventsJoined")} />
                 <Stat value={rows ? String(attended) : null} label={t("me.confirmedPresent")} />
                 <Stat
@@ -154,15 +162,36 @@ export default function MePage() {
                   label={t("me.turnout")}
                   tone={rate !== null && rate >= 80 ? "ok" : undefined}
                 />
+                <Stat value={rows ? mon(staked) : null} label={t("me.staked")} />
               </dl>
 
-              <p className="mt-3 text-[14px] text-faint">
-                {t("me.stakedTotal", { amount: rows ? mon(staked) : "—" })}
-              </p>
-
-              <h2 className="mt-9 text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
-                {t("me.history")}
-              </h2>
+              <div className="mt-9 flex flex-wrap items-center justify-between gap-4">
+                <h2 className="text-[22px] font-semibold tracking-[-0.02em] md:text-[26px]">
+                  {t("me.history")}
+                </h2>
+                {/* The sheet's chips, narrowed to the two states that exist. "Verified" is the one
+                    an account cannot reach by signing up, so it is worth being able to isolate. */}
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["all", t("me.filterAll")],
+                    ["verified", t("me.verified")],
+                    ["awaiting", t("me.awaiting")],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setFilter(key)}
+                      className={`min-h-[40px] rounded-full border px-4 text-[14px] transition-colors ${
+                        filter === key
+                          ? "border-accent bg-accent/15 text-fg"
+                          : "border-line-2 text-dim hover:text-fg"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {failed ? (
                 <Notice tone="bad">{t("me.unreachable")}</Notice>
@@ -172,7 +201,7 @@ export default function MePage() {
                     <Skeleton key={i} className="h-[92px] w-full rounded-2xl" />
                   ))}
                 </div>
-              ) : rows.length === 0 ? (
+              ) : shown.length === 0 ? (
                 <div className="mt-4 rounded-2xl border border-line bg-panel p-6">
                   <p className="text-[16px] text-dim">{t("me.noneYet")}</p>
                   <Link
@@ -184,7 +213,7 @@ export default function MePage() {
                 </div>
               ) : (
                 <ul className="mt-4 space-y-3">
-                  {rows.map(({ event, confirmed }) => (
+                  {shown.map(({ event, confirmed }) => (
                     <li key={event.id.toString()}>
                       <Link
                         href={`/event?event=${event.id}`}
@@ -195,8 +224,18 @@ export default function MePage() {
                           <p className="truncate text-[16px] font-medium">
                             {event.listing.title || t("common.eventNumber", { id: event.id.toString() })}
                           </p>
-                          <p className="mt-0.5 text-[14px] text-dim">{mon(event.deposit)}</p>
+                          {/* The sheet puts place and date under each title. There is no place on
+                              chain yet — `venue` was added to the listing tonight and no event has
+                              been described with one — so this carries what the contract does know:
+                              when the doors open, and what it cost to hold a place. */}
+                          <p className="mt-0.5 truncate text-[14px] text-dim">
+                            {event.listing.venue ? `${event.listing.venue} · ` : ""}
+                            {new Date(Number(event.attestOpen) * 1000).toLocaleDateString()}
+                          </p>
                         </div>
+                        <span className="shrink-0 text-[15px] font-medium tabular-nums text-accent-2">
+                          {mon(event.deposit)}
+                        </span>
                         {/* Green means the room vouched for this account, not that the transaction
                             went through. It is the only state on this page that cannot be reached
                             by signing up — which is the whole reason the page exists. */}
