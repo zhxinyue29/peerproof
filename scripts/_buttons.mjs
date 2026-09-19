@@ -40,6 +40,11 @@ for (const path of ["/", "/events/", "/me/", "/event/?event=-1", "/organizer/", 
     const before = await sig();
     await el.click({ timeout: 2000 }).catch(() => {});
     await p.waitForTimeout(450);
+    // Dismiss anything modal before measuring the next button. On production the sign-in button
+    // opens Privy's dialog, which covers the page — every button after it would otherwise time
+    // out against an overlay rather than being tested.
+    await p.keyboard.press("Escape").catch(() => {});
+    await p.waitForTimeout(250);
     const after = await sig();
     if (before === after) dead.push(label || "(无标签)");
   }

@@ -73,7 +73,13 @@ export default function PrivyBridge({
   // itself for ever: pressing its close button worked and was undone within a frame, which reads
   // as a dialog that cannot be closed, and it was reported as exactly that. Keying on a counter the
   // button controls means it opens when asked and stays closed when dismissed.
-  const openedFor = useRef(-1);
+  //
+  // Starts at 0, not -1, and `openSignal` also starts at 0 — so a bridge that merely mounted has
+  // nothing to open. Mounting is not a request. Privy is re-enabled on every load that restored an
+  // email session, which meant a person who pressed sign-in once, closed the dialog, and carried on
+  // was met by the same dialog on every page they opened afterwards, for the rest of the browser
+  // session. Only a press of the button moves the counter off 0.
+  const openedFor = useRef(0);
 
   useEffect(() => {
     if (!ready || authenticated || openedFor.current === openSignal) return;
