@@ -12,6 +12,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
   ESCROW_ADDRESS,
+  basePath,
   eventId,
   GAS_LIMITS,
   chainNowMs,
@@ -128,6 +129,47 @@ export default function OrganizerPage() {
           />
         ) : (
           <div className="space-y-6">
+            {/* The greeting band from the dashboard sheet. Its artwork is the same clip the landing
+                page runs, held still: a second video on a screen somebody is working on is motion
+                competing with a task. The two buttons are the sheet's, and both already existed —
+                this only gives them the place the design puts them. */}
+            <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] bg-cover bg-center opacity-60 lg:block"
+                style={{
+                  backgroundImage: `url(${basePath}/hero.webp)`,
+                  WebkitMaskImage: "linear-gradient(to right, transparent, #000 58%)",
+                  maskImage: "linear-gradient(to right, transparent, #000 58%)",
+                }}
+              />
+              <div className="relative max-w-[42ch]">
+                <p className="text-[15px] text-dim">
+                  {t("organizer.greeting", { who: signer?.label ?? shortAddress(signer?.address ?? "0x") })}
+                </p>
+                <h2
+                  className="mt-2 bg-clip-text pb-[0.1em] text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[36px]"
+                  style={{
+                    fontFamily: '"Montserrat", var(--font-sans)',
+                    backgroundImage:
+                      "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+                  }}
+                >
+                  {t("organizer.bannerTitle")}
+                </h2>
+                <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("organizer.bannerBody")}</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Button onClick={() => goTo("create")}>+ {t("nav.createEvent")}</Button>
+                  <Link
+                    href="/events"
+                    className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-5 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+                  >
+                    {t("organizer.seeAllEvents")}
+                  </Link>
+                </div>
+              </div>
+            </section>
+
             <Kpis events={mine} t={t} />
 
             {/* The split is composed here rather than handed to AppShell's `aside`, which spans the

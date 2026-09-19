@@ -66,7 +66,10 @@ export default function HomePage() {
         <TopNav />
 
         <main>
-          <section className="relative pb-10 pt-4 md:min-h-[540px] md:pb-16 md:pt-8">
+          {/* `pt-0` on a phone. The section carried `pt-4` and the mobile band below it another `mt-8`,
+              which stacked into about 140px of nothing between the bar and the picture — the first
+              thing anybody sees on the screen this product is actually opened on. */}
+          <section className="relative pb-10 pt-0 md:min-h-[540px] md:pb-16 md:pt-8">
             <HeroArt />
 
             {/* Arrival order is reading order: the badge that says what this is, the two lines of

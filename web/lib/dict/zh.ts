@@ -75,6 +75,10 @@ export const zh: Dict = {
 
   "organizer.title": "主办方",
   "organizer.subtitle": "你的活动和它们的实时状态——没有一项是你能暗中改动的。",
+  "organizer.greeting": "{who},早上好 👋",
+  "organizer.bannerTitle": "用真实的活动,建立可信的社区",
+  "organizer.bannerBody": "办一场活动,让到场的人互相证明。押金由合约保管,你从头到尾碰不到。",
+  "organizer.seeAllEvents": "看全部活动",
   "organizer.yourEvents": "你的活动",
   "organizer.registered": "已报名",
   "organizer.heldInEscrow": "合约托管中",

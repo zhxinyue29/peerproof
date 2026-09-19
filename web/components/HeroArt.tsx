@@ -85,7 +85,7 @@ export default function HeroArt() {
           door, and 188KB of video is 188KB somebody did not ask for while queuing. */}
       <div
         aria-hidden
-        className="relative -mx-4 mt-8 h-[240px] bg-cover bg-center sm:-mx-6 md:hidden"
+        className="relative -mx-4 mt-3 h-[240px] bg-cover bg-center sm:-mx-6 md:hidden"
         style={{ backgroundImage: `url(${basePath}/hero-sm.webp)` }}
       />
     </>

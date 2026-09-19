@@ -73,6 +73,10 @@ export const en = {
 
   "organizer.title": "Organizer",
   "organizer.subtitle": "Your events, their live state, and nothing you can secretly override.",
+  "organizer.greeting": "Good morning, {who} 👋",
+  "organizer.bannerTitle": "Build a community out of events that really happen",
+  "organizer.bannerBody": "Host one, and let the people in the room prove each other were there. The contract holds the deposits; you never touch them.",
+  "organizer.seeAllEvents": "See all events",
   "organizer.yourEvents": "Your events",
   "organizer.registered": "Registered",
   "organizer.heldInEscrow": "Held in escrow",
