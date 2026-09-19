@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import AppShell from "@/components/AppShell";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import TopNav from "@/components/TopNav";
 import VouchGraph from "@/components/VouchGraph";
 import { Card, Eyebrow, KeyValue, Notice, Skeleton } from "@/components/ui";
 import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
@@ -62,14 +61,9 @@ export default function VerifyPage() {
 
   if (!hasDeployment) {
     return (
-      <AppShell
-        nav="participant"
-        active="verify"
-        title={t("verify.title")}
-        langSwitcher={<LanguageSwitcher />}
-      >
+      <Frame title={t("verify.title")}>
         <Notice>{t("common.noContract")}</Notice>
-      </AppShell>
+      </Frame>
     );
   }
 
@@ -88,13 +82,7 @@ export default function VerifyPage() {
   const explorerHref = latestTx ? explorerTxUrl(latestTx) : "";
 
   return (
-    <AppShell
-      nav="participant"
-      active="verify"
-      title={t("verify.title")}
-      subtitle={t("verify.subtitle")}
-      langSwitcher={<LanguageSwitcher />}
-      action={
+    <Frame title={t("verify.title")} subtitle={t("verify.subtitle")} action={
         explorerHref ? (
           <a
             href={explorerHref}
@@ -188,8 +176,7 @@ export default function VerifyPage() {
             )}
           </Card>
         </div>
-      }
-    >
+      }>
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
         {error && <Notice tone="bad">{error}</Notice>}
@@ -235,7 +222,7 @@ export default function VerifyPage() {
           </Link>
         </div>
       </div>
-    </AppShell>
+    </Frame>
   );
 }
 
@@ -328,5 +315,63 @@ function ProofList({ history }: { history: EventHistory }) {
         );
       })}
     </ul>
+  );
+}
+
+/// Top bar plus the page column, replacing the app rail.
+///
+/// The participant screens all wear the top bar; this one had been left on the sidebar, so arriving
+/// here from the account page swapped the whole chrome. Caught by a language-switch test that
+/// printed the nav items as part of the page text — "首页 活动 验证" is a rail, and no other
+/// participant screen has one.
+function Frame({
+  title,
+  subtitle,
+  action,
+  aside,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  /// The settlement panel. Same two-column grid AppShell used — same breakpoint, same 320px rail,
+  /// same sticky offset — so the panel sits where it always did.
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
+        <TopNav />
+        <main className="pb-16 pt-6 md:pt-8">
+          <header className="flex flex-col gap-4 pb-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <h1
+                className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-transparent md:text-[40px]"
+                style={{
+                  fontFamily: '"Montserrat", var(--font-sans)',
+                  backgroundImage:
+                    "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+                }}
+              >
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{subtitle}</p>
+              )}
+            </div>
+            {action && <div className="shrink-0">{action}</div>}
+          </header>
+          {aside ? (
+            <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6">
+              <div className="min-w-0">{children}</div>
+              <div className="min-w-0 lg:sticky lg:top-9">{aside}</div>
+            </div>
+          ) : (
+            children
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
