@@ -192,3 +192,172 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .pp-underline { animation: none; stroke-dasharray: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   The hero sequence: four beats on one eight-second loop.
+
+     0–2s  the room          nothing from the overlay
+     2–4s  a phone resolves  pulse, card, three rows ticking one at a time
+     4–6s  the light crosses three arcs drawing between the three phones
+     6–8s  the claim         "Proof comes from peers." and the tick
+
+   All of it in CSS rather than Motion, for the reason the live ring is: Motion
+   cannot animate until React hydrates — about two seconds cold on this page,
+   which is the entire first beat. These run from the first painted frame.
+
+   Every element carries the same 8s period and differs only in which slice of
+   it is its own. Written as explicit percentages rather than delays, because a
+   delay on an infinite animation shifts the phase of that element's own loop
+   and the beats would drift apart from each other over time.
+   --------------------------------------------------------------------------- */
+
+/* Beat 2 — her phone resolving. One expanding ring, not a glow that stays on. */
+@keyframes pp-hero-pulse {
+  0%, 24%   { opacity: 0; transform: scale(0.6); }
+  26%       { opacity: 0.9; }
+  31%       { opacity: 0; transform: scale(2.6); }
+  100%      { opacity: 0; transform: scale(0.6); }
+}
+.pp-hero-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pp-hero-pulse 8s ease-out infinite;
+  opacity: 0;
+}
+
+/* The card itself. Up and in, held while its rows tick, then away before the
+   arcs start — the middle of the ring is the only clear space in the picture
+   and the closing line needs it back. */
+@keyframes pp-hero-card {
+  0%, 25%   { opacity: 0; transform: translateY(10px) scale(0.985); }
+  29%, 46%  { opacity: 1; transform: none; }
+  50%, 100% { opacity: 0; transform: translateY(-6px) scale(0.99); }
+}
+.pp-hero-card {
+  transform-box: fill-box;
+  transform-origin: 50% 30%;
+  animation: pp-hero-card 8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  opacity: 0;
+}
+
+/* Three rows, one at a time. A checklist that resolves all at once is a picture
+   of a result; one that resolves in order is a picture of a process, and the
+   process is the product. */
+@keyframes pp-hero-row1 {
+  0%, 30%   { opacity: 0; transform: translateX(-8px); }
+  34%, 46%  { opacity: 1; transform: none; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes pp-hero-row2 {
+  0%, 35%   { opacity: 0; transform: translateX(-8px); }
+  39%, 46%  { opacity: 1; transform: none; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes pp-hero-row3 {
+  0%, 40%   { opacity: 0; transform: translateX(-8px); }
+  44%, 46%  { opacity: 1; transform: none; }
+  50%, 100% { opacity: 0; }
+}
+.pp-hero-row { transform-box: fill-box; opacity: 0; }
+.pp-hero-row1 { animation: pp-hero-row1 8s ease-out infinite; }
+.pp-hero-row2 { animation: pp-hero-row2 8s ease-out infinite; }
+.pp-hero-row3 { animation: pp-hero-row3 8s ease-out infinite; }
+
+/* The attestation leaving her phone, once all three rows have ticked. It is
+   what the arcs then carry, so it fires just before they draw. */
+@keyframes pp-hero-spark {
+  0%, 45%   { opacity: 0; transform: scale(0.3); }
+  47%       { opacity: 1; transform: scale(1); }
+  52%       { opacity: 0; transform: scale(2.2); }
+  100%      { opacity: 0; transform: scale(0.3); }
+}
+.pp-hero-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pp-hero-spark 8s ease-out infinite;
+  opacity: 0;
+}
+
+/* Beat 3 — the three arcs, each drawing from one phone to the next, in order
+   round the ring. They hold together for a moment once the circuit is closed,
+   which is the only frame in the loop where all three people are connected at
+   once, and then clear for the closing line. */
+@keyframes pp-hero-arc1 {
+  0%, 50%   { stroke-dashoffset: 900; opacity: 0; }
+  52%       { opacity: 1; }
+  57%, 72%  { stroke-dashoffset: 0; opacity: 1; }
+  76%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes pp-hero-arc2 {
+  0%, 56%   { stroke-dashoffset: 900; opacity: 0; }
+  58%       { opacity: 1; }
+  63%, 72%  { stroke-dashoffset: 0; opacity: 1; }
+  76%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes pp-hero-arc3 {
+  0%, 62%   { stroke-dashoffset: 900; opacity: 0; }
+  64%       { opacity: 1; }
+  69%, 72%  { stroke-dashoffset: 0; opacity: 1; }
+  76%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.pp-hero-arc { opacity: 0; }
+.pp-hero-arc1 { animation: pp-hero-arc1 8s ease-in-out infinite; }
+.pp-hero-arc2 { animation: pp-hero-arc2 8s ease-in-out infinite; }
+.pp-hero-arc3 { animation: pp-hero-arc3 8s ease-in-out infinite; }
+
+/* Beat 4 — the claim. Held for nearly two seconds, which is what a sentence
+   this short needs to be read without hurrying. */
+@keyframes pp-hero-line {
+  0%, 74%   { opacity: 0; transform: translateY(8px); }
+  78%, 94%  { opacity: 1; transform: none; }
+  99%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+.pp-hero-line {
+  transform-box: fill-box;
+  animation: pp-hero-line 8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  opacity: 0;
+}
+
+/* Reduced motion is not a preference about taste — it is set by people for whom
+   movement on a screen causes nausea. So the sequence does not run slower, it
+   does not run at all: the picture rests on the frame it was building towards,
+   the circuit closed and the claim legible. The card stays hidden, because a
+   checklist with nothing to check is a claim the page cannot keep. */
+@media (prefers-reduced-motion: reduce) {
+  .pp-hero-pulse, .pp-hero-card, .pp-hero-row, .pp-hero-spark {
+    animation: none;
+    opacity: 0;
+  }
+  .pp-hero-arc {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 0.85;
+  }
+  .pp-hero-line {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Beat 1 — the room, and the only beat with nothing drawn over it.
+   The storyboard asks for a slow push here, and it is also the answer to opening the page and
+   seeing nothing move: this starts at the first painted frame, where everything Motion drives
+   waits about two seconds for hydration.
+   Applied to the artwork and to the overlay together, never to one alone. The arcs are pinned to
+   a ring measured in the picture's pixels, so if the picture scaled and the SVG did not, a 2.5%
+   push would slide them 17px off the light they are supposed to be riding. One class on both
+   boxes — which have identical geometry — keeps them locked.
+   2.5% over eight seconds is about a pixel a second. That is the point: it should register as the
+   room being alive rather than as a camera move. */
+@keyframes pp-hero-push {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.025); }
+}
+.pp-hero-push {
+  animation: pp-hero-push 8s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-hero-push { animation: none; }
+}

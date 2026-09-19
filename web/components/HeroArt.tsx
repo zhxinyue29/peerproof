@@ -44,7 +44,7 @@ export default function HeroArt() {
           off at the shoulders. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] bg-cover bg-center md:block"
+        className="pp-hero-push pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden w-[calc(47%+50vw-50%)] bg-cover bg-center md:block"
         style={{
           // The box takes the picture's own proportions, so `cover` has nothing to crop. Sized off
           // the width and given the aspect, rather than stretched to the section's height: the left

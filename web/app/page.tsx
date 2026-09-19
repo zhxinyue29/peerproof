@@ -206,11 +206,17 @@ export default function HomePage() {
               className="pointer-events-none absolute bottom-[1%] right-[-2%] hidden h-[160px] w-auto lg:block"
             />
 
-            {/* Low and left of the figures, in the darkest part of the scene — over their faces it
-                competed with the artwork, and over the painted badge it repeated it. */}
+            {/* The four beats, over the scene and in the scene's own coordinates. The artwork's
+                handwriting was painted out of the middle of the ring to make room: the checklist and
+                the closing line both land there, and it is the one large area of the picture that is
+                empty and fully opaque under the two masks. */}
             <HeroProofAnimation
               label={t("proof.label")}
-              className="pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden aspect-[1460/838] w-[calc(47%+50vw-50%)] lg:block"
+              detected={t("proof.detected")}
+              rows={[t("proof.location"), t("proof.wallet"), t("proof.peer")]}
+              line={t("proof.line")}
+              verified={t("proof.verified")}
+              className="pp-hero-push pointer-events-none absolute right-[calc(50%-50vw)] top-0 hidden aspect-[1460/838] w-[calc(47%+50vw-50%)] lg:block"
             />
 
             {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
