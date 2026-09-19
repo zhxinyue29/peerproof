@@ -39,11 +39,14 @@ export type Listing = {
   /// Where it happens, as the organizer wrote it. Added with the contract field on 2026-09-20;
   /// every listing described before that reads as "".
   venue: string;
+  /// Comma-separated, exactly as typed. The contract stores the string and nothing parses it into
+  /// a list — the events page searches it as prose, which is also how somebody reads it.
+  tags: string;
   /// 0 when the organizer never described the event.
   updatedAt: bigint;
 };
 
-const EMPTY: Listing = { title: "", blurb: "", url: "", venue: "", updatedAt: 0n };
+const EMPTY: Listing = { title: "", blurb: "", url: "", venue: "", tags: "", updatedAt: 0n };
 
 /// Cached because every screen asks, and the answer only changes once — at the moment somebody
 /// deploys it. `null` means "not asked yet".
@@ -78,8 +81,14 @@ export function directoryReady(): boolean {
 ///
 /// 140k + 700/byte sits 6–13% above each, which is margin without being a surcharge. A short
 /// listing costs a fraction of a long one instead of everyone paying for the longest.
-export function describeGas(title: string, blurb: string, url: string, venue = ""): bigint {
-  const bytes = new TextEncoder().encode(title + blurb + url + venue).length;
+export function describeGas(
+  title: string,
+  blurb: string,
+  url: string,
+  venue = "",
+  tags = "",
+): bigint {
+  const bytes = new TextEncoder().encode(title + blurb + url + venue + tags).length;
   return 140_000n + BigInt(bytes) * 700n;
 }
 

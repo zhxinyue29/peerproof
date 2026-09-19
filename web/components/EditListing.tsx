@@ -32,6 +32,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
   const [venue, setVenue] = useState("");
+  const [tags, setTags] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         setBlurb(l.blurb);
         setUrl(l.url);
         setVenue(l.venue);
+        setTags(l.tags);
       })
       .catch(() => {})
       .finally(() => live && setLoaded(true));
@@ -69,8 +71,8 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
       setBusy(t("listing.saving"));
       await signer.write({
         functionName: "describe",
-        args: [id, title, blurb, url, venue],
-        gas: describeGas(title, blurb, url, venue),
+        args: [id, title, blurb, url, venue, tags],
+        gas: describeGas(title, blurb, url, venue, tags),
         to: directoryAddress(),
         abi: eventDirectoryAbi,
       });
@@ -123,6 +125,16 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         value={venue}
         onChange={setVenue}
         hint={t("listing.venueHint")}
+      />
+      {/* Comma-separated, and the contract stores exactly the string typed — no parsing on the way
+          in. Splitting into a token list would mean deciding what a tag is, and the moment that
+          decision lives on chain it cannot be revised without a migration. The search box on the
+          events page reads this the same way a person does. */}
+      <Field
+        label={t("listing.tags")}
+        value={tags}
+        onChange={setTags}
+        hint={t("listing.tagsHint")}
       />
       <Field
         label={t("listing.link")}

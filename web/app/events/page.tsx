@@ -111,7 +111,12 @@ export default function EventsPage() {
   const q = query.trim().toLowerCase();
   const visible = (events ?? []).filter((e) => {
     if (q) {
-      const hay = `${e.listing.title} ${e.listing.blurb} #${e.id}`.toLowerCase();
+      // Venue and tags are in here because they are the two things somebody types into a search
+      // box that is sitting above a list of events — "Singapore", "workshop" — and until they were
+      // searchable the tags field was write-only: an organizer could fill it and nothing anywhere
+      // would ever read it back.
+      const hay =
+        `${e.listing.title} ${e.listing.blurb} ${e.listing.venue} ${e.listing.tags} #${e.id}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     switch (active) {

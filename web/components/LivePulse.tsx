@@ -91,7 +91,12 @@ export default function LivePulse({ eventId, live }: { eventId: bigint | null; l
     <section className="space-y-4 rounded-2xl border border-line bg-panel p-5 md:p-[22px]">
       <h2 className="text-[22px] font-medium tracking-[-0.01em]">{t("organizer.livePulse")}</h2>
 
-      {eventId === null || (!pulse && !failed) ? (
+      {/* Nothing selected is not the same as nothing loaded. A skeleton says "wait", and it was
+          saying it forever on a dashboard whose first event has not been created yet — the panel
+          sat there pulsing at somebody who had nothing to select. Say what the panel is for. */}
+      {eventId === null ? (
+        <p className="text-[15px] leading-relaxed text-dim">{t("organizer.pulseNoPick")}</p>
+      ) : !pulse && !failed ? (
         <Skeleton className="h-[120px] w-full" />
       ) : pulse && pulse.total > 0 ? (
         // The render's caption is present tense, and it is only true while the doors are open. A

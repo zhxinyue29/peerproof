@@ -41,6 +41,20 @@ import VenueHandoff from "@/components/VenueHandoff";
 /// created, not the one the build points at — an organizer who ran three nights had no way to see
 /// the first two. And the payouts panel is still an absence: a dashed note saying the contract
 /// settles itself, sitting where a product with an escape hatch would put the button.
+/// Morning, afternoon or evening, by the organizer's own clock.
+///
+/// The banner said "good morning" at every hour of the day. A greeting is the one line on a
+/// dashboard that claims to know something about the person reading it, and getting it wrong at
+/// 9pm is worse than not greeting them at all — it tells them the screen is a template.
+///
+/// The device clock, deliberately, not the chain's: this is about where the reader is standing.
+function greetingKey() {
+  const h = new Date().getHours();
+  if (h < 12) return "organizer.greeting.morning";
+  if (h < 18) return "organizer.greeting.afternoon";
+  return "organizer.greeting.evening";
+}
+
 export default function OrganizerPage() {
   const t = useT();
   const { signer } = useIdentity();
@@ -145,7 +159,7 @@ export default function OrganizerPage() {
               />
               <div className="relative max-w-[42ch]">
                 <p className="text-[15px] text-dim">
-                  {t("organizer.greeting", { who: signer?.label ?? shortAddress(signer?.address ?? "0x") })}
+                  {t(greetingKey(), { who: signer?.label ?? shortAddress(signer?.address ?? "0x") })}
                 </p>
                 <h2
                   className="mt-2 bg-clip-text pb-[0.1em] text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[36px]"
@@ -372,6 +386,10 @@ function SelectedEvent({
   useEffect(readFallback, [readFallback, selectedId]);
   useVisiblePoll(readFallback, 8000);
 
+  // Nothing to load when nothing is picked. This used to render "Loading event…" directly under
+  // "You have not created any events yet" — two boxes contradicting each other on the first screen
+  // a new organizer ever sees.
+  if (selectedId === null) return null;
   if (!ev) return <Card><p className="text-[15px] text-dim">{t("organizer.loadingEvent")}</p></Card>;
 
   const phase = phaseOf(ev);
@@ -550,6 +568,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
+  const [venue, setVenue] = useState("");
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState(() => t("create.creating"));
   const [notice, setNotice] = useState<string | null>(null);
@@ -563,7 +582,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       // Descriptions live in a second contract. Whether it exists yet is our problem, not the
       // organizer's — so if it does not, deploy it as part of this action rather than putting a
       // "deploy a contract" button in front of somebody who wanted to create an event.
-      const wantsWords = !!(title || blurb || url);
+      const wantsWords = !!(title || blurb || url || venue);
       if (wantsWords && !(await checkDirectory())) {
         setBusyLabel(t("listing.settingUp"));
         await deployDirectory(signer.address);
@@ -618,11 +637,12 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           setBusyLabel(t("create.savingDescription"));
           await signer.write({
             functionName: "describe",
-            // No venue field in the create flow yet — the listing editor on the event page
-            // has one, and an empty string here is what every listing described before tonight
-            // already reads as.
-            args: [id, title, blurb, url, ""],
-            gas: describeGas(title, blurb, url),
+            // Six arguments, matching `describe` since `tags` joined the struct. It was five,
+            // which is not a value bug — viem refuses to encode at all — so every listing write in
+            // the product, here and in the editor, was failing before it reached the chain.
+            // Tags are not collected in the create flow; the listing editor has that field.
+            args: [id, title, blurb, url, venue, ""],
+            gas: describeGas(title, blurb, url, venue),
             to: directoryAddress(),
             abi: eventDirectoryAbi,
           });
@@ -717,12 +737,26 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
+          {/* Where it happens, asked at creation rather than only in the editor afterwards. The
+              organizer's own cards print the venue under the title, so an event created here and
+              never edited showed a title with a blank line beneath it — the one field the dashboard
+              displays was the one field the create flow never collected. */}
+          <Field
+            label={t("listing.venue")}
+            value={venue}
+            onChange={setVenue}
+            hint={t("listing.venueHint")}
+          />
           <Field
             label={t("listing.link")}
             value={url}
             onChange={setUrl}
             hint={t("listing.linkHint")}
           />
+          {/* Not a block. An event with no title is a legitimate thing to create — the escrow does
+              not need one, and the directory may not even be deployed yet — but it is listed to
+              strangers as "Event #7", and finding that out on the events page is too late. */}
+          {!title.trim() && <p className="text-[14px] text-faint">{t("listing.noTitleWarn")}</p>}
         </section>
 
         {step === "about" && (
