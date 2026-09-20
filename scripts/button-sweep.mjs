@@ -1,3 +1,20 @@
+// 把每条路线上每一个看得见的按钮都按一遍,报告哪些按了没反应,以及哪些链接的
+// href 是空的。
+//
+//   APP=https://zhxinyue29.github.io/peerproof node scripts/button-sweep.mjs
+//   DEV=1 node scripts/button-sweep.mjs        # 本机 out/,顺便用 dev key 登录
+//
+// 两个坑,都踩过:
+//
+// 1. 判「有没有反应」不能只看正文长度。空列表上的筛选胶囊只改变哪一个被点亮,
+//    正文一个字都不变——一轮报出四个假阳性,这份报告就没人读了。所以签名里带上
+//    aria-pressed 和选中态。
+// 2. 每次点击之后要把模态清掉。登录按钮会拉起 Privy 的弹窗,它要好几秒才出现,
+//    比一次页面加载还慢——不清的话,它后面每一个按钮测的都是遮罩,不是页面。
+//
+// 剩下的「无反应」如果是按已经选中的那一项(账户页的「概览」、主办方的「全部」),
+// 那本来就不该有反应。
+
 import { chromium } from "playwright";
 const BASE = process.env.APP ?? "http://127.0.0.1:8799";
 const b = await chromium.launch();
