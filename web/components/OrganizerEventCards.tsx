@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
-import { mon } from "@/lib/format";
 import { SectionTitle } from "@/components/SectionTitle";
 import { useLang } from "@/lib/i18n";
 import type { EventSummary } from "@/lib/events";
@@ -34,25 +33,6 @@ function bucket(e: EventSummary): Filter {
 function pct(n: number, of: number) {
   if (!of) return 0;
   return Math.max(0, Math.min(100, (n / of) * 100));
-}
-
-/// The sheet puts a small outline glyph before the date and the place on every card.
-function Glyph({ kind }: { kind: "clock" | "pin" }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
-      <path
-        d={
-          kind === "clock"
-            ? "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
-            : "M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
-        }
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 export default function OrganizerEventCards({

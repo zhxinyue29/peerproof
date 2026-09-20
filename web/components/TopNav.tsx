@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -34,7 +34,7 @@ import { useT } from "@/lib/i18n";
 /// a link opened at a venue door by somebody who has not agreed to be inside anything yet, and five
 /// tabs across the top is the page asking them to navigate before it has told them what it is.
 
-export default function TopNav({ page }: { page?: string }) {
+export default function TopNav({ page, compact = false }: { page?: string; compact?: boolean }) {
   const t = useT();
   const router = useRouter();
   const { signer, setUpPrivy, busy } = useIdentity();
@@ -64,8 +64,8 @@ export default function TopNav({ page }: { page?: string }) {
       // background bleed to the container's edges while its contents stay on the same left edge as
       // everything below. They were -32 against +17 after the column padding changed, which pulled
       // the whole header 15px left of the cards under it.
-      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-[17px] md:gap-5 md:px-[17px] md:py-5 ${
-        scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
+      className={`sticky top-0 z-40 -mx-4 flex items-center gap-3 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-[220ms] sm:-mx-6 sm:px-6 md:-mx-[17px] md:gap-5 md:px-[17px] ${compact ? "md:py-1.5" : "md:py-5"} ${
+        scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-white/[0.04]"
       }`}
     >
       {/* The mark goes home from anywhere; the page's own name sits beside it so the top-left
@@ -86,7 +86,7 @@ export default function TopNav({ page }: { page?: string }) {
       )}
 
 
-      <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
+      <form onSubmit={onSearch} className={`ml-auto hidden min-w-0 flex-1 md:block ${compact ? "md:max-w-[440px]" : "md:max-w-[340px]"}`}>
         <label className="relative flex items-center">
           <span aria-hidden className="pointer-events-none absolute left-3.5 text-faint">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -144,38 +144,142 @@ export default function TopNav({ page }: { page?: string }) {
 /// visibly a different one before you read a single character. The app chrome draws the same token
 /// for the same reason — this page has no app chrome, so it draws its own.
 function IdentityToken() {
-  const { signer } = useIdentity();
+  const t = useT();
+  const { signer, signOut } = useIdentity();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [open]);
+
   if (!signer) return null;
 
   const label = signer.label ?? shortAddress(signer.address);
   const hue = Number.parseInt(signer.address.slice(2, 6), 16) % 360;
   return (
-    // A link, not an ornament. The design reaches the profile by tapping the avatar in the corner,
-    // which is where everybody looks for their own account — and this token had been sitting there
-    // looking exactly like that control while doing nothing when pressed. The nav item stays: one
-    // of them is a habit and the other is a signpost, and the page is reachable signed out, which
-    // an avatar cannot be.
-    <Link
-      href="/me"
-      aria-label={label}
-      title={label}
-      className="flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-full border border-transparent px-1.5 transition-colors hover:border-line-2 sm:pr-3"
+    <div
+      ref={rootRef}
+      className="relative shrink-0"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        setOpen(false);
+        triggerRef.current?.focus();
+      }}
     >
-      <span
-        aria-hidden
-        className="h-8 w-8 shrink-0 rounded-full border border-line-2"
-        // Generated per account, so it cannot come from the token palette.
-        style={{
-          background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
-        }}
-      />
-      {/* The design puts a name beside the avatar. There is no name in this system — no profiles,
-          no display names, nothing to edit — so what sits here is whatever identified this account
-          at sign-in: the email for an email login, the short address for a wallet. Inventing an
-          "Alice" would be a lie about what the product knows.
-          Hidden on a phone, where the bar is already carrying a logo, a language switch and a menu,
-          and the avatar alone is the control people reach for anyway. */}
-      <span className="hidden max-w-[140px] truncate text-[15px] text-dim sm:block">{label}</span>
-    </Link>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label={t("nav.accountMenu")}
+        title={label}
+        onClick={() => setOpen((value) => !value)}
+        className={`flex min-h-[44px] items-center gap-2.5 rounded-full border px-1.5 transition-colors sm:pr-3 ${
+          open ? "border-line-2 bg-panel/70" : "border-transparent hover:border-line-2 hover:bg-panel/45"
+        }`}
+      >
+        <span
+          aria-hidden
+          className="h-8 w-8 shrink-0 rounded-full border border-line-2"
+          // Generated per account, so it cannot come from the token palette.
+          style={{
+            background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
+          }}
+        />
+        {/* The design puts a name beside the avatar. There is no name in this system, so show the
+            identifier the person actually used: email for Privy, short address for a wallet. */}
+        <span className="hidden max-w-[140px] truncate text-[15px] text-dim sm:block">{label}</span>
+        <svg
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+          className={`hidden h-4 w-4 text-faint transition-transform duration-150 sm:block ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 8 4 4 4-4" />
+        </svg>
+      </button>
+
+      <div
+        className={`absolute right-0 top-full z-50 w-[220px] origin-top-right pt-2 transition duration-150 ${
+          open
+            ? "visible translate-y-0 opacity-100"
+            : "pointer-events-none invisible -translate-y-1 opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden rounded-xl border border-line-2 bg-raised p-1.5 shadow-[0_18px_48px_rgba(0,0,0,0.38)]">
+          <div className="border-b border-line px-3 py-2.5">
+            <p className="truncate text-[14px] font-medium text-fg" title={label}>
+              {label}
+            </p>
+            <p className="mt-0.5 truncate font-mono text-[12px] text-faint" title={signer.address}>
+              {shortAddress(signer.address)}
+            </p>
+          </div>
+
+          <Link
+            href="/me"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex min-h-[42px] items-center gap-3 rounded-lg px-3 text-[14px] text-dim transition-colors hover:bg-panel hover:text-fg focus-visible:bg-panel focus-visible:text-fg focus-visible:outline-none"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-[18px] w-[18px] shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="8" r="3.25" />
+              <path d="M5.5 20c.55-3.55 2.72-5.35 6.5-5.35s5.95 1.8 6.5 5.35" />
+            </svg>
+            {t("nav.viewProfile")}
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              signOut();
+            }}
+            className="flex min-h-[42px] w-full items-center gap-3 rounded-lg px-3 text-left text-[14px] text-[#ff8f9b] transition-colors hover:bg-[#ff5d6c]/10 hover:text-[#ffb2ba] focus-visible:bg-[#ff5d6c]/10 focus-visible:outline-none"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-[18px] w-[18px] shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M10 5H5.75A1.75 1.75 0 0 0 4 6.75v10.5C4 18.22 4.78 19 5.75 19H10" />
+              <path d="M14 8.25 17.75 12 14 15.75" />
+              <path d="M8.5 12h9" />
+            </svg>
+            {t("common.signOut")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

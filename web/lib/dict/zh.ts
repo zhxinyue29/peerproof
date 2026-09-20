@@ -21,6 +21,8 @@ export const zh: Dict = {
   "nav.payouts": "结算",
   "nav.overview": "总览",
   "nav.myPasses": "我的门票",
+  "nav.accountMenu": "账户菜单",
+  "nav.viewProfile": "查看个人主页",
 
   "nav.myProof": "我的证明",
   "me.signedOutBody": "这里是你自己的出席记录:报名过哪些活动、哪些被现场的人确认过、押金累计多少。全部从合约读,别人用同一个地址也能算出同样的结果。",
@@ -256,6 +258,7 @@ export const zh: Dict = {
   "common.localChain": "本地链——交易是真的，钱是假的。",
   "common.noContract": "没有配置合约。",
   "common.signIn": "登录",
+  "common.signOut": "退出登录",
   "common.retry": "重试",
   "event.registered": "已报名",
   "event.snapshot": "活动状态",

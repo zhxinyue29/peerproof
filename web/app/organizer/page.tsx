@@ -44,6 +44,7 @@ import TagInput from "@/components/TagInput";
 import CoverField from "@/components/CoverField";
 import LivePulse from "@/components/LivePulse";
 import VenueHandoff from "@/components/VenueHandoff";
+import organizerStyles from "@/components/organizer/organizer.module.css";
 
 /// The organizer's screen, rebuilt to `04-organizer-dashboard-*.png`.
 ///
@@ -151,6 +152,7 @@ export default function OrganizerPage() {
       title={creating ? t("nav.createEvent") : t("organizer.title")}
       titleEn={creating ? "Create Event" : "Organiser Dashboard"}
       subtitle={creating ? t("create.subtitle") : t("organizer.subtitle")}
+      showHeading={creating}
       action={
         creating ? (
           <Button onClick={() => goTo("dashboard")} variant="ghost" className="w-full sm:w-auto">
@@ -175,7 +177,7 @@ export default function OrganizerPage() {
           <Kpis events={[]} t={t} />
           <section className="space-y-4">
             <SectionTitle zh={t("organizer.yourEvents")} en="My Events" />
-            <div className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+            <div className={`${organizerStyles.identityGate} py-5 md:py-6`}>
               <IdentityGate intro={<GateIntro kind="organizer" />}>{null}</IdentityGate>
             </div>
           </section>
@@ -241,6 +243,7 @@ export default function OrganizerPage() {
                 title={selected?.listing.title || t("common.eventNumber", { id: managing.toString() })}
                 sub={t("organizer.manageSub")}
                 onClose={() => setManaging(null)}
+                wide
               >
                 <div className="space-y-4">
                   <div className="flex gap-1 border-b border-line">
@@ -379,33 +382,35 @@ function useUrlTab(): ["dashboard" | "create", (to: "dashboard" | "create") => v
 /// between the sheet and what shipped, and补块 was never going to close it: it is the skeleton,
 /// not a block.
 ///
-/// `titleEn` is the sheet's second line on every heading — 中文 primary, English underneath at
-/// half the weight. Not a translation for readers who need one; the page already switches
-/// language. It is the sheet's typographic signature, and dropping it made every heading on the
-/// page a different thing from the drawing.
+/// `titleEn` is the sheet's companion label in the Chinese UI. The English UI hides it rather than
+/// repeating the same title twice with slightly different spelling.
 function Frame({
   title,
   titleEn,
   subtitle,
   action,
+  showHeading = true,
   children,
 }: {
   title: string;
   titleEn?: string;
   subtitle?: string;
   action?: React.ReactNode;
+  showHeading?: boolean;
   children: React.ReactNode;
 }) {
+  const { lang } = useLang();
   return (
-    <div className="min-h-dvh overflow-x-hidden">
-      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav page={title} />
-        <main className="flex min-w-0 flex-col gap-6 pb-16 pt-6 md:gap-7 md:pt-8">
+    <div className={`${organizerStyles.shell} min-h-dvh overflow-x-hidden`}>
+      <div className="mx-auto w-full max-w-[1540px] px-4 sm:px-6 md:px-[17px]">
+        <TopNav page={showHeading ? title : undefined} compact />
+        <main className={`flex min-w-0 flex-col gap-5 pb-16 pt-5 md:gap-6 ${showHeading ? "md:pt-7" : "md:pt-4"}`}>
+          {showHeading && (
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <h1
-                  className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-transparent md:text-[40px]"
+                  className="bg-clip-text pb-[0.1em] text-[29px] font-extrabold leading-[1.05] text-transparent md:text-[34px]"
                   style={{
                     fontFamily: '"Montserrat", var(--font-sans)',
                     backgroundImage:
@@ -414,18 +419,19 @@ function Frame({
                 >
                   {title}
                 </h1>
-                {titleEn && (
-                  <span className="text-[16px] font-medium tracking-[-0.01em] text-faint md:text-[18px]">
+                {titleEn && lang === "zh" && (
+                  <span className="text-[16px] font-medium text-faint md:text-[18px]">
                     {titleEn}
                   </span>
                 )}
               </div>
               {subtitle && (
-                <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{subtitle}</p>
+                <p className="text-[15px] leading-relaxed text-dim md:max-w-[58ch]">{subtitle}</p>
               )}
             </div>
             {action && <div className="flex shrink-0 flex-col sm:items-start">{action}</div>}
           </header>
+          )}
           {children}
         </main>
       </div>
@@ -452,7 +458,7 @@ function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () =>
         // 55% and flush to the edges, which is how the sheet sets it — the artwork is half the
         // band, not a thumbnail floated in the corner. The fade starts at 30% so the picture is
         // still a picture where it meets the words rather than a wash.
-        className="pointer-events-none absolute inset-0 left-auto hidden w-[55%] bg-cover bg-center opacity-90 lg:block"
+        className="pointer-events-none absolute inset-0 left-auto w-full bg-cover bg-[68%_center] opacity-35 sm:w-[76%] sm:opacity-55 lg:w-[64%] lg:bg-center lg:opacity-95"
         style={{
           // A composite built for this band: the stage, the organizer with a laptop, and the
           // handwritten lines — the three elements the dashboard sheet draws. Assembled from
@@ -464,12 +470,12 @@ function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () =>
           maskImage: "linear-gradient(to right, transparent 0%, #000 30%)",
         }}
       />
-      <div className="relative max-w-[42ch]">
-        <p className="text-[15px] text-dim">
+      <div className="relative max-w-[520px]">
+        <p className="text-[16px] text-accent-2 md:text-[26px]">
           {who ? t(greetingKey(), { who }) : t("organizer.bannerGuest")}
         </p>
         <h2
-          className="mt-2 bg-clip-text pb-[0.1em] text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[36px]"
+          className="mt-2 max-w-[400px] bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.08] text-transparent md:text-[56px]"
           style={{
             fontFamily: '"Montserrat", var(--font-sans)',
             backgroundImage:
@@ -480,17 +486,17 @@ function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () =>
         </h2>
         {/* The sheet's English line under the headline — "Create events. Verify real people.
             Build stronger communities." It is part of the type setting, not a translation. */}
-        <p className="mt-2 text-[15px] leading-snug text-faint">
+        <p className="mt-3 text-[16px] leading-snug text-accent-2 md:text-[21px]">
           Create events. Verify real people.
           <br />
           Build stronger communities.
         </p>
-        <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("organizer.bannerBody")}</p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button onClick={onCreate}>+ {t("nav.createEvent")}</Button>
+        <p className="mt-2 text-[16px] leading-relaxed text-dim md:hidden">{t("organizer.bannerBody")}</p>
+        <div className="mt-6 flex flex-wrap gap-4">
+          <Button onClick={onCreate} className="md:min-h-[54px] md:min-w-[240px] md:text-[18px]">+ {t("nav.createEvent")}</Button>
           <Link
             href="/events"
-            className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-5 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-white/20 bg-transparent px-5 text-[16px] text-fg transition-colors hover:border-accent/60 hover:bg-white/[0.04] md:min-h-[54px] md:min-w-[230px] md:text-[18px]"
           >
             {t("organizer.seeAllEvents")}
           </Link>
@@ -559,10 +565,10 @@ function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
 /// of identical dark grey with a number in each is a row somebody's eye slides off, and the icon
 /// is what makes "which one was the money" answerable without reading the captions again.
 const KPI_ICONS: Record<string, { path: string; tone: string }> = {
-  live: { path: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z", tone: "text-accent-2 bg-accent/15" },
-  verified: { path: "m9 12 2 2 4-4M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z", tone: "text-ok bg-ok/15" },
-  escrow: { path: "M3 8h18M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M16 13h2", tone: "text-warn bg-warn/15" },
-  registered: { path: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11h4M19 9v4", tone: "text-accent-2 bg-accent/15" },
+  live: { path: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z", tone: "bg-accent text-white shadow-[0_0_16px_rgba(116,88,255,0.32)]" },
+  verified: { path: "m9 12 2 2 4-4M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z", tone: "bg-info text-white shadow-[0_0_16px_rgba(69,186,255,0.26)]" },
+  escrow: { path: "M3 8h18M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M16 13h2", tone: "bg-warn text-[#241300] shadow-[0_0_16px_rgba(255,191,95,0.24)]" },
+  registered: { path: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11h4M19 9v4", tone: "bg-ok text-[#03271d] shadow-[0_0_16px_rgba(67,224,178,0.22)]" },
 };
 
 function Kpi({
@@ -647,7 +653,7 @@ function SelectedEvent({
   // "You have not created any events yet" — two boxes contradicting each other on the first screen
   // a new organizer ever sees.
   if (selectedId === null) return null;
-  if (!ev) return <Card><p className="text-[15px] text-dim">{t("organizer.loadingEvent")}</p></Card>;
+  if (!ev) return <Card framed={false}><p className="text-[15px] text-dim">{t("organizer.loadingEvent")}</p></Card>;
 
   const phase = phaseOf(ev);
   const isMine = signer?.address.toLowerCase() === ev.organizer.toLowerCase();
@@ -661,7 +667,7 @@ function SelectedEvent({
         </Notice>
       )}
 
-      <Card className="space-y-4">
+      <Card framed={false} className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 className="min-w-0 text-[22px] font-medium tracking-[-0.01em]">
             {title || t("common.eventNumber", { id: selectedId?.toString() ?? "…" })}
@@ -1146,7 +1152,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
 
   if (created) {
     return (
-      <Card className="space-y-3">
+      <Card framed={false} className="space-y-3">
         <h3 className="text-[18px] font-medium">
           {t("create.createdTitle", { id: created.id.toString() })}
         </h3>
@@ -1188,7 +1194,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
     <div className="grid gap-5 lg:grid-cols-[232px_minmax(0,1fr)] lg:items-start">
       {/* Horizontal and scrollable on a phone, vertical beside the form on a desktop. A four-item
           vertical rail on a 390px screen costs 200px before the first field. */}
-      <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:px-0">
+      <ol className={`${organizerStyles.stepRail} -mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:px-0`}>
         {STEPS.map((name, i) => {
           const done = i < stepIndex;
           const here = i === stepIndex;
@@ -1204,12 +1210,12 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
                 // same grey text as its neighbours — two of the three signals the design uses
                 // (fill, border, text weight) were missing, so the row read as four identical
                 // items with a slightly different background on one.
-                className={`flex min-h-[52px] w-full items-center gap-3 rounded-xl border px-3 text-left transition-colors ${
+                className={`flex min-h-[52px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors ${
                   here
-                    ? "border-accent/55 bg-accent/20"
+                    ? "bg-accent/16 shadow-[inset_3px_0_0_var(--color-accent)]"
                     : done
-                      ? "border-transparent hover:bg-raised"
-                      : "border-transparent"
+                      ? "hover:bg-white/[0.035]"
+                      : ""
                 } ${i > stepIndex ? "cursor-default" : ""}`}
               >
                 <span
@@ -1249,7 +1255,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       </ol>
 
       <div className="min-w-0 space-y-4">
-        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
+        <section className={`${organizerStyles.formPanel} space-y-4 p-4 md:p-6 ${step === "about" ? "" : "hidden"}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")} ✨</p>
@@ -1259,7 +1265,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             <button
               type="button"
               onClick={saveDraft}
-              className="inline-flex min-h-[44px] shrink-0 items-center rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+              className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg border border-white/10 bg-white/[0.02] px-4 text-[15px] text-dim transition-colors hover:border-accent/60 hover:bg-white/[0.04] hover:text-fg"
             >
               {savedDraft ? t("create.draftSaved") : t("create.saveDraft")}
             </button>
@@ -1308,7 +1314,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           {!title.trim() && <p className="text-[14px] text-faint">{t("listing.noTitleWarn")}</p>}
         </section>
 
-        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "verify" ? "" : "hidden"}`}>
+        <section className={`${organizerStyles.formPanel} space-y-4 p-4 md:p-6 ${step === "verify" ? "" : "hidden"}`}>
           <div>
             <p className="text-[22px] font-medium tracking-tight">{t("create.verifyTitle")}</p>
             <p className="mt-1 text-[15px] text-dim">{t("create.verifySub")}</p>
@@ -1318,7 +1324,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               three switches that do nothing would be the single most dishonest thing on a screen
               whose product is "you do not have to trust the organizer". So the one that exists is
               stated as what it is, and its parameter is the question. */}
-          <div className="rounded-xl border border-accent/35 bg-accent/[0.07] p-4">
+          <div className="border-l-2 border-accent bg-accent/[0.07] px-4 py-3.5">
             <p className="text-[16px] font-medium">{t("create.methodPeer")}</p>
             <p className="mt-1 text-[14px] leading-relaxed text-dim">{t("create.methodPeerBody")}</p>
           </div>
@@ -1338,7 +1344,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             </label>
             <Field label={t("create.runsMins")} value={runsMins} onChange={edited(setRunsMins)} hint={t("create.runsHint")} />
           </div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-2 bg-ink p-3.5">
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-ink/45 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
             <input
               type="checkbox"
               checked={walkIns}
@@ -1359,7 +1365,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           />
         </section>
 
-        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "money" ? "" : "hidden"}`}>
+        <section className={`${organizerStyles.formPanel} space-y-4 p-4 md:p-6 ${step === "money" ? "" : "hidden"}`}>
           <div>
             <p className="text-[22px] font-medium tracking-tight">{t("create.moneyTitle")}</p>
             <p className="mt-1 text-[15px] text-dim">{t("create.moneySub")}</p>
@@ -1372,7 +1378,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           <p className="text-[14px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
         </section>
 
-        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "publish" ? "" : "hidden"}`}>
+        <section className={`${organizerStyles.formPanel} space-y-4 p-4 md:p-6 ${step === "publish" ? "" : "hidden"}`}>
           <div>
             <p className="text-[22px] font-medium tracking-tight">{t("create.publishTitle")}</p>
             <p className="mt-1 text-[15px] text-dim">{t("create.publishSub")}</p>
@@ -1380,7 +1386,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           {/* Everything back, in one place, before the irreversible press. The numbers below are
               fixed at creation — the contract has no function that changes any of them — so this is
               the last screen on which a typo is cheap. */}
-          <dl className="space-y-2 rounded-xl border border-line-2 bg-ink p-4">
+          <dl className="divide-y divide-white/[0.055] rounded-lg bg-ink/45 px-4 py-2">
             <Row label={t("listing.title")} value={title || t("create.untitled")} />
             {venue && <Row label={t("listing.venue")} value={venue} />}
             {tags && <Row label={t("listing.tags")} value={tags} />}
@@ -1426,7 +1432,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4">
+    <div className="flex justify-between gap-4 py-2.5">
       <dt className="text-faint">{label}</dt>
       <dd className="text-right text-dim">{value}</dd>
     </div>

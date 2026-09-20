@@ -28,7 +28,7 @@ export default function EventTimeline({
   const registrationEndsAt = walkIns ? 100 : doorsAt;
 
   return (
-    <div className="rounded-[13px] border border-line-2 bg-ink/60 p-4">
+    <div className="border-y border-white/[0.06] py-4">
       <p className="text-[15px] font-medium">{t("timeline.whatParticipants")}</p>
 
       <div className="relative mx-2 mb-3 mt-7 h-2 rounded-full bg-line">

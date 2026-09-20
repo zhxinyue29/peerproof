@@ -203,6 +203,12 @@ export default function IdentityGate({
         ) : null}
       </div>
 
+      {devMode && (
+        <Button onClick={useDevKey} variant="ghost" className="w-full">
+          Throwaway local key (dev)
+        </Button>
+      )}
+
       <p className="text-center text-[14px] text-faint">
         {t("identity.boundTo")} <code>{relyingPartyId()}</code>
       </p>

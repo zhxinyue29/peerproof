@@ -20,6 +20,8 @@ export const en = {
   "nav.payouts": "Payouts",
   "nav.overview": "Overview",
   "nav.myPasses": "My passes",
+  "nav.accountMenu": "Account menu",
+  "nav.viewProfile": "View profile",
 
   "nav.myProof": "My proof",
   "me.signedOutBody": "Your own attendance record: which events you joined, which ones the room confirmed you at, and what you have staked. All of it read from the contract — anyone with the same address computes the same answer.",
@@ -255,6 +257,7 @@ export const en = {
   "common.localChain": "Local chain — real transactions, fake money.",
   "common.noContract": "No contract configured.",
   "common.signIn": "Sign in",
+  "common.signOut": "Sign out",
   "common.retry": "Try again",
   "event.registered": "registered",
   "event.snapshot": "Event status",

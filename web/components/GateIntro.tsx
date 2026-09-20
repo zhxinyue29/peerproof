@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n";
 /// landing page uses, because this is the same argument told at a different moment.
 export default function GateIntro({ kind }: { kind: "organizer" | "floor" }) {
   const t = useT();
+  const organizer = kind === "organizer";
   const steps =
     kind === "organizer"
       ? ([
@@ -36,7 +37,13 @@ export default function GateIntro({ kind }: { kind: "organizer" | "floor" }) {
   // desktop, because a real phone's viewport is below the breakpoint and gets one column by
   // accident. `@container` asks the box this actually sits in, which is the thing that decides.
   return (
-    <section className="@container relative overflow-hidden rounded-2xl border border-line bg-panel p-5 @2xl:p-7">
+    <section
+      className={`@container relative overflow-hidden ${
+        organizer
+          ? "py-5 @2xl:py-6"
+          : "rounded-2xl border border-line bg-panel p-5 @2xl:p-7"
+      }`}
+    >
       <span
         aria-hidden
         className="pointer-events-none absolute -right-16 -top-12 hidden h-[240px] w-[340px] opacity-[0.16] @2xl:block"
@@ -57,7 +64,11 @@ export default function GateIntro({ kind }: { kind: "organizer" | "floor" }) {
         {steps.map(([title, body], i) => (
           <li
             key={title}
-            className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-raised/60 p-4"
+            className={`relative min-w-0 overflow-hidden ${
+              organizer
+                ? "py-4 @2xl:px-5 @2xl:py-2 @2xl:first:pl-0"
+                : "rounded-xl border border-line bg-raised/60 p-4"
+            }`}
           >
             <span
               aria-hidden

@@ -51,14 +51,14 @@ export default function EventManagement({
       </div>
 
       <div className="flex flex-wrap items-center gap-4 p-5">
-        <div className="relative h-[72px] w-[112px] shrink-0 overflow-hidden rounded-xl">
+        <div className="relative h-[72px] w-[112px] shrink-0 overflow-hidden rounded-lg">
           <CoverImage id={event.id} src={event.listing.cover} nodes={6} className="absolute inset-0 h-full w-full" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full px-2.5 py-1 text-[13px] font-medium ${
-                event.phase === "live" ? "bg-ok/20 text-ok" : "bg-[#0d1626]/85 text-dim"
+                event.phase === "live" ? "bg-ok/20 text-ok" : "bg-ink/85 text-dim"
               }`}
             >
               {t(
@@ -80,7 +80,7 @@ export default function EventManagement({
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-px border-t border-line bg-line sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-px border-t border-white/[0.055] bg-white/[0.055] sm:grid-cols-4">
         <Cell value={event.registered} label={t("organizer.registered")} />
         <Cell value={event.confirmed} label={t("organizer.confirmedPresent")} tone="ok" />
         <Cell
@@ -104,7 +104,7 @@ function Cell({
   tone?: "dim" | "ok" | "warn";
 }) {
   return (
-    <div className="bg-panel px-5 py-4">
+    <div className="bg-panel/90 px-5 py-4">
       <dd
         className={`text-[26px] font-semibold tabular-nums leading-none tracking-[-0.02em] ${
           tone === "ok" ? "text-ok" : tone === "warn" ? "text-warn" : "text-fg"

@@ -39,7 +39,7 @@ export default function VenueHandoff({ beaconPk }: { beaconPk: string }) {
   }, [url]);
 
   return (
-    <div className="space-y-3 rounded-xl border border-line-2 bg-ink/40 p-4">
+    <div className="space-y-3 border-l-2 border-info/45 bg-info/[0.045] px-4 py-3.5">
       <div>
         <p className="text-[16px] font-medium">{t("handoff.title")}</p>
         <p className="mt-1 text-[15px] leading-relaxed text-dim">{t("handoff.body")}</p>

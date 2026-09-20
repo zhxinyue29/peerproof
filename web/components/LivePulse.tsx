@@ -6,6 +6,7 @@ import { countdown } from "@/lib/format";
 import { useT, type TFn } from "@/lib/i18n";
 import { readHistory } from "@/lib/logs";
 import { useVisiblePoll } from "@/lib/poll";
+import organizerStyles from "@/components/organizer/organizer.module.css";
 import { Skeleton } from "@/components/ui";
 import { SectionTitle } from "@/components/SectionTitle";
 
@@ -123,7 +124,7 @@ export default function LivePulse({ eventId, live }: { eventId: bigint | null; l
   }, 15000);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-line bg-panel p-5 md:p-[22px]">
+    <section className={`${organizerStyles.section} space-y-4 p-5 md:p-[22px]`}>
       <SectionTitle zh={t("organizer.livePulse")} en="Analytics" />
 
       {/* Nothing selected is not the same as nothing loaded. A skeleton says "wait", and it was
@@ -283,7 +284,7 @@ function Empty({ stale }: { stale: boolean }) {
 function PayoutsNote() {
   const t = useT();
   return (
-    <div className="space-y-2 rounded-xl border border-dashed border-line-2 p-4">
+    <div className="space-y-2 border-l-2 border-ok/35 bg-ok/[0.045] px-4 py-3.5">
       <p className="text-[16px] font-medium">{t("organizer.payoutsAutomatic")}</p>
       <p className="text-[14px] leading-relaxed text-dim">{t("organizer.payoutsBody")}</p>
       <p className="text-[14px] leading-relaxed text-faint">{t("organizer.payoutsDetail")}</p>

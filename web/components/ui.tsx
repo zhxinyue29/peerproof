@@ -141,12 +141,14 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
 export function Card({
   children,
   className = "",
+  framed = true,
 }: {
   children: React.ReactNode;
   className?: string;
+  framed?: boolean;
 }) {
   return (
-    <section className={`rounded-2xl border border-line bg-panel p-5 md:p-[22px] ${className}`}>
+    <section className={`rounded-2xl bg-panel p-5 md:p-[22px] ${framed ? "border border-line" : ""} ${className}`}>
       {children}
     </section>
   );
@@ -249,7 +251,7 @@ export function Button({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`min-h-[46px] rounded-xl px-4 text-[16px] font-medium transition-[background-color,transform] duration-100 active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${styles} ${className}`}
+      className={`min-h-[46px] rounded-lg px-4 text-[16px] font-medium outline-none transition-[background-color,transform] duration-100 focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink active:scale-[0.985] disabled:pointer-events-none disabled:opacity-35 ${styles} ${className}`}
     >
       {children}
     </button>
@@ -260,7 +262,7 @@ export function LinkButton({ href, children }: { href: string; children: React.R
   return (
     <Link
       href={href}
-      className="flex min-h-[46px] items-center justify-center rounded-xl bg-accent px-4 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
+      className="flex min-h-[46px] items-center justify-center rounded-lg bg-accent px-4 text-[16px] font-medium text-white outline-none transition-transform duration-100 focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink active:scale-[0.985]"
     >
       {children}
     </Link>
@@ -493,11 +495,13 @@ export function Sheet({
   sub,
   onClose,
   children,
+  wide = false,
 }: {
   title: string;
   sub?: string;
   onClose: () => void;
   children: React.ReactNode;
+  wide?: boolean;
 }) {
   return (
     <div
@@ -508,7 +512,9 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-[520px] space-y-4 rounded-[22px] border border-line-2 bg-raised p-5 shadow-[0_-24px_70px_rgba(0,0,0,.45)] md:p-6"
+        className={`max-h-[calc(100dvh-1.5rem)] w-full space-y-4 overflow-y-auto border border-white/10 bg-raised p-5 shadow-[0_-24px_70px_rgba(0,0,0,.45)] md:max-h-[88dvh] md:p-6 ${
+          wide ? "max-w-[980px] rounded-lg" : "max-w-[520px] rounded-[22px]"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-1">

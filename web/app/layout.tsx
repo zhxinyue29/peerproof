@@ -4,7 +4,7 @@ import NavTracker from "@/components/NavTracker";
 import MobileTabBar from "@/components/MobileTabBar";
 import { LanguageProvider } from "@/lib/i18n";
 import PrivyClientProvider from "@/components/PrivyClientProvider";
-// Montserrat ExtraBold, for the landing headline and nothing else.
+// Montserrat for the Latin UI and display weights. CJK falls through to the local system face.
 //
 // The design's headline is a geometric grotesque — double-storey `a`, straight-legged `R` — and the
 // system stack is a different animal at any weight; matching the measured 800 weight got the
@@ -13,8 +13,12 @@ import PrivyClientProvider from "@/components/PrivyClientProvider";
 // font CDNs, and a landing page whose only outbound request is a font is a landing page that has a
 // blank headline when that host is slow.
 //
-// Latin 800 only — 19KB. No CJK: Montserrat has none, so a Chinese headline falls through to the
-// system CJK face, which is what should render it anyway.
+// Self-hosted Latin subsets keep the interface stable without a font-CDN request. No CJK:
+// Montserrat has none, so Chinese falls through to the system CJK face.
+import "@fontsource/montserrat/latin-400.css";
+import "@fontsource/montserrat/latin-500.css";
+import "@fontsource/montserrat/latin-600.css";
+import "@fontsource/montserrat/latin-700.css";
 import "@fontsource/montserrat/latin-800.css";
 import "./globals.css";
 

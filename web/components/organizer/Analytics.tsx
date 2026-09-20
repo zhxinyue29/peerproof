@@ -94,7 +94,7 @@ export default function Analytics({ events }: { events: EventSummary[] | null })
         </div>
 
         {/* ── 奖励发放状态 ─────────────────────────────────────────────── */}
-        <div className="min-w-0">
+        <div className="min-w-0 lg:border-l lg:border-white/[0.06] lg:pl-6">
           <p className="text-[15px] font-medium">{t("organizer.payoutState")}</p>
           <div className="mt-4 flex flex-wrap items-center gap-5">
             <Donut pct={pct} />
