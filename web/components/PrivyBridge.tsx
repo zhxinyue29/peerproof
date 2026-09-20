@@ -10,6 +10,7 @@ import { ESCROW_ADDRESS, resolveEventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 import { saveSession } from "@/lib/session";
 import { useT } from "@/lib/i18n";
+import { ASK_KEY, privyRestoredOnLoad } from "@/components/PrivyClientProvider";
 
 /// Turns a Privy session into the same Signer the wallet path produces. Rendered only once the
 /// gate has mounted Privy, and imported dynamically, so nothing here reaches a page that never
@@ -73,7 +74,29 @@ export default function PrivyBridge({
   // itself for ever: pressing its close button worked and was undone within a frame, which reads
   // as a dialog that cannot be closed, and it was reported as exactly that. Keying on a counter the
   // button controls means it opens when asked and stays closed when dismissed.
-  const openedFor = useRef(-1);
+  //
+  // `-1` opens on mount; `0` — the value `openSignal` starts at, so the effect below returns
+  // early — does not. Which one depends on whether this mount is somebody pressing the button or
+  // a session being restored, and those are only distinguishable through storage: turning Privy on
+  // swaps `children` into `<LazyPrivy>`, which remounts the whole app and destroys every counter
+  // in IdentityProvider, including `openSignal`. The press cannot be remembered in React state
+  // because the act of acting on it is what wipes that state.
+  //
+  // The ask-flag is one-shot — read here, removed below — so a reload does not inherit a press
+  // from ten minutes ago. That inheritance is the reported bug: sign in once, close the dialog,
+  // and it came back on every page for the rest of the browser session.
+  const openedFor = useRef(
+    typeof window === "undefined" ||
+    sessionStorage.getItem(ASK_KEY) === "1" ||
+    // The floor. Privy was not on when this page loaded, so the only thing that can have turned it
+    // on is somebody pressing the button — open, whatever the flag says.
+    !privyRestoredOnLoad()
+      ? -1
+      : 0,
+  );
+  useEffect(() => {
+    sessionStorage.removeItem(ASK_KEY);
+  }, []);
 
   useEffect(() => {
     if (!ready || authenticated || openedFor.current === openSignal) return;

@@ -20,6 +20,32 @@ import { chain } from "@/lib/chain";
 const APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "";
 const SESSION_KEY = "peerproof.privy.chosen";
 
+/// One-shot: "somebody just pressed sign in". Consumed by PrivyBridge the moment it mounts.
+///
+/// It has to live in storage rather than in React state, because enabling Privy swaps `children`
+/// from a bare position into `<LazyPrivy>` — a different element type at the same position, which
+/// unmounts and remounts the entire app beneath it. Every counter, ref and piece of state in
+/// IdentityProvider is destroyed by the very act of turning Privy on, so a press cannot be
+/// remembered in any of them.
+///
+/// That remount is also why the dialog used to reopen on every page load. The bridge could not
+/// tell "the user just asked" from "a previous session was restored" — both look like a fresh
+/// mount — so it opened for both. This key is the difference, and being one-shot is what keeps a
+/// reload from inheriting the intent.
+export const ASK_KEY = "peerproof.privy.ask";
+
+/// True when Privy was already chosen *before this page load* — i.e. this mount is a restored
+/// session rather than something the reader just did.
+///
+/// Module-level and written once, at the only moment the answer is knowable: the gate's first
+/// mount, before any press can have run `enable`. The bridge uses it as a floor, so that a missing
+/// or unreadable ask-flag degrades to "open the dialog" rather than to "the sign-in button does
+/// nothing" — the second is the worse failure by a distance, and is what shipped on 2026-09-20.
+let restoredOnLoad = false;
+export function privyRestoredOnLoad() {
+  return restoredOnLoad;
+}
+
 export const hasPrivy = APP_ID.length > 0;
 
 /// Privy only knows the chains it was configured with, so on the local anvil fixture it is mounted
@@ -33,7 +59,13 @@ const LazyPrivy = dynamic(() => import("./PrivyInner"), {
 
 const LazyPrivyLogout = dynamic(() => import("./PrivyLogout"), { ssr: false });
 
-type GateCtx = { enabled: boolean; enable: () => void; disable: () => void };
+type GateCtx = {
+  enabled: boolean;
+  /// `ask` distinguishes the button from the restore path. Without it, restoring an email session
+  /// on page load is indistinguishable from pressing sign in.
+  enable: (opts?: { ask?: boolean }) => void;
+  disable: () => void;
+};
 const PrivyGateContext = createContext<GateCtx>({
   enabled: false,
   enable: () => {},
@@ -55,12 +87,17 @@ export default function PrivyClientProvider({ children }: { children: React.Reac
   useEffect(() => {
     if (!privyUsable) return;
     // sessionStorage does not exist during the static export, so this cannot be a lazy initialiser.
+    const already = sessionStorage.getItem(SESSION_KEY) === "1";
+    // Written before the setState, and read by PrivyBridge on a later mount — so the ordering the
+    // lint rule cares about does not apply to it.
+    restoredOnLoad = already;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEnabled(sessionStorage.getItem(SESSION_KEY) === "1");
+    setEnabled(already);
   }, []);
 
-  const enable = useCallback(() => {
+  const enable = useCallback((opts?: { ask?: boolean }) => {
     if (!privyUsable) return;
+    if (opts?.ask) sessionStorage.setItem(ASK_KEY, "1");
     sessionStorage.setItem(SESSION_KEY, "1");
     setLoggingOut(false);
     setEnabled(true);

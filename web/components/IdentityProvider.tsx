@@ -156,7 +156,10 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     // extension blocking privy.io, pressing the button did nothing at all, for as long as you
     // cared to watch. "Nothing happened" is the one outcome a button must never produce.
     setBusy(t("identity.openingSignIn"));
-    privyGate.enable();
+    // `ask`, because this is the button. The restore path a hundred lines up calls the same
+    // function without it, and the bridge cannot otherwise tell the two apart — turning Privy on
+    // remounts this whole provider, so nothing set here survives to be read there.
+    privyGate.enable({ ask: true });
 
     // The same import the gate performs, requested again so its failure is observable. `next/dynamic`
     // swallows a failed chunk load: it renders nothing and says nothing, which is why this was a
