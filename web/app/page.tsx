@@ -95,10 +95,9 @@ export default function HomePage() {
                 </span>
                 {/* #7972a9, measured. `text-dim` is #cdd7e5 — a light blue-grey where the design has a
                     muted violet, which is the single largest colour error on this screen. */}
-                {/* The sheet's eyebrow, in the sheet's words. "快、公平、链上可查" was a second
-                    claim beside the Monad badge; the drawing has one line here and it names what
-                    the product is rather than how it performs. */}
-                <span className="text-[15px]" style={{ color: "#7972a9" }}>{t("home.eyebrow")}</span>
+                {/* #7972a9, measured. `text-dim` is #cdd7e5 — a light blue-grey where the design
+                    has a muted violet, which is the single largest colour error on this screen. */}
+                <span className="text-[15px]" style={{ color: "#7972a9" }}>{t("home.fastFair")}</span>
               </motion.div>
 
               {/* Sized in vw, not in pixels.
@@ -118,13 +117,9 @@ export default function HomePage() {
                 <motion.span variants={m.item} className="block">
                   {t("home.headline1")}
                 </motion.span>
-                {/* The sheet colours only the last three characters of the second line — the rest
-                    of it is the same white as the first. A whole line in the gradient reads as two
-                    headlines stacked; the drawing has one sentence with its object lit. */}
-                <motion.span variants={m.item} className="mt-1 block">
-                  {t("home.headline2")}
-                  <span
-                    className="bg-clip-text text-transparent"
+                <motion.span
+                  variants={m.item}
+                  className="mt-1 block bg-clip-text text-transparent"
                   style={{
                     // Horizontal, not vertical. Sampled on a grid across the design's own letters:
                     // vertically it barely moves, but across the line it runs #c4b6fc at the left
@@ -134,9 +129,8 @@ export default function HomePage() {
                     backgroundImage:
                       "linear-gradient(97deg, #c4b6fc 0%, #d3c8fb 22%, #e2d8fd 43%, #d0c3fb 63%, #dccdfb 84%, #e3d8fc 100%)",
                   }}
-                  >
-                    {t("home.headline3")}
-                  </span>
+                >
+                  {t("home.headline2")}
                 </motion.span>
               </h1>
 
