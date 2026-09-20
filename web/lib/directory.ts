@@ -45,7 +45,18 @@ export type Listing = {
   updatedAt: bigint;
 };
 
-const EMPTY: Listing = { title: "", blurb: "", url: "", venue: "", tags: "", updatedAt: 0n };
+/// Exported, because two modules need the same "no listing" value and the one in lib/events.ts
+/// was a second hand-written copy that fell behind when `venue` and `tags` were added — leaving a
+/// `tags` of undefined that the events page split on.
+export const EMPTY_LISTING: Listing = {
+  title: "",
+  blurb: "",
+  url: "",
+  venue: "",
+  tags: "",
+  updatedAt: 0n,
+};
+const EMPTY = EMPTY_LISTING;
 
 /// Cached because every screen asks, and the answer only changes once — at the moment somebody
 /// deploys it. `null` means "not asked yet".

@@ -546,6 +546,11 @@ export const zh: Dict = {
   "create.doorsMins": "多久后开场（分钟）",
   "create.doorsHint": "什么时候开始签到",
   "create.runsMins": "持续多久（分钟）",
+  "create.startAt": "开场时间",
+  "create.saveDraft": "保存草稿",
+  "create.draftSaved": "已存 ✓",
+  "create.startHint": "用你自己所在时区的时间填。到点之后门口那块屏才开始接受扫码。",
+  "create.startInPast": "开场时间得在将来——合约不接受一个已经开始的窗口。",
   "create.runsHint": "签到开放多长时间",
   "create.walkIns": "接受现场报名",
   "create.walkInsOnBody":

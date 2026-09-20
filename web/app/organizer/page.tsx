@@ -22,7 +22,7 @@ import {
   resolveEventId,
 } from "@/lib/chain";
 import { both, countdown, fiat, fiatAvailable, shortAddress, shortenError } from "@/lib/format";
-import { useT, type TFn } from "@/lib/i18n";
+import { useLang, useT, type TFn } from "@/lib/i18n";
 import { canRegister, phaseOf, useEvent, type EventInfo } from "@/lib/useEvent";
 import { readAllEvents, type EventSummary } from "@/lib/events";
 import { useVisiblePoll } from "@/lib/poll";
@@ -662,6 +662,73 @@ function FallbackForm({
 /// have is the deposit, which is the only money in the product, so the step keeps its position and
 /// changes its subject rather than being dropped and leaving a three-step flow the sheet does not
 /// draw.
+/// Where a half-filled create form lives between visits.
+///
+/// Local, not on chain: nothing here has been paid for yet, and a draft is not a fact about the
+/// world — it is one person's unfinished sentence. The sheet puts a "保存草稿" button at the top of
+/// step one, which is the honest scope for it.
+///
+/// Restored on mount rather than saved on every keystroke. Autosave would be fine, but the sheet
+/// draws a button and a button is better here: it tells somebody the form is safe to leave, which
+/// an invisible autosave never does.
+const DRAFT_KEY = "peerproof.create.draft";
+
+type Draft = {
+  title: string;
+  blurb: string;
+  venue: string;
+  tags: string;
+  url: string;
+  deposit: string;
+  capacity: string;
+  minQuorum: string;
+  k: string;
+  startAt: string;
+  runsMins: string;
+  walkIns: boolean;
+};
+
+function readDraft(): Partial<Draft> | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Partial<Draft>) : null;
+  } catch {
+    // Private browsing, or a draft written by an older shape of this form. Either way, start
+    // clean rather than crashing the one screen that creates events.
+    return null;
+  }
+}
+
+/// The default start: the next quarter hour at least half an hour out, as a `datetime-local` value.
+///
+/// Not "now". An event whose doors open the instant it is created cannot be registered for, and the
+/// contract rejects a window that has already begun — so the default has to be far enough ahead to
+/// be usable and round enough to read as a suggestion rather than a timestamp.
+function defaultStart() {
+  const d = new Date(Date.now() + 30 * 60_000);
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  // `toISOString` is UTC and `datetime-local` is not, so the offset has to come off first or the
+  // field opens showing a time several hours from the one just computed.
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+/// How far ahead the chosen start is, for the timeline preview. Clamped at zero: a start in the
+/// past draws a timeline running backwards, and the submit path already refuses it.
+function minutesUntil(startAt: string) {
+  const ms = new Date(startAt).getTime() - Date.now();
+  return Number.isFinite(ms) ? Math.max(0, Math.round(ms / 60_000)) : 0;
+}
+
+function formatStart(startAt: string, lang: string) {
+  const d = new Date(startAt);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleString(lang === "zh" ? "zh-CN" : "en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 const STEPS = ["about", "verify", "money", "publish"] as const;
 type Step = (typeof STEPS)[number];
 
@@ -674,14 +741,21 @@ const STEP_LABEL: Record<Step, string> = {
 
 function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onDone: () => void }) {
   const { signer } = useIdentity();
-  const t = useT();
+  const { t, lang } = useLang();
   const [deposit, setDeposit] = useState("30");
   const [capacity, setCapacity] = useState("40");
   const [minQuorum, setMinQuorum] = useState("10");
   const [k, setK] = useState("3");
   // Expressed the way somebody plans an event, not the way the contract stores it: when the doors
   // open, how long it runs, and whether people can still join once it has started.
-  const [doorsMins, setDoorsMins] = useState("30");
+  /// When the doors open, as a wall-clock moment in the organizer's own timezone.
+  ///
+  /// This was "minutes from now", which is the shape the contract wants — it stores absolute
+  /// seconds and the form computed them at submit. But nobody planning an evening thinks "in 2,880
+  /// minutes"; they think "Thursday, 7pm". Minutes was a demo affordance that survived into the
+  /// part of the product somebody would actually use.
+  const [startAt, setStartAt] = useState(() => defaultStart());
+  const [savedDraft, setSavedDraft] = useState(false);
   const [runsMins, setRunsMins] = useState("180");
   const [walkIns, setWalkIns] = useState(true);
   // Four steps, as the create sheet draws them. Its third is 奖励与资金 — a reward pool this
@@ -696,6 +770,44 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
   const [busy, setBusy] = useState(false);
   const [busyLabel, setBusyLabel] = useState(() => t("create.creating"));
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Restored once, at mount. `localStorage` does not exist during the static export, so this
+  // cannot be a lazy initialiser on each field.
+  useEffect(() => {
+    const d = readDraft();
+    if (!d) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (d.title) setTitle(d.title);
+    if (d.blurb) setBlurb(d.blurb);
+    if (d.venue) setVenue(d.venue);
+    if (d.tags) setTags(d.tags);
+    if (d.url) setUrl(d.url);
+    if (d.deposit) setDeposit(d.deposit);
+    if (d.capacity) setCapacity(d.capacity);
+    if (d.minQuorum) setMinQuorum(d.minQuorum);
+    if (d.k) setK(d.k);
+    // A start time from last week is worse than the default — it is a value the contract will
+    // reject, restored silently into a field somebody may not look at again.
+    if (d.startAt && new Date(d.startAt).getTime() > Date.now()) setStartAt(d.startAt);
+    if (d.runsMins) setRunsMins(d.runsMins);
+    if (typeof d.walkIns === "boolean") setWalkIns(d.walkIns);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  const saveDraft = () => {
+    const draft: Draft = {
+      title, blurb, venue, tags, url,
+      deposit, capacity, minQuorum, k, startAt, runsMins, walkIns,
+    };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      setSavedDraft(true);
+      setTimeout(() => setSavedDraft(false), 2000);
+    } catch {
+      // Nothing to tell anybody: the form is still on screen and still works.
+    }
+  };
+
   const [created, setCreated] = useState<{ id: bigint; beacon: string } | null>(null);
 
   async function submit() {
@@ -721,7 +833,14 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       const beacon = privateKeyToAccount(beaconPk);
 
       const now = BigInt(Math.floor(chainNowMs() / 1000));
-      const attestOpen = now + BigInt(Number(doorsMins) * 60);
+      // `datetime-local` has no timezone, so `Date.parse` reads it in the browser's — which is the
+      // one the organizer typed it in. The contract stores UTC seconds either way.
+      const attestOpen = BigInt(Math.floor(new Date(startAt).getTime() / 1000));
+      if (!Number.isFinite(Number(attestOpen)) || attestOpen <= now) {
+        setNotice(t("create.startInPast"));
+        setBusy(false);
+        return;
+      }
       const attestClose = attestOpen + BigInt(Number(runsMins) * 60);
       // Walk-ins keep registration open until the event ends. Without them it closes when the
       // doors do, which is the classic RSVP shape — the organizer picks.
@@ -751,6 +870,13 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       })) as bigint;
       const id = next - 1n;
       setCreated({ id, beacon: beaconPk });
+      // The draft has become an event. Leaving it behind would re-fill the form the next time
+      // somebody opens it, with the details of something that already exists.
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* nothing to do */
+      }
 
       // A second transaction, deliberately. The escrow stores nothing but the fields that decide
       // where money goes, so the description lives in EventDirectory — and an event that exists
@@ -857,9 +983,19 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
 
       <div className="min-w-0 space-y-4">
         <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
-          <div>
-            <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")}</p>
-            <p className="mt-1 text-[15px] text-dim">{t("create.aboutSub")}</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")}</p>
+              <p className="mt-1 text-[15px] text-dim">{t("create.aboutSub")}</p>
+            </div>
+            {/* Top right of step one, where the sheet puts it. */}
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="inline-flex min-h-[44px] shrink-0 items-center rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+            >
+              {savedDraft ? t("create.draftSaved") : t("create.saveDraft")}
+            </button>
           </div>
           <Field label={t("listing.title")} value={title} onChange={setTitle} hint={t("listing.titleHint")} />
           <label className="block">
@@ -902,7 +1038,18 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
             <Field label={t("create.vouchesNeeded")} value={k} onChange={setK} hint={t("create.kHint")} />
-            <Field label={t("create.doorsMins")} value={doorsMins} onChange={setDoorsMins} hint={t("create.doorsHint")} />
+            <label className="block">
+              <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
+                {t("create.startAt")}
+              </span>
+              <input
+                type="datetime-local"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+                className="min-h-[46px] w-full rounded-xl border border-line-2 bg-ink px-3.5 text-[16px] text-fg outline-none focus:border-accent"
+              />
+              <span className="mt-1.5 block text-[14px] text-faint">{t("create.startHint")}</span>
+            </label>
             <Field label={t("create.runsMins")} value={runsMins} onChange={setRunsMins} hint={t("create.runsHint")} />
           </div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-2 bg-ink p-3.5">
@@ -920,7 +1067,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             </span>
           </label>
           <EventTimeline
-            doorsMins={Number(doorsMins) || 0}
+            doorsMins={minutesUntil(startAt)}
             runsMins={Number(runsMins) || 0}
             walkIns={walkIns}
           />
@@ -955,7 +1102,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             <Row label={t("create.capacity")} value={capacity} />
             <Row label={t("organizer.runsIfAtLeast")} value={minQuorum} />
             <Row label={t("create.vouchesNeeded")} value={k} />
-            <Row label={t("create.doorsMins")} value={doorsMins} />
+            <Row label={t("create.startAt")} value={formatStart(startAt, lang)} />
             <Row label={t("create.runsMins")} value={runsMins} />
             <Row label={t("create.walkIns")} value={t(walkIns ? "common.yes" : "common.no")} />
           </dl>

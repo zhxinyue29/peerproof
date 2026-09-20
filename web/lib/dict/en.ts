@@ -566,6 +566,11 @@ export const en = {
   "create.doorsMins": "Doors open in (mins)",
   "create.doorsHint": "when check-in starts",
   "create.runsMins": "Runs for (mins)",
+  "create.startAt": "Doors open",
+  "create.saveDraft": "Save draft",
+  "create.draftSaved": "Saved ✓",
+  "create.startHint": "In your own timezone. The venue screen starts accepting scans at this moment.",
+  "create.startInPast": "The start has to be in the future — the contract will not take a window that has already begun.",
   "create.runsHint": "how long check-in stays open",
   "create.walkIns": "Take walk-ins",
   "create.walkInsOnBody":

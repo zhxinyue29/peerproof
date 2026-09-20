@@ -1,6 +1,6 @@
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import { ESCROW_ADDRESS, chainNowMs, hasDeployment, publicClient } from "@/lib/chain";
-import { readListings, type Listing } from "@/lib/directory";
+import { EMPTY_LISTING, readListings, type Listing } from "@/lib/directory";
 
 /// Everything the directory page shows about one event, joined from the two contracts: the escrow
 /// decides the numbers, the directory supplies the words.
@@ -107,7 +107,11 @@ export async function readAllEvents(): Promise<EventSummary[]> {
         attestOpen: r.attestOpen,
         attestClose: r.attestClose,
         status: Number(r.status),
-        listing: listings[i] ?? { title: "", blurb: "", url: "", updatedAt: 0n },
+        // The fallback for an event the directory has never been asked about — and it has to
+        // carry every field, `venue` and `tags` included. It was written before those existed and
+        // never updated, so the events page called `.split` on an undefined and took the whole
+        // grid down the moment one event in the range had no listing.
+        listing: listings[i] ?? EMPTY_LISTING,
         phase: phaseOfRaw(now, r.registerDeadline, r.attestOpen, r.attestClose, Number(r.status)),
       };
     })
