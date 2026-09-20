@@ -76,6 +76,7 @@ export const zh: Dict = {
   "me.badgeLeader": "社区领袖",
   "me.badgeLeaderHint": "办的活动累计 25 人报名",
   "me.badgeNote": "每一枚都是链上记录里的一个门槛,没有人在背后评定。",
+  "me.badgeQuote": "最好的社区,是由真的到场的人建起来的。",
   "me.roles": "我的角色",
   "me.share": "分享主页",
   "me.joined": "{when} 加入",

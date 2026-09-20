@@ -2,6 +2,7 @@
 
 import { SectionTitle } from "@/components/SectionTitle";
 import { useT } from "@/lib/i18n";
+import { basePath } from "@/lib/chain";
 
 /// "贡献与徽章", the third card of the sheet's second row.
 ///
@@ -53,7 +54,18 @@ export default function Achievements({ stats, loading }: { stats: Stats; loading
           );
         })}
       </ul>
-      <p className="mt-auto pt-4 text-[13px] leading-relaxed text-faint">{t("me.badgeNote")}</p>
+      <p className="pt-4 text-[13px] leading-relaxed text-faint">{t("me.badgeNote")}</p>
+      {/* The sheet closes this card with a quote over a piece of the artwork — the one place on the
+          page where the product says what it is for rather than what it counted. Under the note,
+          not over it: the note explains the badges above and has to stay attached to them. */}
+      <div
+        className="mt-auto flex min-h-[86px] items-end rounded-xl border border-line bg-cover bg-center p-4"
+        style={{ backgroundImage: `url(${basePath}/rail-card.webp)` }}
+      >
+        <p className="max-w-[22ch] text-[13.5px] font-medium leading-snug text-fg">
+          {t("me.badgeQuote")}
+        </p>
+      </div>
     </section>
   );
 }

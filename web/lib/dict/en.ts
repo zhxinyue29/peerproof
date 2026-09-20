@@ -75,6 +75,7 @@ export const en = {
   "me.badgeLeader": "Community leader",
   "me.badgeLeaderHint": "25 registrations across your events",
   "me.badgeNote": "Every one is a threshold in the chain's own record. Nobody awards these.",
+  "me.badgeQuote": "The best communities are built by people who show up.",
   "me.roles": "My roles",
   "me.share": "Share",
   "me.joined": "Joined {when}",

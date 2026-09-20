@@ -489,6 +489,8 @@ export default function MePage() {
           {(tab === "overview" || tab === "joined") && (
             <EventList
               title={t("me.recentJoined")}
+              more={() => setTab("joined")}
+              showAll={tab === "joined"}
               empty={guest ? t("me.noneYetPublic") : t("me.noneYet")}
               emptyHref={guest ? undefined : "/events"}
               emptyCta={guest ? undefined : t("me.findOne")}
@@ -506,6 +508,8 @@ export default function MePage() {
           {(tab === "overview" || tab === "hosted") && (
             <EventList
               title={t("me.myHosted")}
+              more={() => setTab("hosted")}
+              showAll={tab === "hosted"}
               empty={guest ? t("me.noneHostedPublic") : t("me.noneHosted")}
               emptyHref={guest ? undefined : "/organizer"}
               emptyCta={guest ? undefined : t("events.createFirst")}
@@ -703,21 +707,37 @@ function EventList({
   emptyHref,
   emptyCta,
   loading,
+  more,
+  showAll,
   t,
 }: {
   title: string;
   items: { event: EventSummary; right: { text: string; ok: boolean } }[];
+  /// Switches this page to the tab that shows the whole list.
+  more?: () => void;
   empty: string;
   /// Both absent on somebody else's page — "create your first event" under a stranger's empty
   /// list is an invitation addressed to the wrong person.
   emptyHref?: string;
   emptyCta?: string;
   loading: boolean;
+  /// The tab that owns this list shows every row; the overview shows the first three, as the
+  /// sheet does — three rows is a sample, twelve is the page.
+  showAll?: boolean;
   t: (k: string, v?: Record<string, string | number>) => string;
 }) {
   return (
     <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5 md:p-6">
-      <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">{title}</h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">{title}</h2>
+        {/* The sheet's "查看全部 →". Only when the list is longer than what fits — a link that
+            shows the same rows you are already looking at is a control that does nothing. */}
+        {more && items.length > 3 && (
+          <button type="button" onClick={more} className="text-[15px] text-accent-2 hover:text-fg">
+            {t("events.seeAll")} <span aria-hidden>→</span>
+          </button>
+        )}
+      </div>
       {loading ? (
         <div className="mt-3 space-y-3">
           {[0, 1].map((i) => (
@@ -738,32 +758,37 @@ function EventList({
         </div>
       ) : (
         <ul className="mt-3 space-y-3">
-          {items.map(({ event, right }) => (
+          {items.slice(0, showAll ? undefined : 3).map(({ event, right }) => (
             <li key={event.id.toString()}>
+              {/* The badge and the amount sit under the title, not beside it. At a third of the
+                  page these rows had four things competing for one line and the title lost — it
+                  truncated to a single character while the deposit kept its full width. */}
               <Link
                 href={`/event?event=${event.id}`}
-                className="flex min-w-0 items-center gap-4 rounded-2xl border border-line bg-panel p-3 transition-colors hover:border-line-2"
+                className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-raised/40 p-3 transition-colors hover:border-line-2"
               >
-                <EventCover id={event.id} nodes={5} className="h-[60px] w-[88px] shrink-0 rounded-xl" />
+                <EventCover id={event.id} nodes={5} className="h-[54px] w-[54px] shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[16px] font-medium">
+                  <p className="truncate text-[15.5px] font-medium">
                     {event.listing.title || t("common.eventNumber", { id: event.id.toString() })}
                   </p>
-                  <p className="mt-0.5 truncate text-[14px] text-dim">
+                  <p className="mt-0.5 truncate text-[13.5px] text-faint">
                     {event.listing.venue ? `${event.listing.venue} · ` : ""}
                     {new Date(Number(event.attestOpen) * 1000).toLocaleDateString()}
                   </p>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[12.5px] ${
+                        right.ok ? "bg-ok/15 font-medium text-ok" : "border border-line-2 text-faint"
+                      }`}
+                    >
+                      {right.text}
+                    </span>
+                    <span className="text-[14px] font-medium tabular-nums text-accent-2">
+                      {mon(event.deposit)}
+                    </span>
+                  </p>
                 </div>
-                <span className="shrink-0 text-[15px] font-medium tabular-nums text-accent-2">
-                  {mon(event.deposit)}
-                </span>
-                <span
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] ${
-                    right.ok ? "bg-ok/15 font-medium text-ok" : "border border-line-2 text-faint"
-                  }`}
-                >
-                  {right.text}
-                </span>
               </Link>
             </li>
           ))}
