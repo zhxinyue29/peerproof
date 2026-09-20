@@ -3,6 +3,7 @@
 import Link from "next/link";
 import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
+import { SectionTitle } from "@/components/SectionTitle";
 import { useLang } from "@/lib/i18n";
 import type { EventSummary } from "@/lib/events";
 
@@ -40,7 +41,7 @@ export default function EventManagement({
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-panel">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("organizer.management")}</h2>
+        <SectionTitle zh={t("organizer.management")} en="Event Management" />
         <Link
           href={`/event?event=${event.id}`}
           className="inline-flex min-h-[44px] items-center text-[15px] text-accent-2 transition-colors hover:text-fg"

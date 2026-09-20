@@ -5,6 +5,7 @@ import Link from "next/link";
 import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
 import { mon } from "@/lib/format";
+import { SectionTitle } from "@/components/SectionTitle";
 import { useLang } from "@/lib/i18n";
 import type { EventSummary } from "@/lib/events";
 
@@ -94,9 +95,7 @@ export default function OrganizerEventCards({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
-          <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">
-            {t("organizer.yourEvents")}
-          </h2>
+          <SectionTitle zh={t("organizer.yourEvents")} en="My Events" />
           {/* The sheet's "查看全部 →". It clears the chip rather than going anywhere: there is one
               list and this is it, so a link to a second page would be a claim about how much there
               is that is not true. Only shown while a filter is hiding something. */}

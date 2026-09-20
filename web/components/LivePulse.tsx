@@ -7,6 +7,7 @@ import { useT, type TFn } from "@/lib/i18n";
 import { readHistory } from "@/lib/logs";
 import { useVisiblePoll } from "@/lib/poll";
 import { Skeleton } from "@/components/ui";
+import { SectionTitle } from "@/components/SectionTitle";
 
 /// The right-hand panel of the organizer dashboard: vouches arriving, as a shape.
 ///
@@ -123,7 +124,7 @@ export default function LivePulse({ eventId, live }: { eventId: bigint | null; l
 
   return (
     <section className="space-y-4 rounded-2xl border border-line bg-panel p-5 md:p-[22px]">
-      <h2 className="text-[22px] font-medium tracking-[-0.01em]">{t("organizer.livePulse")}</h2>
+      <SectionTitle zh={t("organizer.livePulse")} en="Analytics" />
 
       {/* Nothing selected is not the same as nothing loaded. A skeleton says "wait", and it was
           saying it forever on a dashboard whose first event has not been created yet — the panel

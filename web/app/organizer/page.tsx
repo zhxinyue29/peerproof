@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { parseEther } from "viem";
-import AppShell from "@/components/AppShell";
+import TopNav from "@/components/TopNav";
+import { SectionTitle } from "@/components/SectionTitle";
 import IdentityGate from "@/components/IdentityGate";
 import GateIntro from "@/components/GateIntro";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -124,17 +125,17 @@ export default function OrganizerPage() {
 
   if (!hasDeployment) {
     return (
-      <AppShell nav="organizer" active="overview" title={t("organizer.title")} langSwitcher={<LanguageSwitcher />}>
+      <Frame active="manage" title={t("organizer.title")}>
         <Notice>{t("common.noContract")}</Notice>
-      </AppShell>
+      </Frame>
     );
   }
 
   return (
-    <AppShell
-      nav="organizer"
-      active={creating ? "create" : "overview"}
+    <Frame
+      active={creating ? "create" : "manage"}
       title={creating ? t("nav.createEvent") : t("organizer.title")}
+      titleEn={creating ? "Create Event" : "Organiser Dashboard"}
       subtitle={creating ? t("create.subtitle") : t("organizer.subtitle")}
       action={
         creating ? (
@@ -147,7 +148,6 @@ export default function OrganizerPage() {
           </Button>
         )
       }
-      langSwitcher={<LanguageSwitcher />}
     >
       {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
@@ -160,9 +160,7 @@ export default function OrganizerPage() {
           <GreetingBanner who={null} onCreate={() => goTo("create")} />
           <Kpis events={[]} t={t} />
           <section className="space-y-4">
-            <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">
-              {t("organizer.yourEvents")}
-            </h2>
+            <SectionTitle zh={t("organizer.yourEvents")} en="My Events" />
             <div className="rounded-2xl border border-line bg-panel p-5 md:p-6">
               <IdentityGate intro={<GateIntro kind="organizer" />}>{null}</IdentityGate>
             </div>
@@ -232,7 +230,7 @@ export default function OrganizerPage() {
       <p className="text-[14px] leading-relaxed text-faint md:max-w-[70ch]">
         {t("organizer.footNote")}
       </p>
-    </AppShell>
+    </Frame>
   );
 }
 
@@ -296,6 +294,70 @@ function useUrlTab(): ["dashboard" | "create", (to: "dashboard" | "create") => v
 /// couple of people in it, so the cards are built to look composed at single digits: one column
 /// width, one type size, and a caption line that is always there — a card whose caption vanishes
 /// when the count is zero is what makes a quiet dashboard look broken rather than early.
+/// The organizer chrome: the sheet's horizontal bar across the top, and the page under it.
+///
+/// This replaced a left sidebar. The sidebar was not wrong on its own, but the dashboard sheet
+/// draws a top bar — and the participant screens already wear one, so the sidebar was also the
+/// moment the product stopped looking like one product. It is the single largest difference
+/// between the sheet and what shipped, and补块 was never going to close it: it is the skeleton,
+/// not a block.
+///
+/// `titleEn` is the sheet's second line on every heading — 中文 primary, English underneath at
+/// half the weight. Not a translation for readers who need one; the page already switches
+/// language. It is the sheet's typographic signature, and dropping it made every heading on the
+/// page a different thing from the drawing.
+function Frame({
+  active,
+  title,
+  titleEn,
+  subtitle,
+  action,
+  children,
+}: {
+  active: string;
+  title: string;
+  titleEn?: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-dvh overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
+        <TopNav nav="organizer" active={active} />
+        <main className="flex min-w-0 flex-col gap-6 pb-16 pt-6 md:gap-7 md:pt-8">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <h1
+                  className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-transparent md:text-[40px]"
+                  style={{
+                    fontFamily: '"Montserrat", var(--font-sans)',
+                    backgroundImage:
+                      "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+                  }}
+                >
+                  {title}
+                </h1>
+                {titleEn && (
+                  <span className="text-[16px] font-medium tracking-[-0.01em] text-faint md:text-[18px]">
+                    {titleEn}
+                  </span>
+                )}
+              </div>
+              {subtitle && (
+                <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{subtitle}</p>
+              )}
+            </div>
+            {action && <div className="flex shrink-0 flex-col sm:items-start">{action}</div>}
+          </header>
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
 /// The greeting band from the dashboard sheet.
 ///
 /// Its artwork is the same clip the landing page runs, held still: a second video on a screen
