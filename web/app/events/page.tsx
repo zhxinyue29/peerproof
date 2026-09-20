@@ -181,10 +181,10 @@ export default function EventsPage() {
         <main className="pb-16">
           {/* The page's own headline, set like the landing page's rather than like a document
               title: same face, same weight, same light across the letters. */}
-          <section className="relative pb-8 pt-6 md:pb-10 md:pt-10">
+          <section className="relative isolate pb-6 pt-6 md:pb-10 md:pt-10">
             <div className="relative md:max-w-[56%]">
               <h1
-                className="bg-clip-text pb-[0.12em] text-[36px] font-extrabold leading-[1.04] tracking-[-0.035em] text-transparent md:text-[clamp(38px,3.6vw,56px)] md:leading-[1]"
+                className="bg-clip-text pb-[0.12em] text-[30px] font-extrabold leading-[1.06] tracking-[-0.035em] text-transparent sm:text-[36px] md:text-[clamp(38px,3.6vw,56px)] md:leading-[1]"
                 style={{
                   fontFamily: '"Montserrat", var(--font-sans)',
                   backgroundImage:
@@ -204,7 +204,7 @@ export default function EventsPage() {
                 type="button"
                 onClick={() => setHowOpen(true)}
                 aria-label={t("home.howItWorks")}
-                className="group mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white transition-transform duration-150 hover:scale-105 active:scale-95"
+                className="group mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white md:mt-6 md:h-12 md:w-12 transition-transform duration-150 hover:scale-105 active:scale-95"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -212,13 +212,18 @@ export default function EventsPage() {
               </button>
             </div>
 
-            {/* On a phone the scene becomes a band under the words, the same as the landing page —
-                without it this screen is text on a dark rectangle, while the one it was reached
-                from opens on a room. */}
+            {/* On a phone the scene sits *behind* the words, as the mobile panel of the sheet
+                draws it — not as a 180px band under them. Stacked, the headline, the sub, the
+                arrow and the band came to 420px before the search box, and the first event was two
+                scrolls down on the screen this product is actually opened on. */}
             <div
               aria-hidden
-              className="relative -mx-4 mt-6 h-[180px] bg-cover bg-center sm:-mx-6 lg:hidden"
-              style={{ backgroundImage: `url(${basePath}/hero-sm.webp)` }}
+              className="pointer-events-none absolute inset-0 -z-10 -mx-4 bg-cover bg-center opacity-45 sm:-mx-6 lg:hidden"
+              style={{
+                backgroundImage: `url(${basePath}/hero-sm.webp)`,
+                WebkitMaskImage: "linear-gradient(to bottom, #000 40%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, #000 40%, transparent 100%)",
+              }}
             />
 
             {/* The scene, bleeding off the right edge exactly as it does on the landing page. */}

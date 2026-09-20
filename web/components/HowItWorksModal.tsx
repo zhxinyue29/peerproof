@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import StepFigure from "@/components/StepFigure";
 import { useMotionPrefs } from "@/lib/motion";
 import { useT } from "@/lib/i18n";
+import { basePath } from "@/lib/chain";
 
 /// "How does this work?" — the whole mechanism, on demand rather than down the page.
 ///
@@ -99,6 +100,33 @@ export default function HowItWorksModal({
             </li>
           ))}
         </ol>
+
+        {/* The sheet closes the modal with this card: a trophy, one sentence about why any of it
+            is worth doing, and the handwriting. Four mechanical steps end on a mechanism; the
+            drawing ends on the reason. */}
+        <div
+          className="mt-5 flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-cover bg-center p-5 md:p-6"
+          style={{ backgroundImage: `url(${basePath}/rail-card.webp)` }}
+        >
+          <span
+            aria-hidden
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/25 text-accent-2"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M8 4h8v5a4 4 0 0 1-8 0V4ZM6 5H4v2a3 3 0 0 0 3 3m11-5h2v2a3 3 0 0 1-3 3M10 17h4m-2-4v4m-3 3h6"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <p className="min-w-0 flex-1 text-[15.5px] leading-relaxed">
+            <span className="block text-[17px] font-semibold">{t("home.stepsOutroTitle")}</span>
+            <span className="mt-1 block max-w-[52ch] text-dim">{t("home.stepsOutroBody")}</span>
+          </p>
+        </div>
 
         {/* The chain facts, moved here from the hero. They are true and they are not what somebody
             deciding whether to turn up needs on the first screen — but they are exactly what

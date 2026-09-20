@@ -397,3 +397,13 @@ textarea {
   .pp-hero-haze1, .pp-hero-haze2, .pp-hero-beam { animation: none; }
   .pp-hero-beam { opacity: 0.3; }
 }
+
+/* The mobile tab bar is fixed to the bottom of the viewport, so every page needs room under its
+   last element or the bar sits on top of it. Applied to `body` rather than to each page: there are
+   eight of them and a missed one is a footer nobody can read.
+   Desktop keeps nothing — the bar is `md:hidden`. */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+}

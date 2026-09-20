@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IdentityProvider } from "@/components/IdentityProvider";
 import NavTracker from "@/components/NavTracker";
+import MobileTabBar from "@/components/MobileTabBar";
 import { LanguageProvider } from "@/lib/i18n";
 import PrivyClientProvider from "@/components/PrivyClientProvider";
 // Montserrat ExtraBold, for the landing headline and nothing else.
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <IdentityProvider>
               <NavTracker />
               {children}
+              <MobileTabBar />
             </IdentityProvider>
           </PrivyClientProvider>
         </LanguageProvider>
