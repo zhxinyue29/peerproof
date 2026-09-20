@@ -220,7 +220,7 @@ export default function EventsPage() {
               aria-hidden
               className="pointer-events-none absolute inset-0 -z-10 -mx-4 bg-cover bg-center opacity-45 sm:-mx-6 lg:hidden"
               style={{
-                backgroundImage: `url(${basePath}/hero-sm.webp)`,
+                backgroundImage: `url(${basePath}/peers-hero-sm.webp)`,
                 WebkitMaskImage: "linear-gradient(to bottom, #000 40%, transparent 100%)",
                 maskImage: "linear-gradient(to bottom, #000 40%, transparent 100%)",
               }}
@@ -237,7 +237,11 @@ export default function EventsPage() {
                 // /events/hero.webp — which does not exist, and a background that fails to load
                 // fails silently. HeroArt has always got away with the relative form because it
                 // only ever rendered on the root route.
-                backgroundImage: `url(${basePath}/hero.webp)`,
+                // The peers illustration, not the stage. The stage is the landing page's, and
+                // seeing the same picture again one click later reads as the page not having
+                // changed. This one is the sheet's own artwork for the participant side: two
+                // people vouching for each other with a third between them.
+                backgroundImage: `url(${basePath}/peers-hero.webp)`,
                 WebkitMaskImage:
                   "linear-gradient(to right, transparent 0%, #000 34%), linear-gradient(to bottom, #000 58%, transparent 100%)",
                 maskImage:

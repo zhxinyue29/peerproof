@@ -3,12 +3,13 @@
 import { useEffect, useRef } from "react";
 import { getEmbeddedConnectedWallet, useLogin, usePrivy, useWallets } from "@privy-io/react-auth";
 import { monadTestnet } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
 import type { Address } from "viem";
 import { deriveFromWallet, type Eip1193 } from "@/lib/wallet";
 import { walletSigner, type Signer } from "@/lib/signer";
 import { ESCROW_ADDRESS, resolveEventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
-import { saveSession } from "@/lib/session";
+import { loadSession, saveSession } from "@/lib/session";
 import { useT } from "@/lib/i18n";
 import { ASK_KEY, privyRestoredOnLoad } from "@/components/PrivyClientProvider";
 
@@ -154,7 +155,22 @@ export default function PrivyBridge({
         // cheap and idempotent; not resolving showed up as a signature prompt naming event 2 on a
         // page pointing at event 3.
         const id = await resolveEventId();
-        const { account, attestPk } = await deriveFromWallet(ESCROW_ADDRESS, id, provider);
+
+        // Reuse the saved key before asking the wallet for a signature.
+        //
+        // This derived unconditionally on every mount, so every page load — every refresh, every
+        // navigation that remounted the bridge — put a signature prompt in front of somebody who
+        // had already signed. With an external wallet connected through Privy that prompt is
+        // MetaMask's modal, and it appears before the page is even readable.
+        //
+        // The key is deterministic for an (address, event) pair and already stored, so a saved one
+        // is the same key the signature would produce. Asking again buys nothing and costs the one
+        // interaction people find most alarming.
+        const saved = loadSession(id, wallet.address as Address);
+        const { account, attestPk } =
+          saved?.kind === "privy"
+            ? { account: privateKeyToAccount(saved.attestPk), attestPk: saved.attestPk }
+            : await deriveFromWallet(ESCROW_ADDRESS, id, provider);
         saveSession(id, "privy", attestPk, wallet.address as Address, privyLabel(user));
         onSigner(
           walletSigner(wallet.address as Address, account, {
