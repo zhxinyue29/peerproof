@@ -924,6 +924,14 @@ function whyNotValid(v: {
 const STEPS = ["about", "verify", "money", "publish"] as const;
 type Step = (typeof STEPS)[number];
 
+/// The sheet's English second line under each step name.
+const STEP_EN: Record<Step, string> = {
+  about: "Tell Your Story",
+  verify: "Verification Rules",
+  money: "Deposit & Places",
+  publish: "Preview & Launch",
+};
+
 const STEP_LABEL: Record<Step, string> = {
   about: "create.stepAbout",
   verify: "create.stepVerify",
@@ -1186,8 +1194,14 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
                 >
                   {done ? "✓" : i + 1}
                 </span>
-                <span className={`whitespace-nowrap text-[15px] ${here ? "text-fg" : "text-faint"}`}>
-                  {t(STEP_LABEL[name])}
+                {/* Bilingual, as the sheet sets them: 活动基础信息 / Tell Your Story. */}
+                <span className="min-w-0">
+                  <span className={`block whitespace-nowrap text-[15px] ${here ? "text-fg" : "text-faint"}`}>
+                    {t(STEP_LABEL[name])}
+                  </span>
+                  <span className="hidden whitespace-nowrap text-[12.5px] text-faint lg:block">
+                    {STEP_EN[name]}
+                  </span>
                 </span>
               </button>
             </li>
@@ -1199,7 +1213,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
         <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")}</p>
+              <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")} ✨</p>
               <p className="mt-1 text-[15px] text-dim">{t("create.aboutSub")}</p>
             </div>
             {/* Top right of step one, where the sheet puts it. */}
@@ -1215,19 +1229,36 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
           <CoverField value={cover} onChange={edited(setCover)} />
           <Field label={t("listing.title")} value={title} onChange={edited(setTitle)} hint={t("listing.titleHint")} />
           <label className="block">
-            <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
-              {t("listing.description")}
+            <span className="mb-1.5 flex items-baseline justify-between gap-3">
+              <span className="text-[14px] uppercase tracking-wide text-faint">
+                {t("listing.description")}
+              </span>
+              {/* The sheet's counter. A limit nobody can see is a limit that stops your sentence
+                  mid-word. */}
+              <span className="text-[13px] tabular-nums text-faint">{blurb.length}/600</span>
             </span>
             <textarea
               value={blurb}
               onChange={(e) => edited(setBlurb)(e.target.value)}
-              rows={3}
+              rows={4}
               maxLength={600}
               placeholder={t("listing.blurbPlaceholder")}
               className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
           <Field label={t("listing.venue")} value={venue} onChange={edited(setVenue)} hint={t("listing.venueHint")} />
+          {/* The sheet's 线上活动 toggle, sitting with the place it replaces. It writes the word
+              rather than setting a flag: the contract has no notion of online, and a listing that
+              says "Online" is the same fact expressed in the one field that exists. */}
+          <label className="flex cursor-pointer items-center gap-2.5 text-[15px]">
+            <input
+              type="checkbox"
+              checked={venue.trim() === t("listing.online")}
+              onChange={(e) => edited(setVenue)(e.target.checked ? t("listing.online") : "")}
+              className="h-4 w-4 accent-accent"
+            />
+            <span className="text-dim">{t("listing.onlineEvent")}</span>
+          </label>
           {/* Chips, as the sheet draws them. Stored as the same comma-separated string either way —
               this is a way of typing it, not a different shape on chain. */}
           <TagInput value={tags} onChange={edited(setTags)} />
