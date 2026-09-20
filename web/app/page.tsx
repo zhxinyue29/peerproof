@@ -242,14 +242,20 @@ export default function HomePage() {
         </main>
       </div>
 
-      {/* The four claims sit directly under the hero, as the sheet draws — they are the answer to
-          "why would I trust this", and that question is asked before "what is on tonight". They
-          were below the listing, which is after somebody has already decided to look. */}
-      <ValueStrip />
-
       <div className="mx-auto w-full max-w-[1380px] px-4 pt-12 sm:px-6 md:px-[17px] md:pt-16">
         <FeaturedEvents />
       </div>
+
+      {/* Under the listing, not above it.
+          It was moved above on the reading that the sheet puts these four directly beneath the
+          hero — but the sheet's homepage ends at the hero and has no listing at all, so there was
+          nothing in the drawing that said what comes between them. Inferring an order from a
+          picture that does not contain one of the two things is not reading the design, it is
+          guessing and calling it the design.
+          Below is also the better place: somebody who has scrolled past the events is asking "can
+          I trust this", and these four are the answer. Above, they interrupt the one thing the
+          page exists to show. */}
+      <ValueStrip />
 
       <SiteFooter />
 
