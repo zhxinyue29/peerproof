@@ -128,6 +128,92 @@ export default function EventPage() {
 
   const surplus = ev ? projectedPayout(ev) - ev.deposit : 0n;
 
+  /// The invitation. Held as a value for the same reason `action` is: it renders outside the
+  /// two-column grid, above it, at the full width of the page.
+  const heroSlot = (
+    <>
+        {/* ═══ the invitation ═══
+            Cover, title, when, where, tags — one picture with the facts written on it, the width
+            of the page. It was a 200px band above a headline above a chip row above a bordered
+            block of explanation: four stacked rectangles, the shape of a documentation page. An
+            invitation is one image that tells you what this is and where to be, and everything
+            that argues for coming can wait until after somebody has decided to read on.
+
+            `isolate` because the scrim and the text are positioned against this box, not the page. */}
+        <section className="relative isolate mt-2 overflow-hidden rounded-[28px] border border-accent/20 shadow-[0_0_0_1px_rgba(110,84,255,0.10),0_30px_70px_-40px_rgba(110,84,255,0.55)]">
+          <CoverImage
+            id={eventId()}
+            src={meta.cover}
+            nodes={11}
+            className="h-[300px] w-full md:h-[clamp(340px,44vh,460px)]"
+          />
+          {/* Deep at the bottom, gone by halfway. The title has to hold against whatever photograph
+              an organizer uploads — including a bright one — and a flat wash over the whole image
+              would dull the picture everywhere to protect two lines of text in one corner. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/78 to-transparent"
+          />
+          <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 md:p-8">
+            <h1
+              className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.06] tracking-[-0.03em] text-transparent md:text-[44px] md:leading-[1.02]"
+              style={{
+                fontFamily: '"Montserrat", var(--font-sans)',
+                backgroundImage:
+                  "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+              }}
+            >
+              {meta.title}
+            </h1>
+
+            {/* Place and time, on one line. They are the two facts somebody checks before anything
+                else, so they sit on the picture with the title rather than below the fold. */}
+            {ev && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                <MetaChip
+                  icon="cal"
+                  tone="accent"
+                  label={t("event.whenLabel")}
+                  value={new Date(Number(ev.attestOpen) * 1000).toLocaleString(
+                    lang === "zh" ? "zh-CN" : "en-GB",
+                    { dateStyle: "full", timeStyle: "short" },
+                  )}
+                />
+                <span aria-hidden className="hidden text-faint sm:inline">·</span>
+                <MetaChip
+                  icon="pin"
+                  tone="ok"
+                  label={t("listing.venue")}
+                  value={meta.venue || t("event.venueUnset")}
+                  muted={!meta.venue}
+                />
+              </div>
+            )}
+
+            {/* Only when there are any — an empty row of chips is a control that is not there. */}
+            {ev && meta.tags.trim() !== "" && (
+              <div className="flex flex-wrap gap-2">
+                {meta.tags
+                  .split(",")
+                  .map((v: string) => v.trim())
+                  .filter(Boolean)
+                  .map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-white/10 bg-ink/50 px-3.5 text-[14px] text-fg backdrop-blur-sm"
+                    >
+                      <TagGlyph tag={tag} />
+                      {tag}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+    </>
+  );
+
   /// The card that actually joins the event. Lives in the right column, which is where the sheet
   /// puts it — the decision belongs beside the numbers it depends on, not below three paragraphs
   /// of explanation. Held as a value so the JSX stays one expression whichever column it lands in.
@@ -255,6 +341,28 @@ export default function EventPage() {
             is within a few pixels of the noise floor. The full-size sheet is drawn at very nearly
             this page's own scale — 1311px of content against 1345 — so its numbers transfer
             almost one to one, and this is the last time this ratio needs guessing at. */}
+        {/* Above the picture, not between it and the tabs: the way out of a page and the warning
+            that this page is a mockup are both chrome, and chrome that sits under the hero pushes
+            the thing somebody came for off the first screen. */}
+        <div className="flex flex-col gap-3 pt-4 md:pt-5">
+        {/* Back to wherever this was opened from. It was hardcoded to `/events`, so an organizer
+            who opened their own event from the dashboard was returned to the participant listing —
+            a different side of the product than the one they were working on. `/events` stays as
+            the fallback for a link opened cold, which is the common case at a venue door. */}
+          <Link
+          {...back}
+          className="-mb-2 inline-flex min-h-[44px] w-fit items-center gap-1.5 text-[14px] text-faint hover:text-dim"
+        >
+          <span aria-hidden>‹</span>
+          {t("common.back")}
+          </Link>
+
+          {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
+          {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
+        </div>
+
+        <div className="pt-3">{heroSlot}</div>
+
         <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:items-start lg:gap-8 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {/* Said once, at the top, before anything below it is read.
@@ -283,118 +391,6 @@ export default function EventPage() {
               />
         )}
 
-        {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
-        {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
-
-        {/* Back to wherever this was opened from. It was hardcoded to `/events`, so an organizer
-            who opened their own event from the dashboard was returned to the participant listing —
-            a different side of the product than the one they were working on. `/events` stays as
-            the fallback for a link opened cold, which is the common case at a venue door. */}
-        <Link
-          {...back}
-          className="-mb-2 inline-flex min-h-[44px] w-fit items-center gap-1.5 text-[14px] text-faint hover:text-dim"
-        >
-          <span aria-hidden>‹</span>
-          {t("common.back")}
-        </Link>
-
-        {/* The organizer's picture when there is one, and one of the product's own otherwise —
-            the sheet's cover is a photograph, and a drawn constellation beside it read as a slot
-            waiting to be filled. */}
-        <CoverImage
-          id={eventId()}
-          src={meta.cover}
-          nodes={11}
-          /* The sheet's cover sits in a violet-tinted edge with a soft glow around it, not a flat
-             grey hairline — it is the first thing on the page and the drawing treats it as lit. */
-          className="h-[200px] w-full shrink-0 rounded-2xl border border-accent/25 shadow-[0_0_0_1px_rgba(110,84,255,0.10),0_18px_46px_-24px_rgba(110,84,255,0.55)] md:h-[260px]"
-        />
-
-        <div className="space-y-2">
-          {/* 28/34px from the V3 type scale, matching AppShell's own heading. Rendered here rather
-              than through its `title` prop because the cover band has to come first. */}
-          {/* Same treatment as the listing and the landing page. A detail page whose title is set
-              in the plain body face, one click after a headline with light running across it, reads
-              as a different product's screen. */}
-          <h1
-            className="bg-clip-text pb-[0.1em] text-[30px] font-extrabold leading-[1.06] tracking-[-0.03em] text-transparent md:text-[40px] md:leading-[1.02]"
-            style={{
-              fontFamily: '"Montserrat", var(--font-sans)',
-              backgroundImage:
-                "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
-            }}
-          >
-            {meta.title}
-          </h1>
-          {meta.blurb && <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{meta.blurb}</p>}
-        </div>
-
-        {/* Place and time, on one line, each behind a tinted round glyph — the sheet's shape.
-            They are the two facts somebody checks before anything else, and a line of dim grey
-            text under a headline is where the eye goes last. */}
-        {ev && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <MetaChip
-              icon="cal"
-              tone="accent"
-              label={t("event.whenLabel")}
-              value={new Date(Number(ev.attestOpen) * 1000).toLocaleString(
-                lang === "zh" ? "zh-CN" : "en-GB",
-                { dateStyle: "full", timeStyle: "short" },
-              )}
-            />
-            <span aria-hidden className="hidden text-faint sm:inline">·</span>
-            <MetaChip
-              icon="pin"
-              tone="ok"
-              label={t("listing.venue")}
-              value={meta.venue || t("event.venueUnset")}
-              muted={!meta.venue}
-            />
-          </div>
-        )}
-
-        {/* The listing's tags, as the sheet sets them under the meta row. Only when there are
-            any — an empty row of chips is a control that is not there. */}
-        {ev && meta.tags.trim() !== "" && (
-          <div className="flex flex-wrap gap-2">
-            {meta.tags
-              .split(",")
-              .map((v: string) => v.trim())
-              .filter(Boolean)
-              .map((tag: string) => (
-                <span
-                  key={tag}
-                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-line-2 bg-raised px-3.5 text-[14px] text-fg"
-                >
-                  <TagGlyph tag={tag} />
-                  {tag}
-                </span>
-              ))}
-          </div>
-        )}
-
-        {/* 验证方式, as four tiles — the shape the sheet gives this block.
-            Its four are methods: wallet, on-site check-in, geolocation, peer vouching. This
-            contract has one method, so four method tiles would be three lies. What it does have is
-            four true properties of that one method, and those are what the tiles say: who vouches,
-            what the door does, where it is written, who pays out. Same block, same rhythm, nothing
-            in it that cannot be checked. */}
-        <section className="rounded-2xl border border-line bg-panel p-5 md:p-7">
-          <h2 className="text-[20px] font-semibold text-fg">{t("event.methodTitle")}</h2>
-          <div className="mt-5 grid grid-cols-2 gap-y-6 divide-line sm:grid-cols-4 sm:gap-y-0 sm:divide-x">
-            <VerifyTile
-              icon="peers"
-              title={t("create.methodPeer")}
-              body={ev ? t("event.vTilePeers", { k: String(ev.k) }) : ""}
-              lit
-            />
-            <VerifyTile icon="qr" title={t("event.vDoorTitle")} body={t("event.vDoorBody")} lit />
-            <VerifyTile icon="chain" title={t("event.vChainTitle")} body={t("event.vChainBody")} lit />
-            <VerifyTile icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
-          </div>
-
-        </section>
 
         {/* The sheet's tab strip, all five of it: 活动介绍 / 日程安排 / 场地信息 / 验证规则 /
             常见问题. 日程安排 used to be missing on the grounds that the contract stores one
@@ -535,6 +531,32 @@ export default function EventPage() {
             )}
           </div>
         </section>
+        {/* 验证方式, as four tiles — the shape the sheet gives this block.
+            Its four are methods: wallet, on-site check-in, geolocation, peer vouching. This
+            contract has one method, so four method tiles would be three lies. What it does have is
+            four true properties of that one method, and those are what the tiles say: who vouches,
+            what the door does, where it is written, who pays out. Same block, same rhythm, nothing
+            in it that cannot be checked. */}
+        {/* No panel. Four true properties of one method do not become more credible for being
+            put in a box, and the box was the last thing on the first screen standing between
+            somebody and the decision this page exists for. A rule and some air do the same
+            separating for nothing. */}
+        <section className="border-t border-line pt-7">
+          <h2 className="text-[20px] font-semibold text-fg">{t("event.methodTitle")}</h2>
+          <div className="mt-5 grid grid-cols-2 gap-y-6 divide-line sm:grid-cols-4 sm:gap-y-0 sm:divide-x">
+            <VerifyTile
+              icon="peers"
+              title={t("create.methodPeer")}
+              body={ev ? t("event.vTilePeers", { k: String(ev.k) }) : ""}
+              lit
+            />
+            <VerifyTile icon="qr" title={t("event.vDoorTitle")} body={t("event.vDoorBody")} lit />
+            <VerifyTile icon="chain" title={t("event.vChainTitle")} body={t("event.vChainBody")} lit />
+            <VerifyTile icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
+          </div>
+
+        </section>
+
       </div>
 
       <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} />
@@ -554,8 +576,27 @@ export default function EventPage() {
             {/* 活动状态, laid out as the sheet draws it: the phase as a lit dot, the count, the
                 bar, the faces, then the button. The dot is the piece that was missing — the card
                 said how full the room was without ever saying whether you could still join it. */}
-            <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
-              <h2 className="text-[20px] font-semibold tracking-[-0.01em]">{t("event.snapshot")}</h2>
+            {/* One panel, floating, holding the whole decision: what it costs, who is holding it,
+                how full the room is, and the button. It was three cards plus a repeat of the cover
+                photograph — and the deposit, which is the number somebody actually decides on, was
+                in the second of them, below the fold on a laptop. */}
+            <section className="space-y-4 rounded-[26px] border border-white/[0.06] bg-panel/55 p-5 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.95)] backdrop-blur-xl md:p-6">
+              <div>
+                <p className="text-[15px] text-dim">{t("event.deposit")}</p>
+                <p className="mt-1 text-[38px] font-extrabold leading-none tracking-[-0.02em] tabular-nums">
+                  {ev ? mon(ev.deposit) : <Skeleton className="h-9 w-28 align-middle" />}
+                </p>
+                <p className="mt-2 text-[15px] leading-snug text-dim">
+                  {t("event.heldBy")}
+                  <span className="mt-0.5 block text-faint">{t("event.notByOrganizer")}</span>
+                </p>
+              </div>
+
+              <div className="border-t border-line pt-4">
+                <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-dim">
+                  {t("event.snapshot")}
+                </h2>
+              </div>
               {ev && (
                 <>
                   <PhaseDot ev={ev} t={t} />
@@ -609,44 +650,9 @@ export default function EventPage() {
               {action}
             </section>
 
-            {/* The sheet's second right-hand block is 活动奖励 — a prize pool this contract does
-                not have. The money that does exist is the deposit, so that slot says what the
-                deposit is and who is holding it. Left column had it as a banner; the sheet keeps
-                the left column for what the event *is* and the right for what it *costs*. */}
-            {/* The sheet's second card is 奖励池 — a prize pool this contract does not have. The
-                money that does exist is the deposit, so this slot says what the deposit is and who
-                holds it. The sheet draws a gold coin beside the figure; the deposit is the only
-                real money on this page, so it keeps the coin. */}
-            <section
-              aria-label={t("event.deposit")}
-              className="flex items-center gap-4 rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5"
-            >
-              <Coin />
-              <div className="min-w-0">
-                <p className="mb-1.5 text-[15.5px] font-medium text-dim">{t("event.deposit")}</p>
-                <p className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums">
-                  {ev ? mon(ev.deposit) : <Skeleton className="h-7 w-24 align-middle" />}
-                </p>
-                <p className="mt-2 text-[15px] font-medium leading-snug">
-                  {t("event.heldBy")}
-                  <span className="mt-0.5 block font-normal text-dim">{t("event.notByOrganizer")}</span>
-                </p>
-              </div>
-            </section>
-
-            {/* The third card in the sheet's rail, which I had said there were two of. That came
-                from measuring the 532px crop, where this one is below the fold of what I cropped.
-                The full-size sheet has it: 活动状态, the money, then a picture.
-
-                No new artwork needed — `rail-card.webp` has been in the repo the whole time and is
-                already doing exactly this job on /me, in the participation modal and on the
-                achievements card. It was missing here and nowhere else, for no reason at all. */}
-            <section
-              aria-hidden
-              className="h-[184px] overflow-hidden rounded-2xl border border-line bg-cover bg-center"
-              style={{ backgroundImage: `url(${basePath}/rail-card.webp)` }}
-            />
-
+            {/* The rail's third card was `rail-card.webp` — the same artwork the hero above now
+                runs at full width. Two copies of one picture on one screen is not a composition,
+                and the second one was carrying no information at all. */}
             {/* The rail is 活动状态, the money, and the picture above — three cards. It had four,
                 and the two extra ones are what made it look nothing like the drawing.
                 They are not deleted. The counts (how many vouches, how few people it takes to run)
@@ -1006,39 +1012,5 @@ function TagGlyph({ tag }: { tag: string }) {
     <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent-2">
       <path d={hit[1]} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-/// The gold coin the sheet puts beside the money.
-///
-/// Drawn rather than an image file: it has to sit on a gradient panel in two themes and at two
-/// sizes, and a flat PNG of a coin on a violet card is the kind of thing that looks pasted on.
-function Coin() {
-  return (
-    <span aria-hidden className="relative flex h-14 w-14 shrink-0 items-center justify-center">
-      <span className="absolute inset-0 rounded-full bg-[#f5a623]/25 blur-md" />
-      <svg viewBox="0 0 56 56" className="relative h-14 w-14">
-        <defs>
-          <linearGradient id="coinFace" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffd77a" />
-            <stop offset="55%" stopColor="#f5a623" />
-            <stop offset="100%" stopColor="#c9791a" />
-          </linearGradient>
-        </defs>
-        <circle cx="28" cy="28" r="20" fill="url(#coinFace)" />
-        <circle cx="28" cy="28" r="20" fill="none" stroke="#ffe6a8" strokeOpacity="0.55" strokeWidth="1.5" />
-        <circle cx="28" cy="28" r="14.5" fill="none" stroke="#8a4f10" strokeOpacity="0.35" strokeWidth="1.5" />
-        {/* A generic currency mark, not a token logo — this coin stands for a deposit in whatever
-            the chain's unit is, and stamping a brand on it would be a claim. */}
-        <path
-          d="M28 19v18M33 23.5h-6.6a3.4 3.4 0 0 0 0 6.8h4.2a3.4 3.4 0 0 1 0 6.8H23"
-          fill="none"
-          stroke="#7a4310"
-          strokeOpacity="0.8"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
   );
 }
