@@ -34,8 +34,8 @@ ALIVE = (
     "drifts, screen glow pulses, the character breathes and shifts their weight. "
 )
 
-SHOTS = [
-    ("a1", 7101, STYLE +
+SHOTS = [   # (tag, seed, prompt, first_frame 或 None)
+    ("a1", 7101, None, STYLE +
      "A modern startup office at night, deep navy walls. One large monitor is the main light "
      "source, washing violet across the desk and the man's face. A stylised young man in a dark "
      "shirt sits at the desk, leaning forward on one elbow, looking at the monitor with a tired, "
@@ -54,7 +54,7 @@ SHOTS = [
     #
     # 第三条:"三分之三背侧只露半张脸"本来是为了躲 H3 的脸漂移,用户已经说了不必是
     # 同一个人、画风一致即可,所以这一层纯粹在伤戏——叹气和惊喜都在脸上。改成正面。
-    ("a2", 7212, STYLE +
+    ("a2", 7212, None, STYLE +
      "A dim living room at night, deep navy and indigo. The ONLY light in the room is the phone "
      "screen held above a young person's face: it throws bright violet and magenta light up onto "
      "their cheeks, nose and chin from below, and falls off into darkness a foot away. There is no "
@@ -65,14 +65,14 @@ SHOTS = [
      "towards camera with a bored half-smile. The camera holds a slow steady medium shot. " +
      ALIVE + NO_TEXT),
 
-    ("a4", 7303, STYLE +
+    ("a4", 7303, None, STYLE +
      "A single bright violet ribbon of light bursts out of a glowing monitor and flies out through "
      "a window into a stylised night city of deep navy towers, threading between the buildings and "
      "leaving a soft magenta trail behind it. It curves down towards a phone lying on a sofa in a "
      "warm-lit window. Fast flying camera following the ribbon from behind, motion blur, thick "
      "volumetric haze. One single ribbon of light, not particles. " + NO_TEXT),
 
-    ("a7a", 7404, STYLE +
+    ("a7a", 7404, None, STYLE +
      "Inside a stylised event venue at night. A huge stage screen at the back is by far the "
      "brightest thing in the frame and it lights the entire room: violet and magenta wash over the "
      "floor, the haze and the people, throwing long soft shadows towards camera. Bright and "
@@ -81,18 +81,34 @@ SHOTS = [
      "their shoulders and the back of their head in the near foreground. The stage lights sweep "
      "slowly across the room, thick haze drifts through the beams, people shift and gesture. The "
      "camera tracks slowly forward behind them. " + NO_TEXT),
+
+    # a7b 接 a7a 的尾帧:同一个会场、同一块大屏、同一个背影,镜头只是转向门口那块牌子。
+    # 这是「同一连续镜头切两段」,本机验过接得住;跨场景硬接才会 morph。
+    ("a7b", 7505, "a7a_tail.png", STYLE +
+     "Unbroken continuation of the same shot, same venue, same lighting. The same person seen from "
+     "behind walks a few steps further and stops in front of a tall free-standing sign near the "
+     "entrance. The sign glows with a bright abstract violet panel — a soft grid of glowing squares "
+     "of light, purely geometric, with no readable characters of any kind. The camera dollies "
+     "slowly in past their shoulder towards the glowing panel, which grows larger in frame. The "
+     "stage lights keep sweeping behind them and the haze drifts. " + NO_TEXT),
 ]
 
 
-def build(prompt, seed, tag):
-    return {
+def build(prompt, seed, tag, first=None):
+    """first 给了就走首帧约束(fl2va),不给就是纯文生。
+
+    本机验过的边界:**同一个连续镜头切成两段**时喂尾帧接得住,人物、灯光、站位全接上;
+    **跨场景**硬接则会在前一两秒 morph 成照片重影。a7b 接 a7a 属于前者——同一个会场、
+    同一块大屏、同一个背影往前走,只是镜头转向门口那块牌子。
+    """
+    g = {
         "1": {"class_type": "UNETLoader", "inputs": {
             "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors", "weight_dtype": "default"}},
         "2": {"class_type": "CLIPLoader", "inputs": {
             "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "type": "minimax", "device": "default"}},
         "3": {"class_type": "VAELoader", "inputs": {"vae_name": "minimax_h3_video_vae_fp16.safetensors"}},
         "4": {"class_type": "VAELoader", "inputs": {"vae_name": "minimax_h3_audio_vae_fp32.safetensors"}},
-        # 不给 first_frame —— 纯文生,机位自由。
+        # 不给 first_frame —— 纯文生,机位自由。给了就接前一镜的尾帧。
         "10": {"class_type": "MiniMaxH3ImageToVideo", "inputs": {
             "clip": ["2", 0], "vae": ["3", 0], "prompt": prompt,
             "width": W, "height": H, "length": LENGTH}},
@@ -110,51 +126,57 @@ def build(prompt, seed, tag):
         "43": {"class_type": "SaveVideo", "inputs": {
             "video": ["42", 0], "filename_prefix": f"peerproof_demo_a/{tag}", "format": "mp4", "codec": "h264"}},
     }
+    if first:
+        g["5"] = {"class_type": "LoadImage", "inputs": {"image": first}}
+        g["10"]["inputs"]["first_frame"] = ["5", 0]
+    return g
 
 
-def settled(path, quiet=6, limit=180):
-    """等文件不再长大。
+def usable(path, limit=420):
+    """等到文件**真的能解码**为止,而不是等它"大小不再变"。
 
-    实测栽过:a2 出片时脚本在文件刚出现、只有 **48 字节** 的瞬间就去判,判成坏文件,
-    而完整文件是 291KB。SaveVideo 是边编码边写盘,文件"存在"远早于"写完"。
-    固定 sleep 3 秒对小文件够、对大文件不够——所以不睡固定时长,盯着大小不变为止。
+    栽过两次,一次比一次隐蔽:
+
+    1. 第一版固定 sleep 3 秒就判 —— 对大文件不够,a2 被当成 48 字节的坏文件。
+    2. 第二版改成"等大小连续 6 秒不变" —— **还是错**。ComfyUI 先建文件写一个 48 字节
+       的头,然后停下来编码,这段停顿里大小一直是 48,静默判定正好落进去。a5、a8、a6
+       三条全被判坏,而它们其实是 422KB / 756KB / 557KB 的好片。
+
+    大小是间接信号,解码才是直接的。所以反复试解,直到解得开或超时。
     """
-    last, same, t0 = -1, 0, time.time()
+    t0 = time.time()
     while time.time() - t0 < limit:
         try:
             n = os.path.getsize(path)
         except OSError:
-            n = -1
-        same = same + 1 if n == last and n > 0 else 0
-        if same >= quiet:
-            return True
-        last = n
-        time.sleep(1)
+            n = 0
+        if n > 100_000:
+            r = subprocess.run(["/home/liyakun/bin/ffmpeg", "-v", "error", "-i", path, "-f", "null", "-"],
+                               capture_output=True, text=True)
+            if r.returncode == 0:
+                return True
+        time.sleep(5)
     return False
-
-
-def usable(path):
-    """真数帧。别用 ffprobe —— PATH 上那个是 compat 包装,忽略 -show_entries 只回显时长。"""
-    settled(path)
-    r = subprocess.run(["/home/liyakun/bin/ffmpeg", "-v", "error", "-i", path, "-f", "null", "-"],
-                       capture_output=True, text=True)
-    return r.returncode == 0 and os.path.getsize(path) > 100_000
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     bad = 0
-    for tag, seed, prompt in SHOTS:
-        hit = lambda: glob.glob(os.path.join(OUT, f"{tag}_*.mp4"))
+    for tag, seed, first, prompt in SHOTS:
+        # 排除废片。之前把废掉的 a2 改名成 `a2_v1废_….mp4`,以为这样就不算数了——
+        # 它照样匹配 `a2_*.mp4`,于是重拍被当成"已有"跳过,而下游要接它尾帧的 a5
+        # 会跟着一起废。废片一律以「废片_」开头,不要留在原 tag 的命名空间里。
+        hit = lambda: [h for h in glob.glob(os.path.join(OUT, f"{tag}_*.mp4"))
+                       if "废" not in os.path.basename(h)]
         if hit():
             print(f"跳过 {tag}(已有)", flush=True)
             continue
         before = set(hit())
         urllib.request.urlopen(urllib.request.Request(
             SRV + "/prompt",
-            data=json.dumps({"prompt": build(prompt, seed, tag), "client_id": str(uuid.uuid4())}).encode(),
+            data=json.dumps({"prompt": build(prompt, seed, tag, first), "client_id": str(uuid.uuid4())}).encode(),
             headers={"Content-Type": "application/json"}))
-        print(f"提交 {tag}  {W}x{H}  {LENGTH}帧  seed={seed}", flush=True)
+        print(f"提交 {tag}  {W}x{H}  {LENGTH}帧  seed={seed}" + (f"  首帧={first}" if first else "  纯文生"), flush=True)
         t0, done = time.time(), False
         while time.time() - t0 < 2700:
             time.sleep(15)
