@@ -169,7 +169,16 @@ contract EventDirectory {
     uint256 public constant MAX_URL = 300;
     uint256 public constant MAX_VENUE = 160;
     uint256 public constant MAX_TAGS = 200;
-    uint256 public constant MAX_COVER = 300;
+    /// Big enough for a small picture inlined as a `data:` URI, not just a link.
+    ///
+    /// There is no server to upload to, and that was first answered by storing only a URL. It is
+    /// the wrong answer for this product: an event that lives on chain should not have its picture
+    /// depend on someone else's hosting staying up. So the client shrinks the image until its
+    /// base64 fits in this budget and stores the bytes themselves.
+    ///
+    /// 12,000 is the ceiling rather than the target. The client aims far lower — every byte here
+    /// is paid for once, in gas, by the organizer.
+    uint256 public constant MAX_COVER = 12000;
 
     constructor(address escrowAddress) {
         escrow = IAttendanceEscrow(escrowAddress);

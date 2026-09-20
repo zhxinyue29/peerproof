@@ -922,12 +922,16 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       // `datetime-local` has no timezone, so `Date.parse` reads it in the browser's — which is the
       // one the organizer typed it in. The contract stores UTC seconds either way.
       const attestOpen = BigInt(Math.floor(new Date(startAt).getTime() / 1000));
-      if (!Number.isFinite(Number(attestOpen)) || attestOpen <= now) {
+      const attestClose = attestOpen + BigInt(Number(runsMins) * 60);
+      // The only window the contract refuses is one that has already finished. Doors opening right
+      // now is legitimate — and it is what somebody setting up a long-running event wants, so that
+      // people can start vouching the moment it exists. This used to require a start in the future,
+      // which was a rule the frontend invented.
+      if (!Number.isFinite(Number(attestOpen)) || attestClose <= now) {
         setNotice(t("create.startInPast"));
         setBusy(false);
         return;
       }
-      const attestClose = attestOpen + BigInt(Number(runsMins) * 60);
       // Walk-ins keep registration open until the event ends. Without them it closes when the
       // doors do, which is the classic RSVP shape — the organizer picks.
       const regDeadline = walkIns ? attestClose : attestOpen;

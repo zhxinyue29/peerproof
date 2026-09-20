@@ -26,8 +26,11 @@ export default function CoverImage({
 }) {
   const [broken, setBroken] = useState(false);
   const url = src.trim();
-  // http(s) only — see CoverField. The contract does not validate, so every render site has to.
-  const ok = /^https?:\/\/\S+$/i.test(url) && !broken;
+  // http(s) links and inlined images. `data:image/` is allowed and every other scheme is not —
+  // a `javascript:` or `data:text/html` string in a src is not an image problem, and the contract
+  // does not validate, so every render site has to. This rejected `data:` outright at first, which
+  // meant a cover somebody had just paid gas to store on chain rendered as the fallback pattern.
+  const ok = /^(https?:\/\/\S+|data:image\/[a-z+]+;base64,)/i.test(url) && !broken;
 
   if (!ok) return <EventCover id={id} nodes={nodes} className={className} />;
   return (
