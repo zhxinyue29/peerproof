@@ -1076,6 +1076,13 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
   }
 
   const invalid = whyNotValid({ deposit, capacity, minQuorum, k, startAt, runsMins, walkIns });
+
+  // Any edit clears the last failure. A red "BadParams" left sitting under a form somebody has
+  // since corrected is worse than no message: it says the thing in front of them is still wrong.
+  const edited = <T,>(set: (v: T) => void) => (v: T) => {
+    setNotice(null);
+    set(v);
+  };
   const stepIndex = STEPS.indexOf(step);
   const go = (by: number) => setStep(STEPS[Math.min(STEPS.length - 1, Math.max(0, stepIndex + by))]);
 
@@ -1139,26 +1146,26 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             </button>
           </div>
           {/* First in step one, where the sheet puts the cover. */}
-          <CoverField value={cover} onChange={setCover} />
-          <Field label={t("listing.title")} value={title} onChange={setTitle} hint={t("listing.titleHint")} />
+          <CoverField value={cover} onChange={edited(setCover)} />
+          <Field label={t("listing.title")} value={title} onChange={edited(setTitle)} hint={t("listing.titleHint")} />
           <label className="block">
             <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
               {t("listing.description")}
             </span>
             <textarea
               value={blurb}
-              onChange={(e) => setBlurb(e.target.value)}
+              onChange={(e) => edited(setBlurb)(e.target.value)}
               rows={3}
               maxLength={600}
               placeholder={t("listing.blurbPlaceholder")}
               className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
-          <Field label={t("listing.venue")} value={venue} onChange={setVenue} hint={t("listing.venueHint")} />
+          <Field label={t("listing.venue")} value={venue} onChange={edited(setVenue)} hint={t("listing.venueHint")} />
           {/* Chips, as the sheet draws them. Stored as the same comma-separated string either way —
               this is a way of typing it, not a different shape on chain. */}
-          <TagInput value={tags} onChange={setTags} />
-          <Field label={t("listing.link")} value={url} onChange={setUrl} hint={t("listing.linkHint")} />
+          <TagInput value={tags} onChange={edited(setTags)} />
+          <Field label={t("listing.link")} value={url} onChange={edited(setUrl)} hint={t("listing.linkHint")} />
           {/* Not a block. An event with no title is a legitimate thing to create — the escrow does
               not need one — but it is listed to strangers as "Event #7", and finding that out on
               the events page is too late. */}
@@ -1180,7 +1187,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             <p className="mt-1 text-[14px] leading-relaxed text-dim">{t("create.methodPeerBody")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Field label={t("create.vouchesNeeded")} value={k} onChange={setK} hint={t("create.kHint")} />
+            <Field label={t("create.vouchesNeeded")} value={k} onChange={edited(setK)} hint={t("create.kHint")} />
             <label className="block">
               <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
                 {t("create.startAt")}
@@ -1188,18 +1195,18 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               <input
                 type="datetime-local"
                 value={startAt}
-                onChange={(e) => setStartAt(e.target.value)}
+                onChange={(e) => edited(setStartAt)(e.target.value)}
                 className="min-h-[46px] w-full rounded-xl border border-line-2 bg-ink px-3.5 text-[16px] text-fg outline-none focus:border-accent"
               />
               <span className="mt-1.5 block text-[14px] text-faint">{t("create.startHint")}</span>
             </label>
-            <Field label={t("create.runsMins")} value={runsMins} onChange={setRunsMins} hint={t("create.runsHint")} />
+            <Field label={t("create.runsMins")} value={runsMins} onChange={edited(setRunsMins)} hint={t("create.runsHint")} />
           </div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-2 bg-ink p-3.5">
             <input
               type="checkbox"
               checked={walkIns}
-              onChange={(e) => setWalkIns(e.target.checked)}
+              onChange={(e) => edited(setWalkIns)(e.target.checked)}
               className="mt-0.5 h-4 w-4 accent-accent"
             />
             <span className="text-[15px] leading-relaxed">
@@ -1222,9 +1229,9 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             <p className="mt-1 text-[15px] text-dim">{t("create.moneySub")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Field label={t("create.deposit")} value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
-            <Field label={t("create.capacity")} value={capacity} onChange={setCapacity} />
-            <Field label={t("organizer.runsIfAtLeast")} value={minQuorum} onChange={setMinQuorum} hint={t("create.quorumHint")} />
+            <Field label={t("create.deposit")} value={deposit} onChange={edited(setDeposit)} hint={fiat(parseEther(deposit || "0"))} />
+            <Field label={t("create.capacity")} value={capacity} onChange={edited(setCapacity)} />
+            <Field label={t("organizer.runsIfAtLeast")} value={minQuorum} onChange={edited(setMinQuorum)} hint={t("create.quorumHint")} />
           </div>
           <p className="text-[14px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
         </section>

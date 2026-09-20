@@ -384,6 +384,7 @@ export const zh: Dict = {
   "error.wrongStatus": "这场活动已经不开放了。",
   "error.alreadyRegistered": "你已经报过名了。",
   "error.quorumNotMet": "报名人数太少，这场活动开不成。",
+  "error.badParams": "合约拒绝了这组参数。最常见的两种:成行最低人数没有大于需要作证数;或者开场时间已经过了而没有接受现场报名。回上一步检查这几个数。",
   "error.fallbackPending": "结算在等兜底窗口过去。",
 
   "vouch.landedIn": "上链耗时",

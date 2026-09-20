@@ -91,6 +91,10 @@ const CONTRACT_ERRORS: Record<string, Copy> = {
   AtCapacity: "event.full",
   DeadlinePassed: "event.registrationClosed",
   QuorumNotMet: "error.quorumNotMet",
+  // The escrow raises this for eight different reasons and names none of them. The form checks all
+  // eight before sending, so reaching this means the form's copy of a rule has drifted from the
+  // contract's — which is worth saying plainly rather than printing "BadParams" at somebody.
+  BadParams: "error.badParams",
   FallbackPending: "error.fallbackPending",
 };
 

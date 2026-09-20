@@ -397,6 +397,7 @@ export const en = {
   "error.wrongStatus": "This event is no longer open.",
   "error.alreadyRegistered": "You're already registered.",
   "error.quorumNotMet": "Too few people registered for this event to run.",
+  "error.badParams": "The contract refused these settings. The two usual causes: the minimum is not larger than the vouches needed, or the doors have already opened and walk-ins are off. Step back and check those.",
   "error.fallbackPending": "Settlement is waiting out the fallback window.",
 
   "vouch.landedIn": "Landed in",
