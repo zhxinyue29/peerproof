@@ -7,7 +7,6 @@ import TopNav from "@/components/TopNav";
 import { SectionTitle } from "@/components/SectionTitle";
 import IdentityGate from "@/components/IdentityGate";
 import GateIntro from "@/components/GateIntro";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button, Card, CopyableCode, Field, Notice, Skeleton } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
@@ -131,7 +130,7 @@ export default function OrganizerPage() {
 
   if (!hasDeployment) {
     return (
-      <Frame active="manage" title={t("organizer.title")}>
+      <Frame title={t("organizer.title")}>
         <Notice>{t("common.noContract")}</Notice>
       </Frame>
     );
@@ -139,7 +138,6 @@ export default function OrganizerPage() {
 
   return (
     <Frame
-      active={creating ? "create" : "manage"}
       title={creating ? t("nav.createEvent") : t("organizer.title")}
       titleEn={creating ? "Create Event" : "Organiser Dashboard"}
       subtitle={creating ? t("create.subtitle") : t("organizer.subtitle")}
@@ -313,14 +311,12 @@ function useUrlTab(): ["dashboard" | "create", (to: "dashboard" | "create") => v
 /// language. It is the sheet's typographic signature, and dropping it made every heading on the
 /// page a different thing from the drawing.
 function Frame({
-  active,
   title,
   titleEn,
   subtitle,
   action,
   children,
 }: {
-  active: string;
   title: string;
   titleEn?: string;
   subtitle?: string;
@@ -330,7 +326,7 @@ function Frame({
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav nav="organizer" active={active} />
+        <TopNav />
         <main className="flex min-w-0 flex-col gap-6 pb-16 pt-6 md:gap-7 md:pt-8">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-2">

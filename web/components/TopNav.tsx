@@ -16,7 +16,13 @@ import { useT } from "@/lib/i18n";
 /// sidebar only on the organiser's side. Walking from the landing page into a sidebar was the
 /// moment the product stopped looking like one product.
 ///
-/// No nav links. The bar is the logo, the search, the language and the account — nothing else.
+/// No nav links, on either side. The bar is the logo, the search, the language and the account —
+/// nothing else.
+///
+/// The organizer dashboard sheet draws six tabs up here, and they were built to it. The user asked
+/// for them gone — twice — and that outranks the drawing: the destinations they named all exist as
+/// buttons on the page itself (the header's "+ 创建活动", the banner's two, the cards' "管理活动"),
+/// so the tabs were a second way to reach things already in front of you.
 ///
 /// It briefly carried five destinations, and every one of them duplicated a route the page already
 /// offered better: the two entry cards on the landing page are the way to the listing and to the
@@ -28,24 +34,7 @@ import { useT } from "@/lib/i18n";
 /// a link opened at a venue door by somebody who has not agreed to be inside anything yet, and five
 /// tabs across the top is the page asking them to navigate before it has told them what it is.
 
-/// The organizer's destinations, from the dashboard sheet's top bar.
-///
-/// The sheet draws six: 活动管理 / 创建活动 / 参与者 / 奖励发放 / 数据分析 / 验证. Five are here —
-/// 奖励发放 is a payout pool this contract does not have, and a tab leading to a page that explains
-/// it does not exist is worse than its absence.
-///
-/// Two of them scroll rather than navigate. The attendee list and the analytics panel live on the
-/// dashboard; giving each its own route would mean two pages that re-read the same chain data to
-/// show one block each.
-const ORGANIZER_NAV = [
-  { key: "manage", label: "onav.manage", href: "/organizer" },
-  { key: "create", label: "onav.create", href: "/organizer?tab=create" },
-  { key: "people", label: "onav.people", href: "/organizer#people" },
-  { key: "stats", label: "onav.stats", href: "/organizer#stats" },
-  { key: "verify", label: "onav.verify", href: "/verify" },
-] as const;
-
-export default function TopNav({ nav = "participant", active }: { nav?: "participant" | "organizer"; active?: string }) {
+export default function TopNav() {
   const t = useT();
   const router = useRouter();
   const { signer, setUpPrivy, busy } = useIdentity();
@@ -83,27 +72,6 @@ export default function TopNav({ nav = "participant", active }: { nav?: "partici
         <PeerProofMark />
         <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
       </Link>
-
-      {/* Only on the organizer's side. The participant bar stays the logo, the search, the language
-          and the account — five tabs across the top of a page somebody opened at a venue door is
-          the product asking them to navigate before it has said what it is.
-          Scrolls sideways below `lg` instead of wrapping into a second row. */}
-      {nav === "organizer" && (
-        <nav aria-label="Organizer" className="-mx-1 hidden min-w-0 gap-1 overflow-x-auto px-1 md:flex">
-          {ORGANIZER_NAV.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={active === item.key ? "page" : undefined}
-              className={`flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full px-3.5 text-[15px] transition-colors ${
-                active === item.key ? "bg-accent/15 font-medium text-fg" : "text-dim hover:text-fg"
-              }`}
-            >
-              {t(item.label)}
-            </Link>
-          ))}
-        </nav>
-      )}
 
 
       <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">
