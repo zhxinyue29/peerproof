@@ -228,3 +228,17 @@ No bundler, no EntryPoint, no paymaster. Mera yields a plain EOA, target users a
 ## License
 
 MIT
+
+## 推不上去的时候
+
+2026-09-20:`git push` 卡在 SSH banner exchange —— TCP 握手成功,然后超时。本机的
+代理(127.0.0.1:7897)在路径上,不放 22 端口的 SSH。
+
+GitHub 官方的备用口是 `ssh.github.com:443`,而那个口能走代理的 CONNECT:
+
+```bash
+GIT_SSH_COMMAND='ssh -o ProxyCommand=scripts/gh-ssh-tunnel.py' git push
+```
+
+`scripts/gh-ssh-tunnel.py` 忽略 ssh 要连的主机,固定连 ssh.github.com:443。
+注意 `-o ProxyCommand=...` 不要加引号,加了 ssh 会把引号当成路径的一部分。
