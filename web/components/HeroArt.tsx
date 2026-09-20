@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMotionPrefs } from "@/lib/motion";
 import { basePath } from "@/lib/chain";
 import { useT } from "@/lib/i18n";
@@ -36,8 +36,8 @@ export default function HeroArt() {
   /// what the product does. It also fails a case that is not about accessibility at all: Firefox
   /// under X11 derives this setting from XSETTINGS and reports `reduce` when nothing publishes it,
   /// so a reader who never asked for anything gets a still picture and no way past it.
-  const [override, setOverride] = useState(false);
-  const still = reduced && !override;
+  const video = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
 
   // Bleeds off the right edge of the viewport, not the container. `right: calc(50% - 50vw)` measures
   // the element's own containing block against the viewport, which reaches the screen edge from
@@ -78,31 +78,21 @@ export default function HeroArt() {
 
   return (
     <>
-      {still ? (
-        <div className={`${frame} relative`}>
-          <div
-            aria-hidden
-            className="h-full w-full bg-cover bg-center"
-            style={{ ...mask, backgroundImage: `url(${basePath}/hero.webp)` }}
-          />
-          {/* The way past it. Small, bottom-left of the still, over the part of the frame the
-              fades have already darkened. `pointer-events-auto` because the frame itself is not
-              clickable — it bleeds under the entry cards. */}
-          <button
-            type="button"
-            onClick={() => setOverride(true)}
-            className="pointer-events-auto absolute bottom-4 right-6 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-line-2 bg-ink/70 px-4 text-[14px] text-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-fg"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            {t("home.playScene")}
-          </button>
-        </div>
-      ) : (
+      {/* Autoplay, for everybody.
+          It was gated on `prefers-reduced-motion`, and on Linux that signal is wrong more often
+          than it is right: Firefox under XWayland takes it from XSETTINGS and reports `reduce`
+          when nothing publishes the setting, so a reader who never asked for anything got a still
+          picture. Measured on this project's own machine — GNOME animations on, Firefox reporting
+          reduce.
+          The clip is one small object moving slowly on a locked-off camera, which is the mildest
+          thing this preference exists to stop. So it plays, and anybody who does not want it can
+          stop it in one press — the control only appears for the readers who asked for less
+          motion, and their choice sticks for the session. */}
+      <div className={frame}>
         <video
+          ref={video}
           aria-hidden
-          className={`${frame} h-auto object-cover`}
+          className="h-auto w-full object-cover"
           style={mask}
           autoPlay
           muted
@@ -114,7 +104,30 @@ export default function HeroArt() {
           <source src={`${basePath}/hero-loop.webm`} type="video/webm" />
           <source src={`${basePath}/hero-loop.mp4`} type="video/mp4" />
         </video>
-      )}
+
+        {reduced && (
+          <button
+            type="button"
+            onClick={() => {
+              const v = video.current;
+              if (!v) return;
+              if (v.paused) {
+                void v.play();
+                setPaused(false);
+              } else {
+                v.pause();
+                setPaused(true);
+              }
+            }}
+            className="pointer-events-auto absolute bottom-4 right-6 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-line-2 bg-ink/70 px-4 text-[14px] text-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-fg"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              {paused ? <path d="M8 5v14l11-7z" /> : <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />}
+            </svg>
+            {t(paused ? "home.playScene" : "home.pauseScene")}
+          </button>
+        )}
+      </div>
 
       {/* On a phone there is no room beside the words, so it becomes a band under them — still edge
           to edge, because a picture of a room inset in a card reads as a screenshot of one. A still,

@@ -315,6 +315,7 @@ export const zh: Dict = {
   "home.headline3": "出席证明。",
   "home.eyebrow": "同伴互证的出席",
   "home.playScene": "播放这段",
+  "home.pauseScene": "暂停",
   "home.headline2": "主办方的",
   "home.script": "在场的人互相证明对方在场。押金和结算跟着证据走，不跟着任何人的判断走。",
   "home.joinSub": "发现有趣的活动，用同伴互证的方式留下你的出席记录。",
