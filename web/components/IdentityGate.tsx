@@ -158,7 +158,10 @@ export default function IdentityGate({
           )}
         </div>
 
-        <details className="text-xs text-faint">
+        {/* 14px. This is the text somebody opens to decide whether to hand over an identity at
+            all — the one paragraph on the screen that has to be readable on a phone, and it was
+            the smallest thing on it. */}
+        <details className="text-[14px] leading-relaxed text-faint">
           <summary className="cursor-pointer">{t("identity.why")}</summary>
           <p className="mt-2 leading-relaxed">{t("identity.whyBody1")}</p>
           <p className="mt-2 leading-relaxed">{t("identity.whyBody2")}</p>

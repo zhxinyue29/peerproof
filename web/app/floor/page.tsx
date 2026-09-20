@@ -634,7 +634,7 @@ export default function FloorPage() {
         )}
 
         {devMode && signer && (
-          <details className="mt-auto rounded-xl border border-line bg-panel p-3 text-xs">
+          <details className="mt-auto rounded-xl border border-line bg-panel p-3 text-[13px]">
             <summary className="cursor-pointer text-faint">dev</summary>
             <div className="mt-2.5 flex flex-wrap gap-2">
               <DevBtn onClick={devFund} label="fund me" />

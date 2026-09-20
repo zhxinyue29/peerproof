@@ -126,7 +126,9 @@ export default function EventCard({
              and left the word "ng" poking out from behind it. On the picture either way: somebody
              scanning the row reads the band before the text, and this has to be read before the
              numbers under it are believed. */
-          <span className="absolute right-3 top-3 z-10 rounded-full bg-[#0d1626]/85 px-2.5 py-1 text-[12px] font-medium text-faint backdrop-blur-sm">
+          /* 13px, not 12. This label is the reason the numbers under it must not be believed —
+             it is the last thing that should be the smallest text on the card. */
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-[#0d1626]/85 px-2.5 py-1 text-[13px] font-medium text-faint backdrop-blur-sm">
             {t("events.sample")}
           </span>
         )}

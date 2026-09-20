@@ -153,7 +153,7 @@ export function Footer({ children }: { children: React.ReactNode }) {
 
 export function FooterLinks({ items }: { items: Array<{ href: string; label: string }> }) {
   return (
-    <div className="flex gap-4 text-xs text-faint">
+    <div className="flex gap-4 text-[13px] text-faint">
       {items.map((i) => (
         <Link key={i.href} href={i.href} className="underline decoration-line-2">
           {i.label}
