@@ -191,9 +191,23 @@ export default function EventCard({
               </span>{" "}
               {t("events.registered")}
             </p>
+            {/* The sheet leads each card with "128 已验证参与者" — the number that says the room
+                turned up, not the number that says people clicked. Shown only once there is one:
+                "0 已验证" on an event that has not opened yet is a fact about the clock, not the
+                room, and it reads as a failure. */}
+            {e.confirmed > 0 && (
+              <p className="text-[14px] text-ok">
+                <span className="font-semibold tabular-nums">{e.confirmed}</span>{" "}
+                {t("events.confirmedCount")}
+              </p>
+            )}
           </div>
+          {/* "立即报名" while the doors are open, as the sheet labels it — otherwise the card
+              would invite somebody to join something that has closed. */}
           <span className="flex min-h-[44px] shrink-0 items-center rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-colors group-hover:bg-accent-2">
-            {t("common.view")}
+            {e.phase === "registering" || e.phase === "waiting" || e.phase === "live"
+              ? t("events.joinNow")
+              : t("common.view")}
           </span>
         </div>
       </div>

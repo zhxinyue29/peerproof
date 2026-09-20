@@ -123,6 +123,104 @@ export default function EventPage() {
 
   const surplus = ev ? projectedPayout(ev) - ev.deposit : 0n;
 
+  /// The card that actually joins the event. Lives in the right column, which is where the sheet
+  /// puts it — the decision belongs beside the numbers it depends on, not below three paragraphs
+  /// of explanation. Held as a value so the JSX stays one expression whichever column it lands in.
+  const action = (
+    <>
+          {justRegistered && ev ? (
+            <RegisteredResult
+              deposit={ev.deposit}
+              hash={justRegistered}
+              opensIn={Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)}
+              vouchesNeeded={ev.k}
+              onContinue={() => router.push("/floor")}
+            />
+          ) : me?.registered ? (
+            <div className="space-y-3">
+              <Notice tone="ok">{t("event.youreIn")}</Notice>
+              <LinkButton href="/floor">
+                {phase === "open" ? t("event.goToFloor") : t("event.openMyCode")}
+              </LinkButton>
+            </div>
+          ) : sample ? (
+            /* A sample event cannot be joined — it is not on any chain. The register button was
+               fully live here: pressing it opened the sign-in sheet, asked somebody to make an
+               account, and led to an event that does not exist. The banner above already says this
+               page is an example; the primary action should agree with it rather than contradict it. */
+            <LinkButton href="/events">{t("events.seeRealOnes")}</LinkButton>
+          ) : joinable ? (
+            /* Signed in: the button is the whole thing. Not signed in: the button opens the
+               sheet, and the three ways to sign in appear at the moment they become a question
+               somebody is asking — not while they are still deciding whether to come. */
+            <div className="space-y-3">
+              {error && <Notice tone="bad">{error}</Notice>}
+              {!error && readError && (
+                <Notice tone="warn">{t("event.cantReach", { why: readError })}</Notice>
+              )}
+              {ev && me && signer && (
+                <Funding
+                  need={needFor(ev.deposit, GAS_LIMITS.register)}
+                  have={me.balance}
+                  what={t("funding.whatRegister")}
+                  address={signer.address}
+                />
+              )}
+              <Button
+                onClick={() => (signer ? void register() : setJoining(true))}
+                disabled={
+                  busy || !ev || (!!signer && (!me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)))
+                }
+                className="w-full"
+              >
+                {busy
+                  ? t("event.staking")
+                  : ev
+                    ? t("event.stakeAndRegister", { amount: mon(ev.deposit) })
+                    : t("common.loading")}
+              </Button>
+              {signer ? (
+                <div className="space-y-1 text-[14px] text-dim">
+                  <p>
+                    {t("event.signedInLabel")}{" "}
+                    <span className="font-medium text-fg">
+                      {signer.label ?? shortAddress(signer.address)}
+                    </span>{" "}
+                    ·{" "}
+                    <button
+                      type="button"
+                      onClick={signOut}
+                      className="underline decoration-line-2 hover:text-fg"
+                    >
+                      {t("event.useDifferentAccount")}
+                    </button>
+                  </p>
+                  {/* The balance is what the button above disables on. Left unsaid, a greyed-out
+                      primary action has no explanation anywhere on the screen. */}
+                  <p className="font-mono text-[14px] text-faint">
+                    {t("event.walletBalance", {
+                      address: shortAddress(signer.address),
+                      balance: me ? mon(me.balance) : "—",
+                    })}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[14px] text-dim">
+                  {t("event.chooseSignIn")}{" "}
+                  <span className="text-accent-2">{t("event.noWalletPlugin")}</span>
+                </p>
+              )}
+            </div>
+          ) : (
+            <Notice>
+              {ev && ev.registered >= ev.capacity
+                ? t("event.full")
+                : t("event.registrationClosed")}
+            </Notice>
+          )}
+    </>
+  );
+
   return (
     // The last participant screen still wearing the sidebar. An event belongs to the directory you
     // reached it from — "Events" stays lit, because leaving every item unlit on a screen you arrived
@@ -204,6 +302,47 @@ export default function EventPage() {
           </p>
         </section>
 
+        {/* The listing's tags, as the sheet sets them under the meta row. Only when there are
+            any — an empty row of chips is a control that is not there. */}
+        {ev && meta.tags.trim() !== "" && (
+          <div className="flex flex-wrap gap-2">
+            {meta.tags
+              .split(",")
+              .map((v: string) => v.trim())
+              .filter(Boolean)
+              .map((tag: string) => (
+                <span
+                  key={tag}
+                  className="inline-flex min-h-[34px] items-center rounded-full border border-line-2 bg-panel px-3.5 text-[14px] text-dim"
+                >
+                  {tag}
+                </span>
+              ))}
+          </div>
+        )}
+
+        {/* 验证方式. The sheet shows four methods with toggles — wallet, on-site check-in,
+            geolocation, peer vouching. This contract has one, and drawing three that do nothing on
+            the page whose product is "you do not have to trust anybody" would be the worst thing
+            here. So the one that exists is stated, with the number it is parameterised by. */}
+        <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+          <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.methodTitle")}</h2>
+          <div className="mt-3 flex items-start gap-3 rounded-xl border border-accent/35 bg-accent/[0.07] p-4">
+            <span aria-hidden className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="m9 12 2 2 4-4M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z"
+                      stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <p className="min-w-0 text-[15px] leading-relaxed">
+              <span className="block font-medium text-fg">{t("create.methodPeer")}</span>
+              <span className="mt-0.5 block text-dim">
+                {ev ? t("event.methodBody", { k: String(ev.k) }) : t("create.methodPeerBody")}
+              </span>
+            </p>
+          </div>
+        </section>
+
         {/* Three numbers, left-aligned under their values the way the render shows them. `capacity`
             is deliberately not folded in here as "128/200" — how full the room is belongs next to the
             rest of the logistics, in the detail panel, and a fraction reads as a ratio to reach
@@ -213,97 +352,6 @@ export default function EventPage() {
           <StatTile value={ev && `${ev.k}`} label={t("event.vouchesNeededLbl")} />
           <StatTile value={ev && `${ev.minQuorum}`} label={t("event.minimumToRun")} />
         </div>
-
-        {justRegistered && ev ? (
-          <RegisteredResult
-            deposit={ev.deposit}
-            hash={justRegistered}
-            opensIn={Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)}
-            vouchesNeeded={ev.k}
-            onContinue={() => router.push("/floor")}
-          />
-        ) : me?.registered ? (
-          <div className="space-y-3">
-            <Notice tone="ok">{t("event.youreIn")}</Notice>
-            <LinkButton href="/floor">
-              {phase === "open" ? t("event.goToFloor") : t("event.openMyCode")}
-            </LinkButton>
-          </div>
-        ) : sample ? (
-          /* A sample event cannot be joined — it is not on any chain. The register button was
-             fully live here: pressing it opened the sign-in sheet, asked somebody to make an
-             account, and led to an event that does not exist. The banner above already says this
-             page is an example; the primary action should agree with it rather than contradict it. */
-          <LinkButton href="/events">{t("events.seeRealOnes")}</LinkButton>
-        ) : joinable ? (
-          /* Signed in: the button is the whole thing. Not signed in: the button opens the
-             sheet, and the three ways to sign in appear at the moment they become a question
-             somebody is asking — not while they are still deciding whether to come. */
-          <div className="space-y-3">
-            {error && <Notice tone="bad">{error}</Notice>}
-            {!error && readError && (
-              <Notice tone="warn">{t("event.cantReach", { why: readError })}</Notice>
-            )}
-            {ev && me && signer && (
-              <Funding
-                need={needFor(ev.deposit, GAS_LIMITS.register)}
-                have={me.balance}
-                what={t("funding.whatRegister")}
-                address={signer.address}
-              />
-            )}
-            <Button
-              onClick={() => (signer ? void register() : setJoining(true))}
-              disabled={
-                busy || !ev || (!!signer && (!me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)))
-              }
-              className="w-full"
-            >
-              {busy
-                ? t("event.staking")
-                : ev
-                  ? t("event.stakeAndRegister", { amount: mon(ev.deposit) })
-                  : t("common.loading")}
-            </Button>
-            {signer ? (
-              <div className="space-y-1 text-[14px] text-dim">
-                <p>
-                  {t("event.signedInLabel")}{" "}
-                  <span className="font-medium text-fg">
-                    {signer.label ?? shortAddress(signer.address)}
-                  </span>{" "}
-                  ·{" "}
-                  <button
-                    type="button"
-                    onClick={signOut}
-                    className="underline decoration-line-2 hover:text-fg"
-                  >
-                    {t("event.useDifferentAccount")}
-                  </button>
-                </p>
-                {/* The balance is what the button above disables on. Left unsaid, a greyed-out
-                    primary action has no explanation anywhere on the screen. */}
-                <p className="font-mono text-[14px] text-faint">
-                  {t("event.walletBalance", {
-                    address: shortAddress(signer.address),
-                    balance: me ? mon(me.balance) : "—",
-                  })}
-                </p>
-              </div>
-            ) : (
-              <p className="text-[14px] text-dim">
-                {t("event.chooseSignIn")}{" "}
-                <span className="text-accent-2">{t("event.noWalletPlugin")}</span>
-              </p>
-            )}
-          </div>
-        ) : (
-          <Notice>
-            {ev && ev.registered >= ev.capacity
-              ? t("event.full")
-              : t("event.registrationClosed")}
-          </Notice>
-        )}
 
         {/* The case for the mechanism, in the same words as before, one tap away instead of
             between somebody and the decision they came to make. */}
@@ -357,7 +405,35 @@ export default function EventPage() {
           </IdentityGate>
         </Sheet>
       )}
-          <div className="min-w-0 lg:sticky lg:top-9">
+          <div className="min-w-0 space-y-4 lg:sticky lg:top-9">
+            {/* 活动快照, as the sheet calls it: how full the room is, how many the room has
+                vouched for, and the button. */}
+            <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
+              <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.snapshot")}</h2>
+              {ev && (
+                <>
+                  <p className="text-[28px] font-semibold leading-none tabular-nums">
+                    {ev.registered}
+                    <span className="text-[20px] text-faint">/{ev.capacity}</span>
+                  </p>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-line" role="img"
+                       aria-label={`${ev.registered} / ${ev.capacity}`}>
+                    <div className="flex h-full w-full">
+                      <span className="h-full bg-ok" style={{ width: `${pct(ev.confirmed, ev.capacity)}%` }} />
+                      <span className="h-full bg-accent"
+                            style={{ width: `${pct(ev.registered - ev.confirmed, ev.capacity)}%` }} />
+                    </div>
+                  </div>
+                  {ev.confirmed > 0 && (
+                    <p className="text-[14px] text-ok">
+                      <span className="font-semibold tabular-nums">{ev.confirmed}</span>{" "}
+                      {t("events.confirmedCount")}
+                    </p>
+                  )}
+                </>
+              )}
+              {action}
+            </section>
             <Details ev={ev} />
           </div>
         </main>

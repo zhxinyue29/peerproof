@@ -130,9 +130,11 @@ export const zh: Dict = {
   "events.myRegistrations": "我的报名",
   // Sits after a count: 「12 人已报名」.
   "events.registered": "人已报名",
+  "events.confirmedCount": "已验证参与者",
+  "events.joinNow": "立即报名",
   "events.featured": "精选活动",
   "events.seeAll": "查看全部",
-  "events.search": "搜索活动",
+  "events.search": "搜索活动、城市或主办方…",
 
   "organizer.title": "主办方",
   "organizer.subtitle": "你的活动和它们的实时状态——没有一项是你能暗中改动的。",
@@ -242,6 +244,9 @@ export const zh: Dict = {
   "common.signIn": "登录",
   "common.retry": "重试",
   "event.registered": "已报名",
+  "event.snapshot": "活动快照",
+  "event.methodTitle": "怎么确认到场",
+  "event.methodBody": "在场的人互相扫码作证。被 {k} 个人作证过,就算到场——没有主办方点名,也没有任何一个人的判断能决定结果。",
   "event.vouchesNeededLbl": "需要作证数",
   "event.minimumToRun": "最低成行人数",
   "event.confirmedPresentShort": "已确认到场",

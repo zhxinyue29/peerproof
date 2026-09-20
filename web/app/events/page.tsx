@@ -246,7 +246,7 @@ export default function EventsPage() {
           {/* Search sits above the chips and spans the column, which is where the sheet puts it —
               and unlike the old one it is here whether or not the contract has events, because on
               this design it is part of the page's shape rather than a control bolted to a list. */}
-          <label className="relative mb-4 flex max-w-[560px] items-center">
+          <label className="relative mb-4 flex max-w-[720px] items-center">
             <span aria-hidden className="pointer-events-none absolute left-4 text-faint">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="6.4" stroke="currentColor" strokeWidth="1.8" />

@@ -19,6 +19,9 @@ export type EventMeta = {
   url: string;
   /// Where it happens. Empty for every listing described before the field existed.
   venue: string;
+
+  /// Comma separated, as the organizer typed them.
+  tags: string;
 };
 
 export const fallbackMeta: EventMeta = {
@@ -26,6 +29,7 @@ export const fallbackMeta: EventMeta = {
   blurb: "",
   url: "",
   venue: "",
+  tags: "",
 };
 
 /// Returns the fallback until the read lands, so a screen never blocks on a description. The
@@ -40,7 +44,7 @@ export function useEventMeta(eventId: bigint): EventMeta {
     const fromSample = sampleListing(eventId);
     if (fromSample) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMeta({ title: fromSample.title, blurb: fromSample.blurb, url: fromSample.url, venue: fromSample.venue });
+      setMeta({ title: fromSample.title, blurb: fromSample.blurb, url: fromSample.url, venue: fromSample.venue, tags: fromSample.tags });
       return;
     }
     let live = true;
@@ -54,7 +58,7 @@ export function useEventMeta(eventId: bigint): EventMeta {
         .then((l) => {
           if (!live) return;
           if (l.title || l.blurb || l.url) {
-            setMeta({ title: l.title || fallbackMeta.title, blurb: l.blurb, url: l.url, venue: l.venue });
+            setMeta({ title: l.title || fallbackMeta.title, blurb: l.blurb, url: l.url, venue: l.venue, tags: l.tags });
             return;
           }
           if (++tries < 4) setTimeout(attempt, 1500 * tries);
