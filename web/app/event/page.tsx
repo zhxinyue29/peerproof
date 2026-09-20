@@ -11,6 +11,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
 import EventCover from "@/components/EventCover";
 import CoverImage from "@/components/CoverImage";
+import AttendeeRow from "@/components/AttendeeRow";
 import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import { Accordion, Button, LinkButton, Notice, Sheet, Skeleton } from "@/components/ui";
@@ -304,7 +305,7 @@ export default function EventPage() {
             They are the two facts somebody checks before anything else, and a line of dim grey
             text under a headline is where the eye goes last. */}
         {ev && (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
             <MetaChip
               icon="cal"
               tone="accent"
@@ -314,6 +315,7 @@ export default function EventPage() {
                 { dateStyle: "full", timeStyle: "short" },
               )}
             />
+            <span aria-hidden className="hidden text-faint sm:inline">·</span>
             <MetaChip
               icon="pin"
               tone="ok"
@@ -335,9 +337,9 @@ export default function EventPage() {
               .map((tag: string) => (
                 <span
                   key={tag}
-                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3.5 text-[14px] text-fg"
+                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-line-2 bg-raised px-3.5 text-[14px] text-fg"
                 >
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent-2" />
+                  <TagGlyph tag={tag} />
                   {tag}
                 </span>
               ))}
@@ -352,7 +354,7 @@ export default function EventPage() {
             in it that cannot be checked. */}
         <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
           <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.methodTitle")}</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-4 gap-2">
             <VerifyTile
               icon="peers"
               title={t("create.methodPeer")}
@@ -510,12 +512,14 @@ export default function EventPage() {
         </Sheet>
       )}
           <div className="min-w-0 space-y-4 lg:sticky lg:top-9">
-            {/* 活动快照, as the sheet calls it: how full the room is, how many the room has
-                vouched for, and the button. */}
+            {/* 活动状态, laid out as the sheet draws it: the phase as a lit dot, the count, the
+                bar, the faces, then the button. The dot is the piece that was missing — the card
+                said how full the room was without ever saying whether you could still join it. */}
             <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
               <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.snapshot")}</h2>
               {ev && (
                 <>
+                  <PhaseDot ev={ev} t={t} />
                   <p className="text-[28px] font-semibold leading-none tabular-nums">
                     {ev.registered}
                     <span className="text-[20px] text-faint">/{ev.capacity}</span>
@@ -528,6 +532,7 @@ export default function EventPage() {
                             style={{ width: `${pct(ev.registered - ev.confirmed, ev.capacity)}%` }} />
                     </div>
                   </div>
+                  <AttendeeRow eventId={eventId()} total={ev.registered} />
                   <p className="text-[14px] text-dim">
                     <span className="font-semibold tabular-nums text-ok">{ev.confirmed}</span>{" "}
                     {t("events.confirmedCount")}
@@ -690,8 +695,8 @@ function MetaChip({
     <span className="inline-flex min-w-0 items-center gap-2.5">
       <span
         aria-hidden
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          tone === "accent" ? "bg-accent/15 text-accent-2" : "bg-ok/15 text-ok"
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
+          tone === "accent" ? "border-accent/45 text-accent-2" : "border-ok/45 text-ok"
         }`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -726,12 +731,12 @@ function VerifyTile({
   /// look unavailable rather than be quietly dropped.
   lit?: boolean;
 }) {
+  // No border, no panel, no body copy — the sheet sets these four straight onto the section, as a
+  // glyph over a word. Giving each one its own bordered box turned a single block into four more
+  // rectangles, which is exactly what the section was meant to avoid. The sentence each one used
+  // to carry is now its tooltip, so the detail is still reachable without being drawn.
   return (
-    <div
-      className={`flex flex-col items-center rounded-xl border px-3 py-4 text-center ${
-        lit ? "border-accent/25 bg-accent/[0.06]" : "border-line bg-ink/40"
-      }`}
-    >
+    <div className="flex flex-col items-center px-1 text-center" title={body}>
       <span
         aria-hidden
         className={`flex h-11 w-11 items-center justify-center rounded-full ${
@@ -742,8 +747,7 @@ function VerifyTile({
           <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <p className={`mt-3 text-[15px] font-medium ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
-      <p className="mt-1.5 text-[13px] leading-snug text-faint">{body}</p>
+      <p className={`mt-2.5 text-[14.5px] font-medium ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
     </div>
   );
 }
@@ -863,4 +867,54 @@ function joinUntil(ev: EventInfo, t: TFn, locale: string): string {
   return ev.registerDeadline >= ev.attestClose
     ? t("event.joinUntilClose")
     : t("event.joinUntilTime", { time: clock(ev.registerDeadline, locale) });
+}
+
+/// The sheet's status line: a lit dot and the phase, in the phase's own colour.
+///
+/// It reads off `phaseOf`, which is derived from the chain's clock rather than the browser's —
+/// a laptop an hour fast would otherwise tell somebody registration had closed while the contract
+/// was still taking deposits.
+function PhaseDot({ ev, t }: { ev: EventInfo; t: TFn }) {
+  const phase = phaseOf(ev);
+  const [label, tone] =
+    ev.status !== 0
+      ? [t("event.phaseSettled"), "text-dim"]
+      : phase === "open"
+        ? [t("event.phaseAttest"), "text-accent-2"]
+        : phase === "closed"
+          ? [t("event.phaseClosed"), "text-faint"]
+          : canRegister(ev)
+            ? [t("event.phaseOpen"), "text-ok"]
+            : [t("event.phaseClosed"), "text-faint"];
+
+  return (
+    <p className={`flex items-center gap-2 text-[15px] font-medium ${tone}`}>
+      <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-current" />
+      {label}
+    </p>
+  );
+}
+
+/// The little mark in front of a tag.
+///
+/// The sheet draws an icon on three of its four chips and leaves the fourth bare, which is the
+/// honest shape for a field like this: `tags` is free text an organizer typed, so there is no
+/// closed set to map. Tags the product actually knows about get their glyph; anything else gets
+/// nothing rather than a generic dot pretending to mean something.
+const TAG_GLYPHS: [RegExp, string][] = [
+  [/^monad$/i, "M12 3 4 12l8 9 8-9-8-9Z"],
+  [/社区|community/i, "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11h4M19 9v4"],
+  [/线下|offline|irl|meetup/i, "M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"],
+  [/开发|dev|builder|hack/i, "m8 6-5 6 5 6M16 6l5 6-5 6"],
+  [/线上|online|virtual/i, "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c2.5 2.4 3.8 5.5 3.8 9S14.5 18.6 12 21m0-18C9.5 5.4 8.2 8.5 8.2 12S9.5 18.6 12 21M3.3 9h17.4M3.3 15h17.4"],
+];
+
+function TagGlyph({ tag }: { tag: string }) {
+  const hit = TAG_GLYPHS.find(([re]) => re.test(tag));
+  if (!hit) return null;
+  return (
+    <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent-2">
+      <path d={hit[1]} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
