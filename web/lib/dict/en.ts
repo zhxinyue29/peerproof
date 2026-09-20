@@ -152,6 +152,7 @@ export const en = {
   "organizer.manage": "Manage",
   "organizer.yourEvents": "Your events",
   "organizer.registered": "Registered",
+  "organizer.registeredShort": "registered",
   "organizer.liveEvents": "Events running now",
   "organizer.management": "Event management",
   "organizer.awaitingVouches": "awaiting vouches",

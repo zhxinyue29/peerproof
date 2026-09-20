@@ -191,8 +191,16 @@ export default function OrganizerEventCards({
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-[15px] font-medium tabular-nums">
                         {e.registered} / {e.capacity || "∞"}
+                        <span className="ml-1.5 text-[13px] font-normal text-faint">
+                          {t("organizer.registeredShort")}
+                        </span>
                       </span>
-                      <span className="text-[13px] text-faint">{mon(e.deposit)}</span>
+                      {/* The percentage, right-aligned above the bar, as the sheet sets it. A bar
+                          on its own is a shape; the number is what somebody reads out loud when
+                          they are deciding whether to worry. */}
+                      <span className="text-[13px] tabular-nums text-faint">
+                        {Math.round(pct(e.registered, e.capacity))}%
+                      </span>
                     </div>
                     <div
                       className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-line"

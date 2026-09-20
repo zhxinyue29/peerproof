@@ -194,7 +194,11 @@ export default function OrganizerPage() {
                 whole of `children` — that would push the KPI band into the narrow column and leave
                 each card about 140px wide at the width the renders were drawn at. The band is
                 full-bleed in `04-organizer-dashboard-desktop.png`, above both columns. */}
-            <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6">
+            {/* One column, not a main-plus-rail split. The sheet's panel 06 (数据分析与结算) is a
+                block of the page like the ones above it — putting it in a 320px rail beside the
+                cards made a chart 320px wide and pushed the event management panel into a column
+                half the width the drawing gives it. */}
+            <div className="grid min-w-0 gap-5">
               <div className="min-w-0 space-y-5">
                 <OrganizerEventCards events={mine} selectedId={selectedId} onSelect={select} />
                 {/* Panel 05 of the sheet. Shown only once an event is picked — the block is about
@@ -212,9 +216,7 @@ export default function OrganizerPage() {
                   title={selected?.listing.title}
                 />
               </div>
-              <div className="min-w-0 lg:sticky lg:top-9">
                 <LivePulse eventId={selectedId} live={selected?.phase === "live"} />
-              </div>
             </div>
           </div>
         )}

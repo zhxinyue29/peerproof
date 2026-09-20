@@ -154,6 +154,7 @@ export const zh: Dict = {
   "organizer.manage": "管理活动",
   "organizer.yourEvents": "你的活动",
   "organizer.registered": "已报名",
+  "organizer.registeredShort": "已报名",
   "organizer.liveEvents": "进行中的活动",
   "organizer.management": "活动管理",
   "organizer.awaitingVouches": "待作证",
