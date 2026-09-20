@@ -142,18 +142,23 @@ await shot("05-confirmed", "bb".repeat(32), async ({ p, signIn }) => {
   await p.waitForTimeout(1600);
   await signIn();
   await p.waitForTimeout(3000);
+  // 展开 dev 工具条。签到和作证走那里的按钮而不是摄像头:录屏里没有第二台设备举着
+  // 会场屏,而这两个按钮发的是同样的链上交易——画面里"0/3 → 3/3"的变化是真的。
   await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
-  await p.waitForTimeout(600);
-  const checkIn = p.getByRole("button", { name: "check in" });
-  if (await checkIn.count()) {
-    await checkIn.click();
-    await p.waitForTimeout(7000);
-  }
-  for (let i = 0; i < 3; i++) {
-    const btn = p.getByRole("button", { name: "attest scripted peer" });
-    if (!(await btn.count())) break;
+  await p.waitForTimeout(800);
+  const press = async (name, wait) => {
+    const btn = p.getByRole("button", { name, exact: true });
+    if (!(await btn.count())) {
+      console.log(`  找不到按钮「${name}」,跳过`);
+      return false;
+    }
     await btn.click();
-    await p.waitForTimeout(6500);
+    await p.waitForTimeout(wait);
+    return true;
+  };
+  await press("check in", 7000);
+  for (let i = 0; i < 3; i++) {
+    if (!(await press("attest scripted peer", 6500))) break;
   }
   await p.waitForTimeout(3500);
 });

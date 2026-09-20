@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Hex } from "viem";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
+import HowItWorksModal from "@/components/HowItWorksModal";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
@@ -43,6 +44,7 @@ export default function EventPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
+  const [howOpen, setHowOpen] = useState(false);
   const [joining, setJoining] = useState(false);
 
   const phase = phaseOf(ev);
@@ -128,15 +130,7 @@ export default function EventPage() {
   /// of explanation. Held as a value so the JSX stays one expression whichever column it lands in.
   const action = (
     <>
-          {justRegistered && ev ? (
-            <RegisteredResult
-              deposit={ev.deposit}
-              hash={justRegistered}
-              opensIn={Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)}
-              vouchesNeeded={ev.k}
-              onContinue={() => router.push("/floor")}
-            />
-          ) : me?.registered ? (
+          {me?.registered ? (
             <div className="space-y-3">
               <Notice tone="ok">{t("event.youreIn")}</Notice>
               <LinkButton href="/floor">
@@ -240,6 +234,26 @@ export default function EventPage() {
             that you do not have to take anyone's word for it, an invented event that does not admit
             it would be the worst thing here; an admitted one is a mockup, which is what every empty
             state in every product is. */}
+        {/* Full width, at the top of the column — not in the 320px rail beside it.
+            The sheet's panel 04 is a screen of its own: an illustration, a congratulation and the
+            event as a card. Squeezed into the rail the heading wrapped onto three lines and the
+            card truncated its own title, which is the opposite of what a moment of arrival should
+            look like. */}
+        {justRegistered && ev && (
+              <RegisteredResult
+                eventId={eventId()}
+                title={meta.title}
+                venue={meta.venue}
+                cover={meta.cover}
+                startsAt={ev.attestOpen}
+                deposit={ev.deposit}
+                hash={justRegistered}
+                opensIn={Number(ev.attestOpen) - Math.floor(chainNowMs() / 1000)}
+                vouchesNeeded={ev.k}
+                onContinue={() => router.push("/floor")}
+              />
+        )}
+
         {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
         {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
@@ -341,6 +355,21 @@ export default function EventPage() {
               </span>
             </p>
           </div>
+
+          {/* The way into panel 03. Somebody deciding whether to stake a deposit wants the whole
+              journey — register, check in, get vouched for, take the proof — and it is four
+              pictures, not four sentences. A modal rather than a fifth section on this page: it
+              answers a question people ask once. */}
+          <button
+            type="button"
+            onClick={() => setHowOpen(true)}
+            className="group mt-3.5 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-5 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+          >
+            {t("home.howTitle4")}
+            <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+              →
+            </span>
+          </button>
         </section>
 
         {/* Three numbers, left-aligned under their values the way the render shows them. `capacity`
@@ -393,6 +422,8 @@ export default function EventPage() {
           </Link>
         </div>
       </div>
+
+      <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} />
 
       {joining && !signer && (
         <Sheet

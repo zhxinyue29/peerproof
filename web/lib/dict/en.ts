@@ -447,6 +447,11 @@ export const en = {
   "registered.andNeedOne": ", and you need 1 person to vouch for you.",
   "registered.andNeed": ", and you need {n} people to vouch for you.",
   "registered.viewTx": "View registration transaction ↗",
+  "registered.title": "You're in 🎉",
+  "registered.sub": "{amount} is in the contract, not in the organizer's wallet. Once the room vouches that you were there it comes back — with a share of what the no-shows left.",
+  "registered.doorsLabel": "Check-in opens in",
+  "registered.vouchesLabel": "Vouches needed",
+  "registered.keepBrowsing": "Keep browsing",
 
   "payout.paidOut": "Paid out",
   // Split so the surplus can carry its own colour. The amount lands between the two.

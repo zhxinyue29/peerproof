@@ -434,6 +434,11 @@ export const zh: Dict = {
   "registered.andNeedOne": "，还需要 1 个人为你作证。",
   "registered.andNeed": "，还需要 {n} 个人为你作证。",
   "registered.viewTx": "查看报名交易 ↗",
+  "registered.title": "报名成功 🎉",
+  "registered.sub": "{amount} 已经进了合约,不在主办方的钱包里。等现场有人证明你到过,押金就回到你手上——还会带上没到场的人留下的那一份。",
+  "registered.doorsLabel": "多久后开始签到",
+  "registered.vouchesLabel": "需要几个人作证",
+  "registered.keepBrowsing": "继续看看别的活动",
 
   "payout.paidOut": "已到账",
   "payout.extraPre": "退还你的 {amount} 押金，另外还有",
