@@ -63,13 +63,13 @@ export default function AttendeeRow({
           <span
             key={a}
             title={a}
-            className={`${small ? "h-7 w-7" : "h-9 w-9"} rounded-full border-2 border-panel`}
-            style={{ marginLeft: i === 0 ? 0 : small ? -8 : -10, background: gradientFor(a) }}
+            className={`${small ? "h-[34px] w-[34px]" : "h-[52px] w-[52px]"} rounded-full border-2 border-panel`}
+            style={{ marginLeft: i === 0 ? 0 : small ? -10 : -14, background: gradientFor(a) }}
           />
         ))}
       </div>
       {rest > 0 && (
-        <span className={`flex items-center rounded-full bg-raised px-2.5 font-medium tabular-nums text-dim ${small ? "h-7 text-[12.5px]" : "h-9 text-[13px]"}`}>
+        <span className={`flex items-center rounded-full bg-raised px-2.5 font-medium tabular-nums text-dim ${small ? "h-[34px] text-[13px]" : "h-[52px] text-[15px]"}`}>
           +{rest}
         </span>
       )}

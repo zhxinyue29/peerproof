@@ -168,7 +168,10 @@ export default function EventPage() {
                 disabled={
                   busy || !ev || (!!signer && (!me || me.balance < needFor(ev.deposit, GAS_LIMITS.register)))
                 }
-                className="w-full"
+                /* 56px, not the shared 46: on the sheet this is the tallest control on the page
+                   and the only one that costs money to press. Local to this button rather than a
+                   change to Button itself, which every other screen is sized around. */
+                className="w-full min-h-[56px] text-[17px]"
               >
                 {busy
                   ? t("event.staking")
@@ -186,7 +189,7 @@ export default function EventPage() {
               <button
                 type="button"
                 onClick={() => setHowOpen(true)}
-                className="group flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+                className="group flex min-h-[56px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-4 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
               >
                 {t("home.howTitle4")}
                 <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
@@ -246,12 +249,13 @@ export default function EventPage() {
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
         <TopNav page={t("event.pageName")} />
 
-        {/* 61.5 : 38.5, measured off the sheet rather than guessed. The rail was a fixed 320px,
-            which on a wide screen came out at about a quarter of the content — so the four tiles
-            in 验证方式 were stretched thin across a left column that was too wide, and the status
-            card was squeezed into a column too narrow for the row of faces the sheet puts in it.
-            Both problems were the same number. */}
-        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-7 md:pt-8">
+        {/* 895 : 384 with a 32px gutter, measured off the full-size sheet.
+            This was 320px fixed (a quarter of the content — far too narrow), then 1.6fr:1fr
+            (38% — too wide) from the 532px crop, where the card is 177px across and everything
+            is within a few pixels of the noise floor. The full-size sheet is drawn at very nearly
+            this page's own scale — 1311px of content against 1345 — so its numbers transfer
+            almost one to one, and this is the last time this ratio needs guessing at. */}
+        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:items-start lg:gap-8 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {/* Said once, at the top, before anything below it is read.
             Everything on this screen — the deposit, the count, the window, the rules — is a literal
@@ -376,8 +380,8 @@ export default function EventPage() {
             four true properties of that one method, and those are what the tiles say: who vouches,
             what the door does, where it is written, who pays out. Same block, same rhythm, nothing
             in it that cannot be checked. */}
-        <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
-          <h2 className="text-[17px] font-semibold text-fg">{t("event.methodTitle")}</h2>
+        <section className="rounded-2xl border border-line bg-panel p-5 md:p-7">
+          <h2 className="text-[20px] font-semibold text-fg">{t("event.methodTitle")}</h2>
           <div className="mt-5 grid grid-cols-2 gap-y-6 divide-line sm:grid-cols-4 sm:gap-y-0 sm:divide-x">
             <VerifyTile
               icon="peers"
@@ -551,16 +555,16 @@ export default function EventPage() {
                 bar, the faces, then the button. The dot is the piece that was missing — the card
                 said how full the room was without ever saying whether you could still join it. */}
             <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
-              <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.snapshot")}</h2>
+              <h2 className="text-[20px] font-semibold tracking-[-0.01em]">{t("event.snapshot")}</h2>
               {ev && (
                 <>
                   <PhaseDot ev={ev} t={t} />
                   {/* The sheet puts the percentage on the same line, right-aligned — the fraction
                       is the exact fact and the percentage is the one you read without thinking. */}
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-[30px] font-bold leading-none tabular-nums">
+                    <p className="text-[40px] font-bold leading-none tracking-[-0.02em] tabular-nums">
                       {ev.registered}
-                      <span className="text-[21px] font-medium text-faint">/{ev.capacity}</span>
+                      <span className="text-[26px] font-medium text-faint">/{ev.capacity}</span>
                     </p>
                     <p className="text-[14px] tabular-nums text-faint">
                       {pct(ev.registered, ev.capacity)}%
@@ -572,7 +576,7 @@ export default function EventPage() {
                       only paid. A single flat bar would lose the one number on this page that
                       cannot be produced by signing up. Each segment carries its own slice of the
                       same gradient, so the seam does not read as a colour change. */}
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-ink" role="img"
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink" role="img"
                        aria-label={`${ev.registered} / ${ev.capacity}`}>
                     <div className="flex h-full w-full">
                       <span className="h-full bg-gradient-to-r from-ok to-accent-2"
@@ -810,7 +814,7 @@ function VerifyTile({
     <div className="flex flex-col items-center px-2 text-center">
       <span
         aria-hidden
-        className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${
+        className={`flex h-[42px] w-[42px] items-center justify-center rounded-[13px] ${
           lit
             ? "bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_6px_18px_-8px_rgba(110,84,255,0.9)]"
             : "bg-line text-faint"
@@ -820,8 +824,8 @@ function VerifyTile({
           <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <p className={`mt-3 text-[15px] font-semibold ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
-      <p className="mt-1.5 text-[13px] leading-snug text-faint">{body}</p>
+      <p className={`mt-3 text-[16px] font-semibold ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
+      <p className="mt-1.5 text-[14px] leading-snug text-faint">{body}</p>
     </div>
   );
 }
