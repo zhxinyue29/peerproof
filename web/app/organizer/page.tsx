@@ -813,6 +813,48 @@ function formatStart(startAt: string, lang: string) {
   });
 }
 
+/// Everything the escrow refuses, checked here first and said in words.
+///
+/// `createEvent` reverts with a bare `BadParams()` for eight different reasons, and the form used
+/// to let somebody walk all four steps, sign, pay gas, and receive that. Worse, two of its refusals
+/// are reachable by filling the form exactly as suggested: a start time that was in the future when
+/// it was typed and in the past by the time the fourth step was reached, and a minimum that equals
+/// the vouches needed.
+///
+/// Returns a dictionary key, or null when the contract will take it.
+function whyNotValid(v: {
+  deposit: string;
+  capacity: string;
+  minQuorum: string;
+  k: string;
+  startAt: string;
+  runsMins: string;
+  walkIns: boolean;
+}): string | null {
+  const deposit = Number(v.deposit);
+  const capacity = Number(v.capacity);
+  const minQuorum = Number(v.minQuorum);
+  const k = Number(v.k);
+  const runs = Number(v.runsMins);
+  const openMs = new Date(v.startAt).getTime();
+
+  if (!(deposit > 0)) return "create.badDeposit";
+  if (!Number.isInteger(capacity) || capacity < 1) return "create.badCapacity";
+  if (!Number.isInteger(k) || k < 1) return "create.badK";
+  if (!Number.isInteger(minQuorum) || minQuorum < 1) return "create.badQuorum";
+  if (minQuorum > capacity) return "create.quorumOverCapacity";
+  if (minQuorum <= k) return "create.quorumUnderK";
+  if (!Number.isFinite(openMs)) return "create.badStart";
+  if (!(runs > 0)) return "create.badRuns";
+
+  const closeMs = openMs + runs * 60_000;
+  if (closeMs <= Date.now()) return "create.startInPast";
+  // Without walk-ins registration shuts when the doors open, so a start that has already passed
+  // leaves nobody any time to register — which is the one configuration the contract calls out.
+  if (!v.walkIns && openMs <= Date.now()) return "create.openPastNoWalkIns";
+  return null;
+}
+
 const STEPS = ["about", "verify", "money", "publish"] as const;
 type Step = (typeof STEPS)[number];
 
@@ -898,6 +940,14 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
 
   async function submit() {
     if (!signer) return;
+    // Re-checked at the press, not only at render: the clock moves between the fourth step being
+    // reached and the button being pressed, and "the doors already opened" is exactly the failure
+    // that takes a minute of form-filling to reach.
+    const stop = whyNotValid({ deposit, capacity, minQuorum, k, startAt, runsMins, walkIns });
+    if (stop) {
+      setNotice(t(stop));
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
@@ -1025,6 +1075,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
     );
   }
 
+  const invalid = whyNotValid({ deposit, capacity, minQuorum, k, startAt, runsMins, walkIns });
   const stepIndex = STEPS.indexOf(step);
   const go = (by: number) => setStep(STEPS[Math.min(STEPS.length - 1, Math.max(0, stepIndex + by))]);
 
@@ -1198,7 +1249,11 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             <Row label={t("create.runsMins")} value={runsMins} />
             <Row label={t("create.walkIns")} value={t(walkIns ? "common.yes" : "common.no")} />
           </dl>
-          <p className="text-[14px] leading-relaxed text-faint">{t("create.lockedNote")}</p>
+          {invalid ? (
+            <Notice tone="warn">{t(invalid)}</Notice>
+          ) : (
+            <p className="text-[14px] leading-relaxed text-faint">{t("create.lockedNote")}</p>
+          )}
         </section>
 
         {notice && <Notice tone="bad">{notice}</Notice>}
@@ -1210,7 +1265,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             </Button>
           )}
           {step === "publish" ? (
-            <Button onClick={() => void submit()} disabled={busy} className="flex-1">
+            <Button onClick={() => void submit()} disabled={busy || !!invalid} className="flex-1">
               {busy ? busyLabel : t("nav.createEvent")}
             </Button>
           ) : (
