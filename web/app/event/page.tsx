@@ -45,6 +45,7 @@ export default function EventPage() {
   const [error, setError] = useState<string | null>(null);
   const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
   const [howOpen, setHowOpen] = useState(false);
+  const [detailTab, setDetailTab] = useState<"about" | "rules" | "faq">("about");
   const [joining, setJoining] = useState(false);
 
   const phase = phaseOf(ev);
@@ -316,6 +317,22 @@ export default function EventPage() {
           </p>
         </section>
 
+        {/* Place and time, directly under the title, as the sheet sets them. They were only in
+            the right rail — which is where the logistics belong once you are deciding, but the
+            first question somebody has when the page opens is "where and when", and a rail is not
+            where the eye goes after a headline. */}
+        {ev && (
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[15px] text-dim">
+            {meta.venue && <EventMetaItem icon="pin">{meta.venue}</EventMetaItem>}
+            <EventMetaItem icon="cal">
+              {new Date(Number(ev.attestOpen) * 1000).toLocaleString(
+                lang === "zh" ? "zh-CN" : "en-GB",
+                { dateStyle: "full", timeStyle: "short" },
+              )}
+            </EventMetaItem>
+          </p>
+        )}
+
         {/* The listing's tags, as the sheet sets them under the meta row. Only when there are
             any — an empty row of chips is a control that is not there. */}
         {ev && meta.tags.trim() !== "" && (
@@ -382,45 +399,99 @@ export default function EventPage() {
           <StatTile value={ev && `${ev.minQuorum}`} label={t("event.minimumToRun")} />
         </div>
 
-        {/* The case for the mechanism, in the same words as before, one tap away instead of
-            between somebody and the decision they came to make. */}
-        <div>
-          <Accordion title={t("event.howTitle")} sub={t("event.howSub")}>
-            <p>{t("event.howP1")}</p>
-            <p>{t("event.howP2")}</p>
-            <p>{t("event.howP3")}</p>
-          </Accordion>
-          <Accordion title={t("event.depositTitle")} sub={t("event.depositSub")}>
-            <p>
-              {t("event.depositP1")}
-              {ev && ev.confirmed > 0 && surplus > 0n ? (
-                <> {t("event.surplusAbout")}{" "}
-                <span className="font-medium tabular-nums">{mon(surplus)}</span>{" "}
-                {t("event.surplusAtCount")}</>
-              ) : null}
-              {t("event.depositP1End")}
-            </p>
-            <p>{t("event.depositP2")}</p>
-            <p>{t("event.depositP3")}</p>
-          </Accordion>
-          {/* A link wearing the accordion's clothes. It sits in the same stack because it answers the
-              same kind of question, but there is nothing to expand — the answer is another screen,
-              and the arrow says so. */}
-          <Link
-            href="/verify"
-            className="flex min-h-[58px] items-center justify-between gap-4 border-b border-line py-3"
-          >
-            <span>
-              <span className="block text-[16px] font-medium">{t("event.publicProof")}</span>
-              <span className="mt-0.5 block text-[14px] text-dim">
-                {t("event.publicProofSub")}
-              </span>
-            </span>
-            <span aria-hidden className="shrink-0 text-faint">
-              ↗
-            </span>
-          </Link>
-        </div>
+        {/* The sheet's tab strip: 活动介绍 / 日程安排 / 场地信息 / 验证规则 / 常见问题.
+            Three of those five are here. 日程安排 and 场地信息 are not: this contract stores one
+            timestamp and one line of free text for a venue, and a tab that opens onto a single
+            sentence is a tab that teaches people not to press the others.
+            Tabs rather than the stack of accordions this was: the sheet shows one body at a time
+            with the rest named across the top, which is a shape somebody scans before they read. */}
+        <section className="rounded-2xl border border-line bg-panel">
+          <div className="overflow-x-auto border-b border-line px-5">
+            <div className="flex min-w-max gap-1">
+              {(
+                [
+                  ["about", "event.tabAbout"],
+                  ["rules", "event.tabRules"],
+                  ["faq", "event.tabFaq"],
+                ] as const
+              ).map(([key, label]) => {
+                const on = detailTab === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setDetailTab(key)}
+                    aria-current={on ? "page" : undefined}
+                    className={`relative flex min-h-[50px] items-center whitespace-nowrap px-3.5 text-[15px] transition-colors ${
+                      on ? "font-medium text-fg" : "text-dim hover:text-fg"
+                    }`}
+                  >
+                    {t(label)}
+                    {on && (
+                      <span aria-hidden className="absolute inset-x-2.5 -bottom-px h-[2px] rounded-full bg-accent" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-3 p-5 text-[15.5px] leading-relaxed text-dim md:p-6">
+            {detailTab === "about" && (
+              <>
+                {meta.blurb ? (
+                  <p className="whitespace-pre-line text-fg">{meta.blurb}</p>
+                ) : (
+                  <p className="text-faint">{t("event.noBlurb")}</p>
+                )}
+                {meta.url && (
+                  <a
+                    href={meta.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex min-h-[44px] items-center text-accent-2 underline decoration-line-2 underline-offset-4"
+                  >
+                    {t("listing.link")} ↗
+                  </a>
+                )}
+              </>
+            )}
+
+            {detailTab === "rules" && (
+              <>
+                <p>{t("event.howP1")}</p>
+                <p>{t("event.howP2")}</p>
+                <p>{t("event.howP3")}</p>
+              </>
+            )}
+
+            {detailTab === "faq" && (
+              <>
+                <p className="font-medium text-fg">{t("event.depositTitle")}</p>
+                <p>
+                  {t("event.depositP1")}
+                  {ev && ev.confirmed > 0 && surplus > 0n ? (
+                    <>
+                      {" "}
+                      {t("event.surplusAbout")}{" "}
+                      <span className="font-medium tabular-nums">{mon(surplus)}</span>{" "}
+                      {t("event.surplusAtCount")}
+                    </>
+                  ) : null}
+                  {t("event.depositP1End")}
+                </p>
+                <p>{t("event.depositP2")}</p>
+                <p>{t("event.depositP3")}</p>
+                <Link
+                  href="/verify"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 text-accent-2 underline decoration-line-2 underline-offset-4"
+                >
+                  {t("event.publicProof")} ↗
+                </Link>
+              </>
+            )}
+          </div>
+        </section>
       </div>
 
       <HowItWorksModal open={howOpen} onClose={() => setHowOpen(false)} />
@@ -455,12 +526,10 @@ export default function EventPage() {
                             style={{ width: `${pct(ev.registered - ev.confirmed, ev.capacity)}%` }} />
                     </div>
                   </div>
-                  {ev.confirmed > 0 && (
-                    <p className="text-[14px] text-ok">
-                      <span className="font-semibold tabular-nums">{ev.confirmed}</span>{" "}
-                      {t("events.confirmedCount")}
-                    </p>
-                  )}
+                  <p className="text-[14px] text-dim">
+                    <span className="font-semibold tabular-nums text-ok">{ev.confirmed}</span>{" "}
+                    {t("events.confirmedCount")}
+                  </p>
                 </>
               )}
               {action}
@@ -558,6 +627,29 @@ function Details({ ev }: { ev: EventInfo | null }) {
         )}
       </dl>
     </section>
+  );
+}
+
+/// One item in the title's meta row: a small outline glyph, then the value.
+const EVENT_META_PATHS: Record<string, string> = {
+  pin: "M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+  cal: "M7 3v3m10-3v3M4 9h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z",
+};
+
+function EventMetaItem({
+  icon,
+  children,
+}: {
+  icon: keyof typeof EVENT_META_PATHS;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 text-faint">
+        <path d={EVENT_META_PATHS[icon]} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {children}
+    </span>
   );
 }
 
