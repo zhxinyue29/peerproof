@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useBack } from "@/lib/back";
+import { PeerProofMark } from "@/components/NavIcons";
 import { useT } from "@/lib/i18n";
 
 /// Shared chrome for all five screens, so the visual language changes in one place.
@@ -88,16 +90,18 @@ export function AppHeader({
   right,
 }: {
   title: string;
+  /// Where back goes when there is no history — the page one level up in the navigation map.
   back?: string;
   right?: React.ReactNode;
 }) {
+  const b = useBack(back ?? "/");
   return (
-    <header className="-mx-5 flex items-center gap-3 border-b border-line px-5 pb-3.5 sm:-mx-8 sm:px-8">
-      {back ? (
+    <header className="-mx-5 flex items-center gap-2.5 border-b border-line px-5 pb-3.5 sm:-mx-8 sm:px-8">
+      {back && (
         <Link
-          href={back}
+          {...b}
           aria-label="Back"
-          className="-ml-2 flex h-11 w-11 items-center justify-center rounded-xl text-dim active:bg-panel"
+          className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-dim active:bg-panel"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -109,15 +113,20 @@ export function AppHeader({
             />
           </svg>
         </Link>
-      ) : (
-        <span className="flex h-11 items-center text-[15px] font-medium tracking-[0.14em] text-faint">
-          PEERPROOF
-        </span>
       )}
-      {/* A root screen shows the brand, a sub-screen shows where you came from — but both show
-          the title. It used to be dropped on root screens, which left the directory with no
-          heading at all and made the prop look optional when it is not. */}
-      <span className="flex-1 truncate text-[16px] font-medium">{title}</span>
+      {/* The mark, on every screen, going home from every screen. These two are held one-handed at
+          a venue door and were the only pages with no way back to the product they belong to —
+          a back arrow returns you one step, which is not the same as a way out. */}
+      <Link href="/" className="flex h-11 shrink-0 items-center gap-2" aria-label="PeerProof">
+        <PeerProofMark />
+        <span className="hidden text-[16px] font-semibold tracking-[-0.01em] sm:inline">
+          PeerProof
+        </span>
+      </Link>
+      <span aria-hidden className="hidden text-[16px] text-line-2 sm:inline">
+        /
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[16px] font-medium">{title}</span>
       {right}
     </header>
   );

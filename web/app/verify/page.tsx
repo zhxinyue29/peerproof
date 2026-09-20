@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
+import { useBack } from "@/lib/back";
 import VouchGraph from "@/components/VouchGraph";
 import { Card, Eyebrow, KeyValue, Notice, Skeleton } from "@/components/ui";
 import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
@@ -23,6 +24,7 @@ import { useT } from "@/lib/i18n";
 /// the contract's own logs.
 export default function VerifyPage() {
   const t = useT();
+  const back = useBack("/event");
   const { ev } = useEvent(null, 4000);
   const [history, setHistory] = useState<EventHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -222,7 +224,7 @@ export default function VerifyPage() {
           )}
           <p>{t("verify.noPayoutFunction")}</p>
           <Link
-            href="/event"
+            {...back}
             className="inline-flex min-h-[44px] items-center text-dim underline decoration-line-2"
           >
             {t("verify.backToEvent")}

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex, LocalAccount } from "viem";
+import Link from "next/link";
+import { useBack } from "@/lib/back";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import RotatingCode from "@/components/RotatingCode";
 import { PeerProofMark } from "@/components/NavIcons";
@@ -237,6 +239,7 @@ export default function VenuePage() {
 /// The language control is in the bar rather than anywhere prominent: the organizer setting this up
 /// may not read English, and after that nobody touches this screen again all evening.
 function Stage({ right, children }: { right: string; children: React.ReactNode }) {
+  const back = useBack("/organizer");
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div
@@ -251,14 +254,28 @@ function Stage({ right, children }: { right: string; children: React.ReactNode }
             left and pushed "会场信标屏" hard against the switcher on the right — two things that
             belong together, separated by the full width of the screen, with the one piece of text
             that says what this screen is looking like an afterthought. */}
-        <header className="flex items-center gap-3 py-3">
-          <span className="flex min-h-[44px] min-w-0 items-center gap-2.5">
+        <header className="flex items-center gap-2.5 py-3">
+          {/* Back to wherever this was opened from — the organizer dashboard, in the map. The
+              venue screen is set up from there and had no way back to it at all. */}
+          <Link
+            {...back}
+            aria-label="Back"
+            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-dim active:bg-panel"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+          <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
             <PeerProofMark />
             <span className="hidden text-[17px] font-semibold tracking-[-0.01em] sm:inline">
               PeerProof
             </span>
-            <span className="min-w-0 truncate text-[16px] text-dim md:text-[18px]">{right}</span>
+          </Link>
+          <span aria-hidden className="hidden text-[16px] text-line-2 sm:inline">
+            /
           </span>
+          <span className="min-w-0 truncate text-[16px] text-dim md:text-[18px]">{right}</span>
           <span className="flex-1" />
           <LanguageSwitcher />
         </header>
