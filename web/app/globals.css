@@ -29,11 +29,25 @@
      At that ratio light type blooms into the background and a page of it is tiring to read, which
      is the opposite of what a high number promises. Raising the floor and lowering the ceiling
      narrows the range without ever dropping below AAA. */
-  --color-ink: #0d1626;
-  --color-panel: #16233c;
-  --color-raised: #1d2d4a;
-  --color-line: #33436a;
-  --color-line-2: #445578;
+  /* Measured off docs/设计稿/参加者.png rather than chosen, 2026-09-20. A horizontal scan across
+     the 活动状态 card's left edge reads page #010e1d → one border pixel #1b2243 → card #09162a.
+     The sheet's white point is (255,255,255) and its black is (0,0,2), so those numbers are the
+     colours and not that render's cast.
+
+     What was here was lighter and bluer at every level, and the borders were the worst of it:
+     #33436a against #16233c is twice the contrast the sheet draws, which is why every panel read
+     as a box with a drawn frame instead of a surface lifted slightly out of the page. Somebody
+     comparing the two said it as "框的线都不管" and they were right — nothing in my checking
+     looked at line colour, because the check was a side-by-side glance and a glance only returns
+     things that have names.
+
+     Darkening the surfaces only raises text contrast, so the AAA figures noted below still hold
+     with room to spare. */
+  --color-ink: #010e1d;
+  --color-panel: #09162a;
+  --color-raised: #0d1930;
+  --color-line: #1b2243;
+  --color-line-2: #242e5a;
 
   /* Against the lightest surface (`raised`, the worst case): 12.3:1, 9.5:1 and 7.3:1 — all AAA.
      `--faint` was the one that mattered. It measured 6.4:1 there and carried whole explanatory
@@ -52,7 +66,9 @@
      figures and links, which need to clear the accent's contrast on a dark panel. */
   --color-accent: #6e54ff;
   --color-accent-2: #9a88ff;
-  --color-ok: #39d98a;
+  /* Also measured: the sheet's green is a mint, well round towards cyan, not the grass green that
+     was here. It carries the "开始报名" status and the confirmed end of the progress bar. */
+  --color-ok: #02d2a1;
   --color-warn: #ffbf5f;
   --color-bad: #ff6b78;
   --color-info: #4db7ff;
