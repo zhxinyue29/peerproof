@@ -315,6 +315,7 @@ export const en = {
   "home.headline1": "You don't have to trust",
   "home.headline3": "attendance proof.",
   "home.eyebrow": "Peer-verified attendance",
+  "home.playScene": "Play the scene",
   "home.headline2": "an organizer's ",
   "home.script": "People in the room prove each other were there. Deposits and payouts follow the evidence, not anyone's judgement.",
   "home.joinSub": "Find something worth going to, and leave a record of it that anyone can check.",

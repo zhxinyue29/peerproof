@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useMotionPrefs } from "@/lib/motion";
 import { basePath } from "@/lib/chain";
+import { useT } from "@/lib/i18n";
 
 /// The scene on the right of the landing page — now a loop rather than a still.
 ///
@@ -24,7 +26,18 @@ import { basePath } from "@/lib/chain";
 /// `poster` is the clip's own first frame, so a slow connection shows the picture the video will
 /// start from rather than a different image that then jumps.
 export default function HeroArt() {
+  const t = useT();
   const { reduced } = useMotionPrefs();
+  /// Pressed by somebody who was given the still because their browser asked for less motion, and
+  /// wants to watch it anyway.
+  ///
+  /// Reduced motion means "do not move things at me without asking". It does not mean "never show
+  /// this person a video" — and treating it that way hides the one thing on the page that shows
+  /// what the product does. It also fails a case that is not about accessibility at all: Firefox
+  /// under X11 derives this setting from XSETTINGS and reports `reduce` when nothing publishes it,
+  /// so a reader who never asked for anything gets a still picture and no way past it.
+  const [override, setOverride] = useState(false);
+  const still = reduced && !override;
 
   // Bleeds off the right edge of the viewport, not the container. `right: calc(50% - 50vw)` measures
   // the element's own containing block against the viewport, which reaches the screen edge from
@@ -65,12 +78,27 @@ export default function HeroArt() {
 
   return (
     <>
-      {reduced ? (
-        <div
-          aria-hidden
-          className={`${frame} bg-cover bg-center`}
-          style={{ ...mask, backgroundImage: `url(${basePath}/hero.webp)` }}
-        />
+      {still ? (
+        <div className={`${frame} relative`}>
+          <div
+            aria-hidden
+            className="h-full w-full bg-cover bg-center"
+            style={{ ...mask, backgroundImage: `url(${basePath}/hero.webp)` }}
+          />
+          {/* The way past it. Small, bottom-left of the still, over the part of the frame the
+              fades have already darkened. `pointer-events-auto` because the frame itself is not
+              clickable — it bleeds under the entry cards. */}
+          <button
+            type="button"
+            onClick={() => setOverride(true)}
+            className="pointer-events-auto absolute bottom-4 right-6 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-line-2 bg-ink/70 px-4 text-[14px] text-dim backdrop-blur-sm transition-colors hover:border-accent hover:text-fg"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {t("home.playScene")}
+          </button>
+        </div>
       ) : (
         <video
           aria-hidden
