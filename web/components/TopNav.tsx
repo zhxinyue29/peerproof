@@ -34,7 +34,7 @@ import { useT } from "@/lib/i18n";
 /// a link opened at a venue door by somebody who has not agreed to be inside anything yet, and five
 /// tabs across the top is the page asking them to navigate before it has told them what it is.
 
-export default function TopNav() {
+export default function TopNav({ page }: { page?: string }) {
   const t = useT();
   const router = useRouter();
   const { signer, setUpPrivy, busy } = useIdentity();
@@ -68,10 +68,22 @@ export default function TopNav() {
         scrolled ? "border-b border-line bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
       }`}
     >
-      <Link href="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5">
+      {/* The mark goes home from anywhere; the page's own name sits beside it so the top-left
+          corner always answers both "where am I" and "how do I get out". The name is not a link —
+          it is a label for the screen you are on, and a link to the page you are already on is the
+          kind of control that teaches people the chrome is decorative. */}
+      <Link href="/" className="flex min-h-[44px] shrink-0 items-center gap-2.5">
         <PeerProofMark />
-        <span className="truncate text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
+        <span className="text-[19px] font-semibold tracking-[-0.015em]">PeerProof</span>
       </Link>
+      {page && (
+        <>
+          <span aria-hidden className="hidden text-[18px] text-line-2 sm:inline">
+            /
+          </span>
+          <span className="hidden min-w-0 truncate text-[16px] text-dim sm:inline">{page}</span>
+        </>
+      )}
 
 
       <form onSubmit={onSearch} className="ml-auto hidden min-w-0 flex-1 md:block md:max-w-[340px]">

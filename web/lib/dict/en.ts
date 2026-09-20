@@ -463,6 +463,7 @@ export const en = {
   "event.signedInLabel": "Signed in as",
   "event.walletBalance": "wallet {address} · balance {balance}",
   "event.revertedOnChain": "Registration reverted on chain.",
+  "event.pageName": "Event",
   "event.joinUntilTime": "You can join until {time}",
   "event.howTitle": "How attendance works",
   "event.howSub": "Check in at the door once, then take your time",

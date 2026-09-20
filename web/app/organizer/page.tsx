@@ -326,7 +326,7 @@ function Frame({
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav />
+        <TopNav page={title} />
         <main className="flex min-w-0 flex-col gap-6 pb-16 pt-6 md:gap-7 md:pt-8">
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-2">

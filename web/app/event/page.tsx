@@ -13,8 +13,9 @@ import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import { Accordion, Button, LinkButton, Notice, Sheet, Skeleton } from "@/components/ui";
 import { chainNowMs, eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
+import { useBack } from "@/lib/back";
 import { countdown, mon, shortAddress, shortenError } from "@/lib/format";
-import { useLang, type TFn } from "@/lib/i18n";
+import { useLang, useT, type TFn } from "@/lib/i18n";
 import { canRegister, phaseOf, projectedPayout, useEvent, type EventInfo } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
 
@@ -33,6 +34,7 @@ import { useEventMeta } from "@/lib/eventMeta";
 export default function EventPage() {
   const { signer, signOut } = useIdentity();
   const { ev, me, refresh, error: readError, missing, sample } = useEvent(signer?.address ?? null);
+  const back = useBack("/events");
   const router = useRouter();
   const { t, lang } = useLang();
   // The app's language, not the browser's: somebody who switched to Chinese on an
@@ -130,7 +132,7 @@ export default function EventPage() {
     // 320px rail, same sticky offset, so the detail panel sits where it always did.
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav />
+        <TopNav page={t("event.pageName")} />
 
         <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
@@ -143,10 +145,12 @@ export default function EventPage() {
         {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
         {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
-        {/* The sidebar and the mobile pill row both lead back to the directory, so this is a
-            convenience rather than the only way out — hence the weight of a footnote. */}
+        {/* Back to wherever this was opened from. It was hardcoded to `/events`, so an organizer
+            who opened their own event from the dashboard was returned to the participant listing —
+            a different side of the product than the one they were working on. `/events` stays as
+            the fallback for a link opened cold, which is the common case at a venue door. */}
         <Link
-          href="/events"
+          {...back}
           className="-mb-2 inline-flex min-h-[44px] w-fit items-center gap-1.5 text-[14px] text-faint hover:text-dim"
         >
           <span aria-hidden>‹</span>
@@ -460,10 +464,11 @@ function pct(n: number, of: number) {
 /// Top bar plus the page's container, for the branches that render before there is an event to
 /// show. Written once because three branches need it and three hand-written copies drift.
 function Frame({ children }: { children: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav />
+        <TopNav page={t("event.pageName")} />
         <main className="pb-16 pt-6 md:pt-8">{children}</main>
       </div>
     </div>

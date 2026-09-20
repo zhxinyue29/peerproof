@@ -507,10 +507,11 @@ export default function MePage() {
 }
 
 function Frame({ children }: { children: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
-        <TopNav />
+        <TopNav page={t("nav.myProof")} />
         <main className="pb-16 pt-6 md:pt-8">{children}</main>
       </div>
     </div>

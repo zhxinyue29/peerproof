@@ -446,6 +446,7 @@ export const zh: Dict = {
   "event.signedInLabel": "当前身份",
   "event.walletBalance": "钱包 {address} · 余额 {balance}",
   "event.revertedOnChain": "报名交易在链上被回滚了。",
+  "event.pageName": "活动详情",
   "event.joinUntilTime": "{time} 之前都可以加入",
   "event.howTitle": "到场是怎么证明的",
   "event.howSub": "门口扫一次，剩下的慢慢来",
