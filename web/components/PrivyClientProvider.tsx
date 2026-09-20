@@ -85,8 +85,17 @@ export default function PrivyClientProvider({ children }: { children: React.Reac
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (!privyUsable) return;
     // sessionStorage does not exist during the static export, so this cannot be a lazy initialiser.
+    //
+    // The removal sits above the `privyUsable` guard: a stale flag should not survive because
+    // Privy happens to be unusable on this chain.
+    //
+    // Any ask-flag surviving a page load is stale: the only thing that sets it is the sign-in
+    // button, and that runs after this effect. It survives when somebody presses sign in and
+    // navigates away before Privy finishes mounting — the flag then had the dialog open itself on
+    // the next page they visited, which is the same nag in a narrower form.
+    sessionStorage.removeItem(ASK_KEY);
+    if (!privyUsable) return;
     const already = sessionStorage.getItem(SESSION_KEY) === "1";
     // Written before the setState, and read by PrivyBridge on a later mount — so the ordering the
     // lint rule cares about does not apply to it.

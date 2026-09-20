@@ -13,6 +13,18 @@ const load = async (path) => {
   await p.waitForTimeout(1300);
   const d = p.getByRole("button", { name: /Throwaway local key/ });
   if (await d.count()) { await d.click(); await p.waitForTimeout(2200); }
+  // Privy's dialog can still be arriving from the previous button's press — it takes several
+  // seconds to appear, which is longer than one page load. Clear it before measuring, or every
+  // button after the sign-in button is tested against an overlay rather than against the page.
+  for (let i = 0; i < 3; i++) {
+    const open = await p.evaluate(() => {
+      const r = document.getElementById("headlessui-portal-root");
+      return !!(r && r.innerText.trim());
+    });
+    if (!open) break;
+    await p.keyboard.press("Escape");
+    await p.waitForTimeout(600);
+  }
 };
 
 for (const path of ["/", "/events/", "/me/", "/event/?event=-1", "/organizer/", "/floor/", "/venue/", "/verify/"]) {
