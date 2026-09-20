@@ -10,7 +10,8 @@ import CoverField from "@/components/CoverField";
 import {
   checkDirectory,
   deployDirectory,
-  describeGas,
+  estimatedGas,
+  offlineDescribeGas,
   directoryAddress,
   readListing,
 } from "@/lib/directory";
@@ -72,12 +73,22 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         await deployDirectory(signer.sendRaw);
       }
       setBusy(t("listing.saving"));
+      // One named struct, not six positional strings. The positional form is what let two call
+      // sites keep passing five arguments after the function grew a sixth.
+      const listing = { title, blurb, url, venue, tags, cover };
       await signer.write({
         functionName: "describe",
-        // One named struct, not six positional strings. The positional form is what let two call
-        // sites keep passing five arguments after the function grew a sixth.
-        args: [id, { title, blurb, url, venue, tags, cover }],
-        gas: describeGas(title, blurb, url, venue, tags, cover),
+        args: [id, listing],
+        gas: await estimatedGas(
+          {
+            to: directoryAddress(),
+            abi: eventDirectoryAbi,
+            functionName: "describe",
+            args: [id, listing],
+            account: signer.address,
+          },
+          offlineDescribeGas(title, blurb, url, venue, tags, cover),
+        ),
         to: directoryAddress(),
         abi: eventDirectoryAbi,
       });

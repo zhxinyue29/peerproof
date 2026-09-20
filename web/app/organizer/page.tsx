@@ -26,7 +26,13 @@ import { useLang, useT, type TFn } from "@/lib/i18n";
 import { canRegister, phaseOf, useEvent, type EventInfo } from "@/lib/useEvent";
 import { readAllEvents, type EventSummary } from "@/lib/events";
 import { useVisiblePoll } from "@/lib/poll";
-import { checkDirectory, deployDirectory, describeGas, directoryAddress } from "@/lib/directory";
+import {
+  checkDirectory,
+  deployDirectory,
+  directoryAddress,
+  estimatedGas,
+  offlineDescribeGas,
+} from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
@@ -1099,14 +1105,23 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       if (wantsWords) {
         try {
           setBusyLabel(t("create.savingDescription"));
+          // One named struct, not six positional strings — the positional form is what let two
+          // call sites keep passing five arguments after the function grew a sixth, and viem
+          // refuses to encode that, so every listing write failed before reaching the chain.
+          const listing = { title, blurb, url, venue, tags, cover };
           await signer.write({
             functionName: "describe",
-            // Six arguments, matching `describe` since `tags` joined the struct. It was five,
-            // which is not a value bug — viem refuses to encode at all — so every listing write in
-            // the product, here and in the editor, was failing before it reached the chain.
-            // Tags are not collected in the create flow; the listing editor has that field.
-            args: [id, { title, blurb, url, venue, tags, cover }],
-            gas: describeGas(title, blurb, url, venue, tags, cover),
+            args: [id, listing],
+            gas: await estimatedGas(
+              {
+                to: directoryAddress(),
+                abi: eventDirectoryAbi,
+                functionName: "describe",
+                args: [id, listing],
+                account: signer.address,
+              },
+              offlineDescribeGas(title, blurb, url, venue, tags, cover),
+            ),
             to: directoryAddress(),
             abi: eventDirectoryAbi,
           });
@@ -1179,14 +1194,22 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
                 // deposit being set, and the numbers it reviews would be defaults they never saw.
                 onClick={() => i < stepIndex && setStep(name)}
                 disabled={i > stepIndex}
-                className={`flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors ${
-                  here ? "bg-accent/15" : done ? "hover:bg-raised" : ""
+                // The selected step has to win at a glance. It was a 15% accent wash behind the
+                // same grey text as its neighbours — two of the three signals the design uses
+                // (fill, border, text weight) were missing, so the row read as four identical
+                // items with a slightly different background on one.
+                className={`flex min-h-[52px] w-full items-center gap-3 rounded-xl border px-3 text-left transition-colors ${
+                  here
+                    ? "border-accent/55 bg-accent/20"
+                    : done
+                      ? "border-transparent hover:bg-raised"
+                      : "border-transparent"
                 } ${i > stepIndex ? "cursor-default" : ""}`}
               >
                 <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[14px] ${
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[14px] font-semibold ${
                     here
-                      ? "border-accent-2 bg-accent text-white"
+                      ? "border-accent-2 bg-accent text-white shadow-[0_0_0_4px_rgba(110,84,255,0.18)]"
                       : done
                         ? "border-ok/50 bg-ok/15 text-ok"
                         : "border-line-2 bg-raised text-faint"
@@ -1196,10 +1219,20 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
                 </span>
                 {/* Bilingual, as the sheet sets them: 活动基础信息 / Tell Your Story. */}
                 <span className="min-w-0">
-                  <span className={`block whitespace-nowrap text-[15px] ${here ? "text-fg" : "text-faint"}`}>
+                  {/* Semibold on the current step, medium on the rest. The whole rail was one
+                      weight, which left colour doing all the work at 15% opacity. */}
+                  <span
+                    className={`block whitespace-nowrap text-[15.5px] ${
+                      here ? "font-semibold text-fg" : done ? "font-medium text-dim" : "font-medium text-faint"
+                    }`}
+                  >
                     {t(STEP_LABEL[name])}
                   </span>
-                  <span className="hidden whitespace-nowrap text-[12.5px] text-faint lg:block">
+                  <span
+                    className={`hidden whitespace-nowrap text-[12.5px] lg:block ${
+                      here ? "text-accent-2" : "text-faint"
+                    }`}
+                  >
                     {STEP_EN[name]}
                   </span>
                 </span>

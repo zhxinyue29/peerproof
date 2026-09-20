@@ -88,24 +88,53 @@ export function directoryReady(): boolean {
   return deployed === true;
 }
 
-/// Monad bills the gas limit rather than the amount used, so this is fitted rather than padded.
+/// Monad bills the gas limit rather than the amount used, so a limit has to be chosen rather than
+/// left generous. Ask the chain.
 ///
-/// Fitted to `setProfile`/`describe` measurements taken against the deployed contract on
-/// 2026-09-20, after `venue` and `tags` joined the struct:
+/// This used to be a formula fitted to measurements — `base + per-field + per-byte`, padded 20%.
+/// It was refitted twice and was short **both** times: a five-field listing needed 348,218 and the
+/// fit offered 324,600, so an organizer who filled the form in got "描述没保存上" and paid for the
+/// failure in full. The lesson is not that the coefficients were wrong. It is that a formula is a
+/// guess about storage layout that has to be re-derived every time the struct changes, and nobody
+/// remembers to. `eth_estimateGas` executes the actual call against the actual state.
 ///
-///   describe · 2 fields / 27 bytes → 123,297 · 5 fields / 132 bytes → 229,253
+/// Twenty percent over the estimate, because state can move between the estimate and the send —
+/// a field that was empty when estimated and non-empty when mined costs a fresh slot.
 ///
-/// The previous fit was `140,000 + 700/byte`, measured when the struct had three strings. It was
-/// 31% over on a short listing and **5,253 short** on an ordinary one — a listing with a title, a
-/// blurb, a link, a venue and tags could not be saved at all, and on Monad the failed attempt was
-/// charged in full. Bytes alone cannot model this: every non-empty field costs a length slot of
-/// its own, so a one-word venue is far more than one word's worth of gas.
-///
-/// `PAD` is the margin over the fit. Twenty percent, because the alternative to over-paying is a
-/// write that runs out of gas and costs exactly the same.
-const PAD = 12n;
+/// The fit stays as `offlineGas`, for the case where estimation itself fails. It is padded harder
+/// there: if it is being used at all, nothing has checked it against this chain.
+export async function estimatedGas(
+  call: {
+    to: Address;
+    abi: readonly unknown[];
+    functionName: string;
+    args: readonly unknown[];
+    account: Address;
+  },
+  offline: bigint,
+): Promise<bigint> {
+  try {
+    const used = await publicClient.estimateContractGas({
+      address: call.to,
+      // viem's estimate wants the narrow Abi type; the artifact is read back as a plain array.
+      abi: call.abi as never,
+      functionName: call.functionName,
+      args: call.args as never,
+      account: call.account,
+    });
+    return (used * 12n) / 10n;
+  } catch {
+    // Estimation reverting usually means the send would revert too — but it also fails on a
+    // flaky RPC, and refusing to send at all would turn a network blip into a lost listing.
+    return offline;
+  }
+}
 
-export function describeGas(
+/// The margin on the offline fit. Forty percent: it is the last resort, not the normal path.
+const PAD = 14n;
+
+/// Offline fallback for `describe`. Prefer `estimatedGas`.
+export function offlineDescribeGas(
   title: string,
   blurb: string,
   url: string,
@@ -236,7 +265,8 @@ export async function readProfile(account: `0x${string}`): Promise<Profile> {
 ///
 /// The old shared fit sent 211,764 for that second case. It was the reason saving a filled-in
 /// profile failed while saving just a name worked.
-export function profileGas(p: Omit<Profile, "updatedAt">): bigint {
+/// Offline fallback for `setProfile`. Prefer `estimatedGas`.
+export function offlineProfileGas(p: Omit<Profile, "updatedAt">): bigint {
   const parts = [p.name, p.bio, p.city, p.x, p.github, p.website];
   return (fit(58_000n, 21_800n, parts) * PAD) / 10n;
 }

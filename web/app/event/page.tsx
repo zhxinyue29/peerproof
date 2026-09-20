@@ -46,7 +46,7 @@ export default function EventPage() {
   const [error, setError] = useState<string | null>(null);
   const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
   const [howOpen, setHowOpen] = useState(false);
-  const [detailTab, setDetailTab] = useState<"about" | "rules" | "faq">("about");
+  const [detailTab, setDetailTab] = useState<"about" | "venue" | "rules" | "faq">("about");
   const [joining, setJoining] = useState(false);
 
   const phase = phaseOf(ev);
@@ -300,20 +300,28 @@ export default function EventPage() {
           {meta.blurb && <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{meta.blurb}</p>}
         </div>
 
-        {/* Place and time, directly under the title, as the sheet sets them. They were only in
-            the right rail — which is where the logistics belong once you are deciding, but the
-            first question somebody has when the page opens is "where and when", and a rail is not
-            where the eye goes after a headline. */}
+        {/* Place and time, on one line, each behind a tinted round glyph — the sheet's shape.
+            They are the two facts somebody checks before anything else, and a line of dim grey
+            text under a headline is where the eye goes last. */}
         {ev && (
-          <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[15px] text-dim">
-            {meta.venue && <EventMetaItem icon="pin">{meta.venue}</EventMetaItem>}
-            <EventMetaItem icon="cal">
-              {new Date(Number(ev.attestOpen) * 1000).toLocaleString(
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <MetaChip
+              icon="cal"
+              tone="accent"
+              label={t("event.whenLabel")}
+              value={new Date(Number(ev.attestOpen) * 1000).toLocaleString(
                 lang === "zh" ? "zh-CN" : "en-GB",
                 { dateStyle: "full", timeStyle: "short" },
               )}
-            </EventMetaItem>
-          </p>
+            />
+            <MetaChip
+              icon="pin"
+              tone="ok"
+              label={t("listing.venue")}
+              value={meta.venue || t("event.venueUnset")}
+              muted={!meta.venue}
+            />
+          </div>
         )}
 
         {/* The listing's tags, as the sheet sets them under the meta row. Only when there are
@@ -327,43 +335,39 @@ export default function EventPage() {
               .map((tag: string) => (
                 <span
                   key={tag}
-                  className="inline-flex min-h-[34px] items-center rounded-full border border-line-2 bg-panel px-3.5 text-[14px] text-dim"
+                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3.5 text-[14px] text-fg"
                 >
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent-2" />
                   {tag}
                 </span>
               ))}
           </div>
         )}
 
-        {/* 验证方式. The sheet shows four methods with toggles — wallet, on-site check-in,
-            geolocation, peer vouching. This contract has one, and drawing three that do nothing on
-            the page whose product is "you do not have to trust anybody" would be the worst thing
-            here. So the one that exists is stated, with the number it is parameterised by. */}
+        {/* 验证方式, as four tiles — the shape the sheet gives this block.
+            Its four are methods: wallet, on-site check-in, geolocation, peer vouching. This
+            contract has one method, so four method tiles would be three lies. What it does have is
+            four true properties of that one method, and those are what the tiles say: who vouches,
+            what the door does, where it is written, who pays out. Same block, same rhythm, nothing
+            in it that cannot be checked. */}
         <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
           <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.methodTitle")}</h2>
-          <div className="mt-3 flex items-start gap-3 rounded-xl border border-accent/35 bg-accent/[0.07] p-4">
-            <span aria-hidden className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="m9 12 2 2 4-4M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z"
-                      stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <p className="min-w-0 text-[15px] leading-relaxed">
-              <span className="block font-medium text-fg">{t("create.methodPeer")}</span>
-              <span className="mt-0.5 block text-dim">
-                {ev ? t("event.methodBody", { k: String(ev.k) }) : t("create.methodPeerBody")}
-              </span>
-            </p>
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <VerifyTile
+              icon="peers"
+              title={t("create.methodPeer")}
+              body={ev ? t("event.vTilePeers", { k: String(ev.k) }) : ""}
+              lit
+            />
+            <VerifyTile icon="qr" title={t("event.vDoorTitle")} body={t("event.vDoorBody")} lit />
+            <VerifyTile icon="chain" title={t("event.vChainTitle")} body={t("event.vChainBody")} lit />
+            <VerifyTile icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
           </div>
 
-          {/* The way into panel 03. Somebody deciding whether to stake a deposit wants the whole
-              journey — register, check in, get vouched for, take the proof — and it is four
-              pictures, not four sentences. A modal rather than a fifth section on this page: it
-              answers a question people ask once. */}
           <button
             type="button"
             onClick={() => setHowOpen(true)}
-            className="group mt-3.5 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-5 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+            className="group mt-4 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-5 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
           >
             {t("home.howTitle4")}
             <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
@@ -384,6 +388,7 @@ export default function EventPage() {
               {(
                 [
                   ["about", "event.tabAbout"],
+                  ["venue", "event.tabVenue"],
                   ["rules", "event.tabRules"],
                   ["faq", "event.tabFaq"],
                 ] as const
@@ -427,6 +432,30 @@ export default function EventPage() {
                     {t("listing.link")} ↗
                   </a>
                 )}
+              </>
+            )}
+
+            {detailTab === "venue" && (
+              <>
+                {meta.venue ? (
+                  <>
+                    <p className="text-fg">{meta.venue}</p>
+                    {/* A map link rather than an embedded map: an iframe from a mapping provider is
+                        an outbound request on every load of a page that otherwise makes none, and
+                        it would carry the event's address to them for every visitor. */}
+                    <a
+                      href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(meta.venue)}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex min-h-[44px] items-center text-accent-2 underline decoration-line-2 underline-offset-4"
+                    >
+                      {t("event.openMap")} ↗
+                    </a>
+                  </>
+                ) : (
+                  <p className="text-faint">{t("event.venueUnset")}</p>
+                )}
+                <p>{t("event.venueNote")}</p>
               </>
             )}
 
@@ -629,6 +658,93 @@ function Details({ ev }: { ev: EventInfo | null }) {
         )}
       </dl>
     </section>
+  );
+}
+
+/// One of the two facts under the title: a tinted round glyph and the value, inline.
+const TILE_ICONS: Record<string, string> = {
+  cal: "M7 3v3m10-3v3M4 9h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z",
+  pin: "M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+};
+
+/// This was two bordered panels, one per fact. The sheet does not draw them that way and it was
+/// right not to: a date and a street are one glance, and giving each of them a box the size of a
+/// card turns the top of the page into a grid of rectangles with two short strings in it. The
+/// glyph carries the label, so the label is only in the accessible name.
+function MetaChip({
+  icon,
+  tone,
+  label,
+  value,
+  muted,
+}: {
+  icon: keyof typeof TILE_ICONS;
+  tone: "accent" | "ok";
+  label: string;
+  value: string;
+  /// The venue nobody filled in. Shown as a placeholder rather than hidden: an event with no place
+  /// is a fact about the listing, and leaving the chip out makes the row look like it never had one.
+  muted?: boolean;
+}) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2.5">
+      <span
+        aria-hidden
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          tone === "accent" ? "bg-accent/15 text-accent-2" : "bg-ok/15 text-ok"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d={TILE_ICONS[icon]} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <span className="sr-only">{label}：</span>
+      <span className={`text-[15.5px] ${muted ? "text-faint" : "font-medium text-fg"}`}>{value}</span>
+    </span>
+  );
+}
+
+/// One of the four squares in 验证方式.
+const VERIFY_ICONS: Record<string, string> = {
+  peers: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11h4M19 9v4",
+  qr: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z",
+  chain: "M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1",
+  coin: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v10m2.5-7.5H10.8a1.8 1.8 0 0 0 0 3.6h2.4a1.8 1.8 0 0 1 0 3.6H9.5",
+};
+
+function VerifyTile({
+  icon,
+  title,
+  body,
+  lit,
+}: {
+  icon: keyof typeof VERIFY_ICONS;
+  title: string;
+  body: string;
+  /// Every tile here is true of this event, so every one is lit. The prop exists because the block
+  /// is the place a future method would land, and a tile that is not available has to be able to
+  /// look unavailable rather than be quietly dropped.
+  lit?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center rounded-xl border px-3 py-4 text-center ${
+        lit ? "border-accent/25 bg-accent/[0.06]" : "border-line bg-ink/40"
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`flex h-11 w-11 items-center justify-center rounded-full ${
+          lit ? "bg-accent/20 text-accent-2" : "bg-line text-faint"
+        }`}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <p className={`mt-3 text-[15px] font-medium ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
+      <p className="mt-1.5 text-[13px] leading-snug text-faint">{body}</p>
+    </div>
   );
 }
 

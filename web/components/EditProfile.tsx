@@ -8,7 +8,8 @@ import { directoryAddress, directoryReady } from "@/lib/directory";
 import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import {
   EMPTY_PROFILE,
-  profileGas,
+  estimatedGas,
+  offlineProfileGas,
   profileUnchanged,
   readProfile,
   type Profile,
@@ -69,17 +70,30 @@ export default function EditProfile({ onSaved }: { onSaved?: (p: Profile) => voi
   };
 
   const unchanged = onChain ? profileUnchanged(draft, onChain) : true;
-  const gas = profileGas(draft);
+  // The figure shown next to the button, not the limit sent with the transaction — that one comes
+  // from the chain at the moment of saving. A price quoted while somebody is still typing has to be
+  // computable without a round trip per keystroke, and being a little over here is the safe side.
+  const quotedGas = offlineProfileGas(draft);
 
   async function save() {
     if (!signer || unchanged) return;
     setBusy(t("profile.saving"));
     setError(null);
     try {
+      const fields = [draft.name, draft.bio, draft.city, draft.x, draft.github, draft.website];
       const hash = await signer.write({
         functionName: "setProfile",
-        args: [draft.name, draft.bio, draft.city, draft.x, draft.github, draft.website],
-        gas,
+        args: fields,
+        gas: await estimatedGas(
+          {
+            to: directoryAddress(),
+            abi: eventDirectoryAbi,
+            functionName: "setProfile",
+            args: fields,
+            account: signer.address,
+          },
+          offlineProfileGas(draft),
+        ),
         to: directoryAddress(),
         abi: eventDirectoryAbi,
       });
@@ -150,7 +164,7 @@ export default function EditProfile({ onSaved }: { onSaved?: (p: Profile) => voi
             something costs, and this is the only screen in the product that charges for typing. */}
         {!unchanged && (
           <span className="text-[14px] text-faint">
-            {t("profile.costs", { amount: mon(gas * 102_000_000_000n) })}
+            {t("profile.costs", { amount: mon(quotedGas * 102_000_000_000n) })}
           </span>
         )}
       </div>
