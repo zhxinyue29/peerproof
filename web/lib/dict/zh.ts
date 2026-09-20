@@ -772,4 +772,15 @@ export const zh: Dict = {
 
   "graph.nobodyRegistered": "还没有人报名。",
   "graph.noVouchesYet": "还没有连线——每有一个人扫了另一个人，就多一条。",
+
+  "verify.statVerified": "确认到场",
+  "verify.statProofs": "互相作证次数",
+  "verify.statSettled": "已在链上结算",
+  "verify.statPending": "尚未结算",
+  "verify.graphLabel": "作证关系图：{people} 人，{proofs} 次被采纳的作证",
+  "verify.inspectHint": "每一条连线都是一笔交易。点一条线，就能打开它。",
+  "verify.inspectVouch": "{from} 为 {to} 作了证",
+  "verify.whoWasThere": "当时这屋子里有谁",
+  "verify.showAll": "展开全部 {n} 条",
+  "verify.showLess": "收起",
 };

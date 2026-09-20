@@ -804,6 +804,19 @@ export const en = {
 
   "graph.nobodyRegistered": "Nobody has registered yet.",
   "graph.noVouchesYet": "No lines yet — one appears each time somebody scans somebody else.",
+
+  /* /verify — the proof network stage. The page's headline figures are not KPI cards; they are
+     the claim itself, which is why they read as sentences rather than as labels. */
+  "verify.statVerified": "verified present",
+  "verify.statProofs": "peer proofs",
+  "verify.statSettled": "settled on chain",
+  "verify.statPending": "not settled yet",
+  "verify.graphLabel": "Proof network: {people} people, {proofs} accepted vouches",
+  "verify.inspectHint": "Every line is one transaction. Touch a line to open it.",
+  "verify.inspectVouch": "{from} vouched for {to}",
+  "verify.whoWasThere": "who was in the room",
+  "verify.showAll": "show all {n}",
+  "verify.showLess": "show fewer",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the
