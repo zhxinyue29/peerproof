@@ -15,7 +15,7 @@ import AttendeeRow from "@/components/AttendeeRow";
 import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import { Accordion, Button, LinkButton, Notice, Sheet, Skeleton } from "@/components/ui";
-import { chainNowMs, eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
+import { basePath, chainNowMs, eventId, GAS_LIMITS, hasDeployment, isLocalChain, publicClient } from "@/lib/chain";
 import { useBack } from "@/lib/back";
 import { countdown, mon, shortAddress, shortenError } from "@/lib/format";
 import { useLang, useT, type TFn } from "@/lib/i18n";
@@ -634,9 +634,21 @@ export default function EventPage() {
               </div>
             </section>
 
-            {/* The sheet's right column is exactly two cards: 活动状态 and the money. It had four
-                here — a strip of three counts and a details panel — and those two extra cards are
-                what made this rail look nothing like the drawing.
+            {/* The third card in the sheet's rail, which I had said there were two of. That came
+                from measuring the 532px crop, where this one is below the fold of what I cropped.
+                The full-size sheet has it: 活动状态, the money, then a picture.
+
+                No new artwork needed — `rail-card.webp` has been in the repo the whole time and is
+                already doing exactly this job on /me, in the participation modal and on the
+                achievements card. It was missing here and nowhere else, for no reason at all. */}
+            <section
+              aria-hidden
+              className="h-[184px] overflow-hidden rounded-2xl border border-line bg-cover bg-center"
+              style={{ backgroundImage: `url(${basePath}/rail-card.webp)` }}
+            />
+
+            {/* The rail is 活动状态, the money, and the picture above — three cards. It had four,
+                and the two extra ones are what made it look nothing like the drawing.
                 They are not deleted. The counts (how many vouches, how few people it takes to run)
                 moved into the 验证规则 tab, and the timings moved into 日程安排 — both tabs the
                 sheet itself draws, and both the place somebody would look for exactly those facts.

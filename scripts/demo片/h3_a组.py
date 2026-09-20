@@ -43,13 +43,27 @@ SHOTS = [
      "turns his head slightly to look off-camera as if asking someone a question. Slow gentle "
      "dolly-in on his face. " + ALIVE + NO_TEXT),
 
-    ("a2", 7202, STYLE +
-     "A dim living room at night, deep navy and indigo, a single warm lamp behind the sofa. A "
-     "stylised young person lies sprawled sideways across a low sofa, head resting on a cushion, "
-     "holding a phone up above their face with one hand. The phone's glow is the key light on "
-     "their cheek. They flick the screen twice with a thumb, let the hand drop onto their chest, "
-     "and sigh with their eyes closing. Static medium shot from three-quarters behind the sofa "
-     "back, so the face is only half seen. " + ALIVE + NO_TEXT),
+    # a2 第一版废了。三条毛病一个根因:提示词里两个光源打架。
+    #
+    # 我同时写了"沙发后一盏暖灯"和"手机的光是脸上的主光",H3 没法两个都满足,
+    # 于是自己在墙上造了一台大电视当主光——手机随即失去存在理由,第 4 帧之后就没了。
+    # 这就是本机那条"出图不对先找自相矛盾,别加约束"的又一例。
+    #
+    # 第二条:我写了 "Static medium shot" 锁机位,又把人写成躺着不动,等于连人一起冻住,
+    # 运动量 4.2/2.6/2.7,而 a1 是 11.9-14.6。只锁机位,不锁人。
+    #
+    # 第三条:"三分之三背侧只露半张脸"本来是为了躲 H3 的脸漂移,用户已经说了不必是
+    # 同一个人、画风一致即可,所以这一层纯粹在伤戏——叹气和惊喜都在脸上。改成正面。
+    ("a2", 7212, STYLE +
+     "A dim living room at night, deep navy and indigo. The ONLY light in the room is the phone "
+     "screen held above a young person's face: it throws bright violet and magenta light up onto "
+     "their cheeks, nose and chin from below, and falls off into darkness a foot away. There is no "
+     "television, no monitor, no lamp and no window — nothing else in the room emits light. "
+     "The person lies on their back along a low sofa, head on a cushion, seen from the side and "
+     "slightly above so the whole face is visible. They scroll with a thumb, their eyes flicking "
+     "across the screen; they puff out a breath, let the phone tilt away, and their head rolls "
+     "towards camera with a bored half-smile. The camera holds a slow steady medium shot. " +
+     ALIVE + NO_TEXT),
 
     ("a4", 7303, STYLE +
      "A single bright violet ribbon of light bursts out of a glowing monitor and flies out through "
