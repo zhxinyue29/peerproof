@@ -108,3 +108,63 @@ await shot("02-create", "aa".repeat(32), async ({ p, signIn, fund }) => {
 });
 
 console.log("浏览器段落录完:", readdirSync(OUT).filter((f) => f.startsWith("shot-")).join(", "));
+
+// ── 3. 活动出现在列表里 ────────────────────────────────────────────────────
+await shot("03-listing", null, async ({ p }) => {
+  await p.goto(APP + "/events/", { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(4500);
+  for (let i = 0; i < 14; i++) {
+    await p.mouse.wheel(0, 40);
+    await p.waitForTimeout(80);
+  }
+  await p.waitForTimeout(2600);
+});
+
+// ── 4. 参与者报名 ──────────────────────────────────────────────────────────
+await shot("04-join", "bb".repeat(32), async ({ p, signIn, fund }) => {
+  await p.goto(APP + "/event/?dev=1", { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(3000);
+  await p.getByRole("button", { name: /押金并报名/ }).first().click();
+  await p.waitForTimeout(1400);
+  await signIn();
+  await fund(80);
+  await p.waitForTimeout(1500);
+  await p.getByRole("button", { name: /押金并报名/ }).first().click();
+  await p.waitForTimeout(14000);
+});
+
+// ── 5. 判定到场 ────────────────────────────────────────────────────────────
+// 把链推进到签到窗口,让固定的那几个参与者互相作证,再录现场页从 0/3 走到 3/3。
+await shot("05-confirmed", "bb".repeat(32), async ({ p, signIn }) => {
+  cast("rpc evm_increaseTime 700");
+  cast("rpc evm_mine");
+  await p.goto(APP + "/floor/?dev=1", { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1600);
+  await signIn();
+  await p.waitForTimeout(3000);
+  await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
+  await p.waitForTimeout(600);
+  const checkIn = p.getByRole("button", { name: "check in" });
+  if (await checkIn.count()) {
+    await checkIn.click();
+    await p.waitForTimeout(7000);
+  }
+  for (let i = 0; i < 3; i++) {
+    const btn = p.getByRole("button", { name: "attest scripted peer" });
+    if (!(await btn.count())) break;
+    await btn.click();
+    await p.waitForTimeout(6500);
+  }
+  await p.waitForTimeout(3500);
+});
+
+// ── 6. 公开记录 ────────────────────────────────────────────────────────────
+await shot("06-verify", null, async ({ p }) => {
+  await p.goto(APP + "/verify/", { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(6000);
+  for (let i = 0; i < 16; i++) {
+    await p.mouse.wheel(0, 40);
+    await p.waitForTimeout(80);
+  }
+  await p.waitForTimeout(3000);
+});

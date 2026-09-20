@@ -193,19 +193,28 @@ export default function HomePage() {
                 <IdentityChoiceCard href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />
                 <IdentityChoiceCard href="/organizer" title={t("home.hostTitle")} body={t("home.hostSub")} tone="host" />
               </motion.div>
-            </motion.div>
 
-            {/* The proof itself, playing over the scene. */}
-            {/* The second piece of the design's handwriting, low on the right where the scene has
-                room for it. Cut from the sheet with the arrow and the smiley, same as the other. */}
-            <img
-              src="script-showup.webp"
-              alt=""
-              aria-hidden
-              width={344}
-              height={324}
-              className="pointer-events-none absolute bottom-[1%] right-[-2%] hidden h-[160px] w-auto lg:block"
-            />
+              {/* Under the two cards, not over the scene.
+                  It sat on the lower left of the artwork, which is exactly where the clip's two
+                  people stand and where the point of light leaves the phone — the one moment the
+                  whole animation exists to show, covered by a panel of zeros. Down here it reads
+                  in the same column as everything else it belongs with, and the scene is whole.
+                  The handwriting comes with it: it was cut from the sheet as this panel's caption
+                  and following it keeps the pair together. */}
+              <motion.div variants={m.item} className="flex flex-wrap items-end gap-4 pt-1">
+                <div className="min-w-0 flex-1">
+                  <LiveStats />
+                </div>
+                <img
+                  src="script-showup.webp"
+                  alt=""
+                  aria-hidden
+                  width={344}
+                  height={324}
+                  className="pointer-events-none hidden h-[104px] w-auto lg:block"
+                />
+              </motion.div>
+            </motion.div>
 
             {/* The four-beat sequence used to live here. It is gone with the still it was drawn
                 against: its card, its arcs and its closing line were pinned to that picture's ring
@@ -213,25 +222,6 @@ export default function HomePage() {
                 tells the same story — a proof leaving one phone and landing on other people — from
                 inside the room rather than on top of it. */}
 
-            {/* Under the words on a phone, over the artwork on a desktop — where the design puts it,
-                and where it reads as a caption on the scene rather than a fourth thing in the column. */}
-            <div className="relative mt-8 md:absolute md:left-[52.6%] md:top-[calc(100%+1.15rem)] md:mt-0 md:w-[37.4%] md:-translate-y-full">
-              {/* Both edges now come from the same basis.
-                  The panel was positioned at 52.6% of the container while the cards beside it were
-                  a fixed 700px, so as the viewport narrowed the panel walked left and the cards did
-                  not: 8px of clearance at 1440, 45px of overlap at 1280, 179px at 1024. The text
-                  column is 52% and the panel starts at 52.6%, which is 0.6% of clearance at every
-                  width rather than at one.
-                  Placed where the design puts it, not where it fits: its panel spans x 802→1299 of
-                  a 1536 canvas — 52.2% to 84.6% — sitting over the lower left of the scene with the
-                  handwriting clear to its right. Measured off the sheet rather than nudged until it
-                  looked settled — and the width is 37.4% of the content column rather than the
-                  32.4% the sheet shows, because the sheet's percentage is of the 1536 viewport and
-                  this box is measured against the 1328 column inside it. Taking the number
-                  straight across made the panel 67px short. */}
-              <LiveStats />
-
-            </div>
           </section>
         </main>
       </div>
