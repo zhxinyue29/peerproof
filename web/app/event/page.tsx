@@ -175,6 +175,9 @@ export default function EventPage() {
                   : ev
                     ? t("event.stakeAndRegister", { amount: mon(ev.deposit) })
                     : t("common.loading")}
+                {/* The sheet's primary carries an arrow. Only when it can actually be pressed —
+                    an arrow on a disabled button points at nothing. */}
+                {!busy && ev && <span aria-hidden className="ml-2">→</span>}
               </Button>
               {/* The sheet puts an outlined button directly under the primary one, the same width.
                   The action that belongs there is the one somebody deciding whether to stake is
@@ -374,8 +377,8 @@ export default function EventPage() {
             what the door does, where it is written, who pays out. Same block, same rhythm, nothing
             in it that cannot be checked. */}
         <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
-          <h2 className="text-[15.5px] font-medium text-dim">{t("event.methodTitle")}</h2>
-          <div className="mt-5 grid grid-cols-4 gap-2">
+          <h2 className="text-[17px] font-semibold text-fg">{t("event.methodTitle")}</h2>
+          <div className="mt-5 grid grid-cols-2 gap-y-6 divide-line sm:grid-cols-4 sm:gap-y-0 sm:divide-x">
             <VerifyTile
               icon="peers"
               title={t("create.methodPeer")}
@@ -552,10 +555,17 @@ export default function EventPage() {
               {ev && (
                 <>
                   <PhaseDot ev={ev} t={t} />
-                  <p className="text-[28px] font-semibold leading-none tabular-nums">
-                    {ev.registered}
-                    <span className="text-[20px] text-faint">/{ev.capacity}</span>
-                  </p>
+                  {/* The sheet puts the percentage on the same line, right-aligned — the fraction
+                      is the exact fact and the percentage is the one you read without thinking. */}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-[30px] font-bold leading-none tabular-nums">
+                      {ev.registered}
+                      <span className="text-[21px] font-medium text-faint">/{ev.capacity}</span>
+                    </p>
+                    <p className="text-[14px] tabular-nums text-faint">
+                      {pct(ev.registered, ev.capacity)}%
+                    </p>
+                  </div>
                   {/* One continuous mint-to-violet sweep, as the sheet draws it — but still two
                       segments underneath, because the boundary between them is real: the mint part
                       is people the room has already vouched for, the violet part is people who have
@@ -572,10 +582,24 @@ export default function EventPage() {
                     </div>
                   </div>
                   <AttendeeRow eventId={eventId()} total={ev.registered} />
-                  <p className="text-[14px] text-dim">
-                    <span className="font-semibold tabular-nums text-ok">{ev.confirmed}</span>{" "}
-                    {t("events.confirmedCount")}
-                  </p>
+                  {/* 已验证参与者, as its own row: the label on the left, the faces of the people
+                      the room has actually vouched for, and a way through to the public record.
+                      It was a sentence with a number in it; the sheet makes it the second most
+                      important thing in the card, because it is the only figure here that cannot
+                      be produced by paying. */}
+                  <div className="flex items-center gap-3">
+                    <span className="shrink-0 text-[14px] text-dim">{t("event.verifiedLabel")}</span>
+                    <AttendeeRow eventId={eventId()} total={ev.confirmed} confirmedOnly small />
+                    <Link
+                      href="/verify"
+                      aria-label={t("nav.verify")}
+                      className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-2 text-dim transition-colors hover:border-accent hover:text-fg"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                  </div>
                 </>
               )}
               {action}
@@ -775,25 +799,29 @@ function VerifyTile({
   /// look unavailable rather than be quietly dropped.
   lit?: boolean;
 }) {
-  // No border, no panel, no body copy — the sheet sets these four straight onto the section, as a
-  // glyph over a word. Giving each one its own bordered box turned a single block into four more
-  // rectangles, which is exactly what the section was meant to avoid. The sentence each one used
-  // to carry is now its tooltip, so the detail is still reachable without being drawn.
+  // Read off the hi-res sheet, which settled three things the low-res crop could not show:
+  // the badge is a rounded square and not a circle, each item keeps its second line, and the four
+  // are separated by hairline rules rather than by their own boxes.
+  //
+  // I had deleted the second lines in the previous pass and moved them into a `title` tooltip, on
+  // the grounds that the sheet drew "a glyph over a word". It draws a glyph over two. On a phone a
+  // tooltip is nothing at all, so that was information removed rather than tidied.
   return (
-    <div className="flex flex-col items-center px-1 text-center" title={body}>
+    <div className="flex flex-col items-center px-2 text-center">
       <span
         aria-hidden
-        className={`flex h-11 w-11 items-center justify-center rounded-full ${
+        className={`flex h-12 w-12 items-center justify-center rounded-[14px] ${
           lit
-            ? "bg-gradient-to-br from-accent-2/45 to-accent/35 text-white shadow-[0_0_0_1px_rgba(154,136,255,0.28)]"
+            ? "bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_6px_18px_-8px_rgba(110,84,255,0.9)]"
             : "bg-line text-faint"
         }`}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <p className={`mt-2.5 text-[14.5px] font-medium ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
+      <p className={`mt-3 text-[15px] font-semibold ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
+      <p className="mt-1.5 text-[13px] leading-snug text-faint">{body}</p>
     </div>
   );
 }

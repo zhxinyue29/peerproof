@@ -20,7 +20,19 @@ import { useT } from "@/lib/i18n";
 /// the event detail on that to draw five circles would be a bad trade, so the card renders without
 /// this, and this appears when it arrives. If it never arrives, nothing is missing — the counts
 /// above it came from the contract directly and were always the real answer.
-export default function AttendeeRow({ eventId, total }: { eventId: bigint; total: number }) {
+export default function AttendeeRow({
+  eventId,
+  total,
+  confirmedOnly,
+  small,
+}: {
+  eventId: bigint;
+  total: number;
+  /// Only the people the room has vouched for. The sheet gives them their own row, smaller, beside
+  /// the label — they are a different claim from "registered" and should not look like the same one.
+  confirmedOnly?: boolean;
+  small?: boolean;
+}) {
   const t = useT();
   const [who, setWho] = useState<Address[] | null>(null);
 
@@ -31,17 +43,17 @@ export default function AttendeeRow({ eventId, total }: { eventId: bigint; total
     // read should leave the card as it is, not put an error into it.
     void readHistory(eventId)
       .then((h) => {
-        if (!dropped) setWho(h.participants.map((p) => p.address));
+        if (!dropped) setWho(h.participants.filter((p) => !confirmedOnly || p.confirmed).map((p) => p.address));
       })
       .catch(() => {});
     return () => {
       dropped = true;
     };
-  }, [eventId, total]);
+  }, [eventId, total, confirmedOnly]);
 
   if (total === 0 || !who?.length) return null;
 
-  const shown = who.slice(0, 5);
+  const shown = who.slice(0, small ? 3 : 5);
   const rest = total - shown.length;
 
   return (
@@ -51,13 +63,13 @@ export default function AttendeeRow({ eventId, total }: { eventId: bigint; total
           <span
             key={a}
             title={a}
-            className="h-9 w-9 rounded-full border-2 border-panel"
-            style={{ marginLeft: i === 0 ? 0 : -10, background: gradientFor(a) }}
+            className={`${small ? "h-7 w-7" : "h-9 w-9"} rounded-full border-2 border-panel`}
+            style={{ marginLeft: i === 0 ? 0 : small ? -8 : -10, background: gradientFor(a) }}
           />
         ))}
       </div>
       {rest > 0 && (
-        <span className="flex h-9 items-center rounded-full bg-raised px-2.5 text-[13px] font-medium tabular-nums text-dim">
+        <span className={`flex items-center rounded-full bg-raised px-2.5 font-medium tabular-nums text-dim ${small ? "h-7 text-[12.5px]" : "h-9 text-[13px]"}`}>
           +{rest}
         </span>
       )}
