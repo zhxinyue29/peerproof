@@ -150,6 +150,28 @@ export default function OrganizerPage() {
     >
       {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
 
+      {/* Signed out, the page still shows what it is. It used to be replaced entirely by a warning
+          and an email field — so anybody opening the organizer link, including somebody being shown
+          the product, saw none of it. The shape is the same shape, the figures are zeros because
+          there is nothing to count yet, and the sign-in sits where the events would be. */}
+      {!signer && !creating && (
+        <div className="space-y-6">
+          <GreetingBanner who={null} onCreate={() => goTo("create")} />
+          <Kpis events={[]} t={t} />
+          <section className="space-y-4">
+            <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">
+              {t("organizer.yourEvents")}
+            </h2>
+            <div className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+              <IdentityGate intro={<GateIntro kind="organizer" />}>{null}</IdentityGate>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* Skipped entirely in the case above, which already renders one. Two gates on one screen
+          would offer the same email field twice. */}
+      {(signer || creating) && (
       <IdentityGate intro={<GateIntro kind="organizer" />}>
         {creating ? (
           <CreateForm
@@ -161,46 +183,7 @@ export default function OrganizerPage() {
           />
         ) : (
           <div className="space-y-6">
-            {/* The greeting band from the dashboard sheet. Its artwork is the same clip the landing
-                page runs, held still: a second video on a screen somebody is working on is motion
-                competing with a task. The two buttons are the sheet's, and both already existed —
-                this only gives them the place the design puts them. */}
-            <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] bg-cover bg-center opacity-60 lg:block"
-                style={{
-                  backgroundImage: `url(${basePath}/hero.webp)`,
-                  WebkitMaskImage: "linear-gradient(to right, transparent, #000 58%)",
-                  maskImage: "linear-gradient(to right, transparent, #000 58%)",
-                }}
-              />
-              <div className="relative max-w-[42ch]">
-                <p className="text-[15px] text-dim">
-                  {t(greetingKey(), { who: signer?.label ?? shortAddress(signer?.address ?? "0x") })}
-                </p>
-                <h2
-                  className="mt-2 bg-clip-text pb-[0.1em] text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[36px]"
-                  style={{
-                    fontFamily: '"Montserrat", var(--font-sans)',
-                    backgroundImage:
-                      "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
-                  }}
-                >
-                  {t("organizer.bannerTitle")}
-                </h2>
-                <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("organizer.bannerBody")}</p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Button onClick={() => goTo("create")}>+ {t("nav.createEvent")}</Button>
-                  <Link
-                    href="/events"
-                    className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-5 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
-                  >
-                    {t("organizer.seeAllEvents")}
-                  </Link>
-                </div>
-              </div>
-            </section>
+            <GreetingBanner who={signer?.label ?? (signer ? shortAddress(signer.address) : null)} onCreate={() => goTo("create")} />
 
             <Kpis events={mine} t={t} />
 
@@ -243,6 +226,7 @@ export default function OrganizerPage() {
             entirely, which is why this had been stuck. */}
         <DeployDirectory />
       </IdentityGate>
+      )}
 
       <p className="text-[14px] leading-relaxed text-faint md:max-w-[70ch]">
         {t("organizer.footNote")}
@@ -311,6 +295,56 @@ function useUrlTab(): ["dashboard" | "create", (to: "dashboard" | "create") => v
 /// couple of people in it, so the cards are built to look composed at single digits: one column
 /// width, one type size, and a caption line that is always there — a card whose caption vanishes
 /// when the count is zero is what makes a quiet dashboard look broken rather than early.
+/// The greeting band from the dashboard sheet.
+///
+/// Its artwork is the same clip the landing page runs, held still: a second video on a screen
+/// somebody is working on is motion competing with a task. The two buttons are the sheet's.
+///
+/// `who` is null for a visitor who has not signed in. The band still renders — this is the block
+/// that tells anybody opening the link what the page is for, and hiding it behind sign-in meant a
+/// stranger's first view of the organizer side was a warning and an email field.
+function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () => void }) {
+  const t = useT();
+  return (
+    <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] bg-cover bg-center opacity-60 lg:block"
+        style={{
+          backgroundImage: `url(${basePath}/hero.webp)`,
+          WebkitMaskImage: "linear-gradient(to right, transparent, #000 58%)",
+          maskImage: "linear-gradient(to right, transparent, #000 58%)",
+        }}
+      />
+      <div className="relative max-w-[42ch]">
+        <p className="text-[15px] text-dim">
+          {who ? t(greetingKey(), { who }) : t("organizer.bannerGuest")}
+        </p>
+        <h2
+          className="mt-2 bg-clip-text pb-[0.1em] text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[36px]"
+          style={{
+            fontFamily: '"Montserrat", var(--font-sans)',
+            backgroundImage:
+              "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
+          }}
+        >
+          {t("organizer.bannerTitle")}
+        </h2>
+        <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("organizer.bannerBody")}</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button onClick={onCreate}>+ {t("nav.createEvent")}</Button>
+          <Link
+            href="/events"
+            className="inline-flex min-h-[44px] items-center rounded-xl border border-line-2 px-5 text-[16px] text-dim transition-colors hover:border-accent hover:text-fg"
+          >
+            {t("organizer.seeAllEvents")}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
   const totals = useMemo(() => {
     if (!events) return null;

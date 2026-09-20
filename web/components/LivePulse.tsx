@@ -25,6 +25,14 @@ const BARS = 8;
 type Pulse = {
   /// Vouch count per bucket, oldest first. Empty when nothing has happened yet.
   bars: number[];
+  /// Cumulative vouches at the end of each bucket — the same data read as a curve rather than as
+  /// a histogram, which is what panel 06 of the organizer sheet draws.
+  ///
+  /// The sheet has two series: 报名人数 and 已验证人数. Only one of them can be drawn honestly
+  /// here: `Registered` logs are read without their block numbers, so the registration series has
+  /// no time axis to sit on. One true line, labelled as one line — rather than two, with the
+  /// second interpolated from a total.
+  cumulative: number[];
   total: number;
   /// How long the window covers, in seconds, or null if the boundary block could not be read.
   spanSeconds: number | null;
@@ -32,7 +40,7 @@ type Pulse = {
 
 async function readPulse(id: bigint): Promise<Pulse> {
   const history = await readHistory(id);
-  if (history.vouches.length === 0) return { bars: [], total: 0, spanSeconds: null };
+  if (history.vouches.length === 0) return { bars: [], cumulative: [], total: 0, spanSeconds: null };
 
   let first = history.vouches[0].block;
   for (const v of history.vouches) if (v.block < first) first = v.block;
@@ -56,7 +64,10 @@ async function readPulse(id: bigint): Promise<Pulse> {
   } catch {
     // An archive node that has pruned the block, or a rate limit. The bars are still true.
   }
-  return { bars, total: history.vouches.length, spanSeconds };
+  let running = 0;
+  const cumulative = bars.map((n) => (running += n));
+
+  return { bars, cumulative, total: history.vouches.length, spanSeconds };
 }
 
 export default function LivePulse({ eventId, live }: { eventId: bigint | null; live: boolean }) {
@@ -119,27 +130,53 @@ export default function LivePulse({ eventId, live }: { eventId: bigint | null; l
 /* ------------------------------------------------------------------ */
 
 function Bars({ pulse, caption, t }: { pulse: Pulse; caption: string; t: TFn }) {
-  const peak = Math.max(...pulse.bars);
+  // A cumulative line, as the sheet draws it, over the per-bucket bars it replaces. The bars said
+  // "how busy was each stretch"; the line says "how far has the room got", which is the question
+  // somebody standing in it is actually asking.
+  const peak = Math.max(1, pulse.cumulative[pulse.cumulative.length - 1] ?? 1);
+  const W = 100;
+  const H = 40;
+  const pts = pulse.cumulative.map((n, i) => {
+    const x = pulse.cumulative.length === 1 ? W : (i / (pulse.cumulative.length - 1)) * W;
+    return [x, H - (n / peak) * H] as const;
+  });
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
+  const area = `${line} L${W} ${H} L0 ${H} Z`;
+
   return (
     <div className="space-y-3">
       <div
         role="img"
-        aria-label={t("organizer.pulseAria", { n: pulse.total, bars: pulse.bars.join(", ") })}
-        className="flex h-[120px] items-end gap-1.5"
+        aria-label={t("organizer.pulseAria", { n: pulse.total, bars: pulse.cumulative.join(", ") })}
+        className="relative h-[120px]"
       >
-        {pulse.bars.map((n, i) => (
-          <div key={i} className="flex h-full flex-1 items-end">
-            <div
-              className={`w-full rounded-t-md transition-[height] duration-500 ${
-                n > 0 ? "bg-gradient-to-t from-accent to-accent-2" : "bg-line"
-              }`}
-              // An empty bucket keeps a 3px stub instead of disappearing: a gap in the row is
-              // itself information — the room went quiet — and a bar of zero height reads as a
-              // chart that is still loading.
-              style={{ height: n > 0 ? `${Math.max(12, (n / peak) * 100)}%` : "3px" }}
-            />
-          </div>
-        ))}
+        {/* `preserveAspectRatio="none"` so the curve fills whatever width the panel has — the shape
+            is the data, and the aspect ratio of the box it sits in carries no information. */}
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full">
+          <defs>
+            <linearGradient id="pulse-line" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--color-accent)" />
+              <stop offset="100%" stopColor="var(--color-ok)" />
+            </linearGradient>
+            <linearGradient id="pulse-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#pulse-fill)" />
+          <path
+            d={line}
+            fill="none"
+            stroke="url(#pulse-line)"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+          {pts.slice(-1).map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="2.4" fill="var(--color-ok)" vectorEffect="non-scaling-stroke" />
+          ))}
+        </svg>
       </div>
 
       <p className="text-[14px] leading-relaxed text-dim">{caption}</p>

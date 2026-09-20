@@ -117,6 +117,7 @@ export const zh: Dict = {
   "organizer.greeting.afternoon": "{who}，下午好 👋",
   "organizer.greeting.evening": "{who}，晚上好 👋",
   "organizer.bannerTitle": "用真实的活动，建立可信的社区",
+  "organizer.bannerGuest": "办活动的人看到的就是这一页 👋",
   "organizer.bannerBody": "办一场活动,让到场的人互相证明。押金由合约保管,你从头到尾碰不到。",
   "organizer.seeAllEvents": "看全部活动",
   "me.filterAllN": "全部 ({n})",

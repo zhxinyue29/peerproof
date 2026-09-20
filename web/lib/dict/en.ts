@@ -115,6 +115,7 @@ export const en = {
   "organizer.greeting.afternoon": "Good afternoon, {who} 👋",
   "organizer.greeting.evening": "Good evening, {who} 👋",
   "organizer.bannerTitle": "Build a community out of events that really happen",
+  "organizer.bannerGuest": "This is what running an event looks like 👋",
   "organizer.bannerBody": "Host one, and let the people in the room prove each other were there. The contract holds the deposits; you never touch them.",
   "organizer.seeAllEvents": "See all events",
   "me.filterAllN": "All ({n})",

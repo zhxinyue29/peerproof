@@ -162,44 +162,82 @@ export default function MePage() {
 
   if (!address) {
     return (
+      // The page's own shape, with the sign-in where the record would be — not a centred card
+      // instead of the page. Somebody opening this link for the first time should see what the
+      // screen is before being asked who they are, and the layout is most of the answer.
       <Frame>
-        <div className="mx-auto max-w-[520px] rounded-2xl border border-line bg-panel p-8 text-center md:mt-10">
-          <span
+        <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start">
+          <nav
             aria-hidden
-            className="mx-auto block h-14 w-14 rounded-2xl border border-line-2"
-            style={{ background: "linear-gradient(145deg, #6e54ff, #3a2da8)" }}
-          />
-          <h1 className="mt-5 text-[24px] font-semibold tracking-[-0.02em]">{t("nav.myProof")}</h1>
-          <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("me.signedOutBody")}</p>
-          <p className="mt-2 text-[15px] leading-relaxed text-faint">{t("me.signInFirst")}</p>
-          {/* Signing in is the action this page is missing, so it is the button on it. It used to
-              send you to the events list to "sign in at an event" — the account page being the one
-              screen in the product you could not sign in from, while the bar above it offered a
-              sign-in button the whole time. Browsing events is still here, as the second thing. */}
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <button
-              type="button"
-              onClick={setUpPrivy}
-              disabled={!!busy}
-              className="inline-flex min-h-[48px] items-center rounded-xl bg-accent px-6 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985] disabled:opacity-60"
-            >
-              {busy ?? t("home.signIn")}
-            </button>
-            <Link
-              href="/events"
-              className="inline-flex min-h-[44px] items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4 hover:text-fg"
-            >
-              {t("me.findOne")}
-            </Link>
-            {devMode && (
-              <button
-                type="button"
-                onClick={useDevKey}
-                className="inline-flex min-h-[44px] items-center text-[14px] text-faint underline decoration-line-2 underline-offset-4"
-              >
-                Throwaway local key (dev)
-              </button>
+            className="hidden rounded-2xl border border-line bg-panel p-2 lg:block"
+          >
+            {[t("me.tabOverview"), t("me.tabJoined"), t("me.tabHosted"), t("me.tabSettings")].map(
+              (label, i) => (
+                <span
+                  key={label}
+                  className={`flex min-h-[44px] items-center rounded-xl px-3.5 text-[15px] ${
+                    i === 0 ? "bg-accent/10 text-dim" : "text-faint"
+                  }`}
+                >
+                  {label}
+                </span>
+              ),
             )}
+          </nav>
+
+          <div className="min-w-0 space-y-6">
+            <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 hidden w-[46%] bg-cover bg-center opacity-40 lg:block"
+                style={{
+                  backgroundImage: `url(${basePath}/hero.webp)`,
+                  WebkitMaskImage: "linear-gradient(to right, transparent, #000 55%)",
+                  maskImage: "linear-gradient(to right, transparent, #000 55%)",
+                }}
+              />
+              <div className="relative max-w-[46ch]">
+                <h1 className="text-[26px] font-semibold tracking-[-0.02em] md:text-[30px]">
+                  {t("nav.myProof")}
+                </h1>
+                <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("me.signedOutBody")}</p>
+                <p className="mt-2 text-[15px] leading-relaxed text-faint">{t("me.signInFirst")}</p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={setUpPrivy}
+                    disabled={!!busy}
+                    className="inline-flex min-h-[48px] items-center rounded-xl bg-accent px-6 text-[16px] font-medium text-white transition-transform duration-100 active:scale-[0.985] disabled:opacity-60"
+                  >
+                    {busy ?? t("home.signIn")}
+                  </button>
+                  <Link
+                    href="/events"
+                    className="inline-flex min-h-[44px] items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4 hover:text-fg"
+                  >
+                    {t("me.findOne")}
+                  </Link>
+                  {devMode && (
+                    <button
+                      type="button"
+                      onClick={useDevKey}
+                      className="inline-flex min-h-[44px] items-center text-[14px] text-faint underline decoration-line-2 underline-offset-4"
+                    >
+                      Throwaway local key (dev)
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* The four figures, as dashes. Zeros would be a claim about this reader — that they
+                have joined nothing — and nobody has said who they are yet. */}
+            <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <Tile value="—" label={t("me.eventsJoined")} />
+              <Tile value="—" label={t("me.eventsHosted")} />
+              <Tile value="—" label={t("me.staked")} />
+              <Tile value="—" label={t("me.turnout")} />
+            </dl>
           </div>
         </div>
       </Frame>
