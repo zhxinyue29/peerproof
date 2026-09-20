@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Participant, Vouch } from "@/lib/logs";
 import { shortAddress } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -27,6 +27,24 @@ export function edgeKey(v: Vouch): EdgeKey {
 const VB_W = 1000;
 const VB_H = 560;
 
+
+/// Narrow-screen switch, shared by the graph and by its skeleton so the two never render at
+/// different scales and make the hand-off look like a jump.
+///
+/// Measured after mount rather than guessed during render: this is a static export with no idea
+/// what is asking for it, and a viewport-dependent first render would hydrate into a mismatch.
+function useCompact() {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 720px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  return compact;
+}
+
 export default function ProofNetwork({
   participants,
   vouches,
@@ -50,26 +68,19 @@ export default function ProofNetwork({
   // worse than absent because it fills the space where the picture should be. On narrow screens
   // the labels go (the roster underneath says who is who anyway) and the view crops to the ring,
   // which is the only part that carries meaning at that size.
-  //
-  // Measured after mount rather than guessed during render: this is a static export with no idea
-  // what is asking for it, and a viewport-dependent first render would hydrate into a mismatch.
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 720px)");
-    const sync = () => setCompact(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
+  const compact = useCompact();
+
   // Ids are scoped per instance: the travelling dots reference their edge by `href`, and two
   // networks on one document with the same ids would both animate along the first one's paths.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
 
-  if (participants.length === 0) {
-    return (
-      <p className="py-16 text-center text-[16px] text-dim">{t("graph.nobodyRegistered")}</p>
-    );
-  }
+  // Which edges this browser has already watched arrive.
+  //
+  // The page re-reads the chain every fifteen seconds, and an edge that was on screen last tick is
+  // not news. Only the ones that were not in the previous read get the arrival signal — otherwise
+  // every poll would replay the whole room and the one thing the motion is supposed to mean
+  // ("somebody just vouched, seconds ago") would mean nothing.
+  const everSeen = useRef<Set<string> | null>(null);
 
   const cx = VB_W / 2;
   const cy = VB_H / 2;
@@ -126,11 +137,36 @@ export default function ProofNetwork({
     ? []
     : edges.filter((_, i) => i % Math.max(1, Math.ceil(edges.length / 6)) === 0).slice(0, 6);
 
+  // First read is not an arrival: everything in it happened before you opened the page, and
+  // flashing forty transactions at once would be a fireworks display, not evidence.
+  //
+  // Derived during render but *recorded* in an effect below. Marking them as seen here instead —
+  // which is what this did first — silently produced nothing at all: React renders a component
+  // twice in development, so by the second pass every "new" edge had already been written into the
+  // set by the first, and the arrival never fired. A render that mutates state it also reads is a
+  // render that behaves differently depending on how many times it runs.
+  const fresh =
+    everSeen.current === null
+      ? new Set<string>()
+      : new Set(edges.filter((e) => !everSeen.current!.has(e.key)).map((e) => e.key));
+
+  const edgeKeys = edges.map((e) => e.key).join("|");
+  useEffect(() => {
+    everSeen.current = new Set(edgeKeys ? edgeKeys.split("|") : []);
+  }, [edgeKeys]);
+
   const activeNodes = new Set<string>();
   const active = edges.find((e) => e.key === selected);
   if (active) {
     activeNodes.add(active.from);
     activeNodes.add(active.to);
+  }
+
+  // Checked here rather than at the top of the function: every hook in this component has to run
+  // on every render, and an early return above them means the set of hooks changes the moment the
+  // first person registers — which React treats, correctly, as a different component.
+  if (participants.length === 0) {
+    return <p className="py-16 text-center text-[16px] text-dim">{t("graph.nobodyRegistered")}</p>;
   }
 
   return (
@@ -201,7 +237,9 @@ export default function ProofNetwork({
               strokeWidth={isActive ? 3 : 1.6}
               strokeOpacity={isActive ? 1 : selected ? 0.18 : 0.5}
               strokeLinecap="round"
-              className="pp-edge pointer-events-none"
+              className={`pointer-events-none ${
+                fresh.has(e.key) && !reduced ? "pp-edge-arrive" : "pp-edge"
+              }`}
               // In the order the chain accepted them, capped so a busy room still finishes
               // drawing before anyone could have read the numbers above it.
               style={{ animationDelay: `${Math.min(e.order * 0.085, 2.2)}s` }}
@@ -209,6 +247,21 @@ export default function ProofNetwork({
           </g>
         );
       })}
+
+      {/* A signal on an edge that has just been accepted, once. This is the only motion on the page
+          tied to something that happened while you were watching, so it is not allowed to repeat:
+          a loop would turn "this just landed" into wallpaper. */}
+      {!reduced &&
+        edges
+          .filter((e) => fresh.has(e.key))
+          .map((e) => (
+            <circle key={`n${e.key}`} r={5} fill="#c9bcff" opacity={0}>
+              <animate attributeName="opacity" values="0;1;1;0" dur="1.5s" begin="0.15s" repeatCount="1" fill="freeze" />
+              <animateMotion dur="1.5s" begin="0.15s" repeatCount="1" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+                <mpath href={`#${uid}-e${e.order}`} />
+              </animateMotion>
+            </circle>
+          ))}
 
       {carriers.map((e, i) => (
         <circle key={`c${e.key}`} r={3.5} fill="#9a88ff" opacity={selected ? 0.25 : 0.9}>
@@ -297,6 +350,63 @@ export default function ProofNetwork({
         </text>
       )}
 
+    </svg>
+  );
+}
+
+/// What the stage holds while the chain is still being read.
+///
+/// The placeholder here was a 200px grey disc, which is the shape of a page that has not been
+/// designed for its own slowest moment — and on this page the slowest moment is the common one,
+/// because rebuilding a graph from logs takes as long as it takes. A faint ring of nodes with a
+/// few edges between them says the same thing the spinner said ("not yet") while looking like the
+/// picture it is about to become, so the composition never collapses.
+///
+/// Deliberately not drawn from real addresses: there is no data yet, and inventing nodes that
+/// resolve into real people would be the one lie this page cannot tell. It is grey, it breathes,
+/// and it is replaced wholesale the moment the logs land.
+export function NetworkSkeleton() {
+  const compact = useCompact();
+  const cx = VB_W / 2;
+  const cy = VB_H / 2;
+  const r = 196;
+  const n = 8;
+  const pts = Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  });
+  const links: Array<[number, number]> = [
+    [0, 3],
+    [1, 4],
+    [2, 6],
+    [3, 5],
+    [5, 7],
+    [6, 1],
+  ];
+
+  return (
+    <svg
+      viewBox={compact ? "235 15 530 530" : `0 0 ${VB_W} ${VB_H}`}
+      className="mx-auto w-full max-w-[1040px]"
+      aria-hidden="true"
+    >
+      <g className="pp-skeleton">
+        {links.map(([a, b]) => (
+          <line
+            key={`${a}-${b}`}
+            x1={pts[a].x}
+            y1={pts[a].y}
+            x2={pts[b].x}
+            y2={pts[b].y}
+            stroke="#242e5a"
+            strokeWidth={1.5}
+            strokeDasharray="5 9"
+          />
+        ))}
+        {pts.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={13} fill="#09162a" stroke="#242e5a" strokeWidth={2} />
+        ))}
+      </g>
     </svg>
   );
 }

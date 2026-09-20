@@ -470,3 +470,39 @@ textarea {
   }
   .pp-node { animation: none; }
 }
+
+/* An edge that landed while you were looking.
+   It draws, brightens for a beat, and settles to the same weight as every other edge — because a
+   transaction accepted ten seconds ago is not more true than one accepted an hour ago, and leaving
+   it lit would turn the graph into a leaderboard of recency. The signal that rides it is rendered
+   in the component and runs exactly once. */
+@keyframes pp-edge-arrive {
+  0%   { stroke-dashoffset: 1; stroke-opacity: 0.9; }
+  35%  { stroke-dashoffset: 0; stroke-opacity: 1; }
+  60%  { stroke-opacity: 1; }
+  100% { stroke-dashoffset: 0; stroke-opacity: 0.5; }
+}
+.pp-edge-arrive {
+  stroke-dasharray: 1;
+  animation: pp-edge-arrive 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* The skeleton network, breathing.
+   Slow and shallow: this is what the page looks like for as long as a log scan takes, which can be
+   a while, and anything faster would read as a progress bar that is not progressing. */
+@keyframes pp-skeleton-breathe {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.8; }
+}
+.pp-skeleton {
+  animation: pp-skeleton-breathe 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-edge-arrive {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .pp-skeleton { animation: none; opacity: 0.6; }
+}
