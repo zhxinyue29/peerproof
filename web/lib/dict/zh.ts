@@ -260,6 +260,7 @@ export const zh: Dict = {
   "event.registered": "已报名",
   "event.snapshot": "活动状态",
   "event.tabAbout": "活动介绍",
+  "event.tabAgenda": "日程安排",
   "event.tabVenue": "场地信息",
   "event.openMap": "在地图上看",
   "event.venueNote": "地点是主办方自己写的一行字,合约不核对它——到场是由在场的人互相证明的,不是由坐标证明的。",

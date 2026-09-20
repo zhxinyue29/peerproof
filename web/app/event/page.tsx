@@ -47,7 +47,7 @@ export default function EventPage() {
   const [error, setError] = useState<string | null>(null);
   const [justRegistered, setJustRegistered] = useState<Hex | null>(null);
   const [howOpen, setHowOpen] = useState(false);
-  const [detailTab, setDetailTab] = useState<"about" | "venue" | "rules" | "faq">("about");
+  const [detailTab, setDetailTab] = useState<"about" | "agenda" | "venue" | "rules" | "faq">("about");
   const [joining, setJoining] = useState(false);
 
   const phase = phaseOf(ev);
@@ -176,6 +176,20 @@ export default function EventPage() {
                     ? t("event.stakeAndRegister", { amount: mon(ev.deposit) })
                     : t("common.loading")}
               </Button>
+              {/* The sheet puts an outlined button directly under the primary one, the same width.
+                  The action that belongs there is the one somebody deciding whether to stake is
+                  actually asking for — what happens after I press the purple button. It used to
+                  sit down in the 验证方式 block, three sections away from the decision. */}
+              <button
+                type="button"
+                onClick={() => setHowOpen(true)}
+                className="group flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+              >
+                {t("home.howTitle4")}
+                <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+                  →
+                </span>
+              </button>
               {signer ? (
                 <div className="space-y-1 text-[14px] text-dim">
                   <p>
@@ -279,7 +293,9 @@ export default function EventPage() {
           id={eventId()}
           src={meta.cover}
           nodes={11}
-          className="h-[200px] w-full shrink-0 rounded-2xl border border-line md:h-[260px]"
+          /* The sheet's cover sits in a violet-tinted edge with a soft glow around it, not a flat
+             grey hairline — it is the first thing on the page and the drawing treats it as lit. */
+          className="h-[200px] w-full shrink-0 rounded-2xl border border-accent/25 shadow-[0_0_0_1px_rgba(110,84,255,0.10),0_18px_46px_-24px_rgba(110,84,255,0.55)] md:h-[260px]"
         />
 
         <div className="space-y-2">
@@ -353,7 +369,7 @@ export default function EventPage() {
             what the door does, where it is written, who pays out. Same block, same rhythm, nothing
             in it that cannot be checked. */}
         <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
-          <h2 className="text-[18px] font-semibold tracking-[-0.01em]">{t("event.methodTitle")}</h2>
+          <h2 className="text-[15.5px] font-medium text-dim">{t("event.methodTitle")}</h2>
           <div className="mt-5 grid grid-cols-4 gap-2">
             <VerifyTile
               icon="peers"
@@ -366,30 +382,22 @@ export default function EventPage() {
             <VerifyTile icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setHowOpen(true)}
-            className="group mt-4 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-line-2 px-5 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
-          >
-            {t("home.howTitle4")}
-            <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
-              →
-            </span>
-          </button>
         </section>
 
-        {/* The sheet's tab strip: 活动介绍 / 日程安排 / 场地信息 / 验证规则 / 常见问题.
-            Three of those five are here. 日程安排 and 场地信息 are not: this contract stores one
-            timestamp and one line of free text for a venue, and a tab that opens onto a single
-            sentence is a tab that teaches people not to press the others.
-            Tabs rather than the stack of accordions this was: the sheet shows one body at a time
-            with the rest named across the top, which is a shape somebody scans before they read. */}
-        <section className="rounded-2xl border border-line bg-panel">
-          <div className="overflow-x-auto border-b border-line px-5">
+        {/* The sheet's tab strip, all five of it: 活动介绍 / 日程安排 / 场地信息 / 验证规则 /
+            常见问题. 日程安排 used to be missing on the grounds that the contract stores one
+            timestamp — but it stores four, and they are the four that decide whether somebody can
+            still join, when the doors open and when vouching stops. That is a schedule, and it was
+            sitting in an extra card in the right rail that the sheet does not have.
+            No bordered box around the strip: the sheet sets the tabs straight onto the page and
+            only the panel beneath them is a card. */}
+        <section>
+          <div className="overflow-x-auto px-1">
             <div className="flex min-w-max gap-1">
               {(
                 [
                   ["about", "event.tabAbout"],
+                  ["agenda", "event.tabAgenda"],
                   ["venue", "event.tabVenue"],
                   ["rules", "event.tabRules"],
                   ["faq", "event.tabFaq"],
@@ -403,12 +411,12 @@ export default function EventPage() {
                     onClick={() => setDetailTab(key)}
                     aria-current={on ? "page" : undefined}
                     className={`relative flex min-h-[50px] items-center whitespace-nowrap px-3.5 text-[15px] transition-colors ${
-                      on ? "font-medium text-fg" : "text-dim hover:text-fg"
+                      on ? "font-medium text-accent-2" : "text-dim hover:text-fg"
                     }`}
                   >
                     {t(label)}
                     {on && (
-                      <span aria-hidden className="absolute inset-x-2.5 -bottom-px h-[2px] rounded-full bg-accent" />
+                      <span aria-hidden className="absolute inset-x-2.5 bottom-0 h-[2.5px] rounded-full bg-accent" />
                     )}
                   </button>
                 );
@@ -416,7 +424,7 @@ export default function EventPage() {
             </div>
           </div>
 
-          <div className="space-y-3 p-5 text-[15.5px] leading-relaxed text-dim md:p-6">
+          <div className="mt-3 space-y-3 rounded-2xl border border-line bg-panel p-5 text-[15.5px] leading-relaxed text-dim md:p-6">
             {detailTab === "about" && (
               <>
                 {meta.blurb ? (
@@ -436,6 +444,11 @@ export default function EventPage() {
                 )}
               </>
             )}
+
+            {/* What used to be the 活动详情 card in the right rail. The sheet has a 日程安排 tab
+                and no such card, and these four timestamps are a schedule — when you can still
+                join, when the doors open, when vouching closes. */}
+            {detailTab === "agenda" && <Details ev={ev} bare />}
 
             {detailTab === "venue" && (
               <>
@@ -463,6 +476,20 @@ export default function EventPage() {
 
             {detailTab === "rules" && (
               <>
+                {/* The two numbers that were a three-up strip in the rail. They belong to this
+                    tab: "how many people have to vouch" is the rule, not a statistic. */}
+                {ev && (
+                  <dl className="grid grid-cols-2 gap-3 pb-1">
+                    <div className="rounded-xl border border-line bg-raised p-4">
+                      <dt className="text-[13.5px] text-faint">{t("event.vouchesNeededLbl")}</dt>
+                      <dd className="mt-1 text-[22px] font-semibold tabular-nums text-fg">{ev.k}</dd>
+                    </div>
+                    <div className="rounded-xl border border-line bg-raised p-4">
+                      <dt className="text-[13.5px] text-faint">{t("event.minimumToRun")}</dt>
+                      <dd className="mt-1 text-[22px] font-semibold tabular-nums text-fg">{ev.minQuorum}</dd>
+                    </div>
+                  </dl>
+                )}
                 <p>{t("event.howP1")}</p>
                 <p>{t("event.howP2")}</p>
                 <p>{t("event.howP3")}</p>
@@ -524,11 +551,18 @@ export default function EventPage() {
                     {ev.registered}
                     <span className="text-[20px] text-faint">/{ev.capacity}</span>
                   </p>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-line" role="img"
+                  {/* One continuous mint-to-violet sweep, as the sheet draws it — but still two
+                      segments underneath, because the boundary between them is real: the mint part
+                      is people the room has already vouched for, the violet part is people who have
+                      only paid. A single flat bar would lose the one number on this page that
+                      cannot be produced by signing up. Each segment carries its own slice of the
+                      same gradient, so the seam does not read as a colour change. */}
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-ink" role="img"
                        aria-label={`${ev.registered} / ${ev.capacity}`}>
                     <div className="flex h-full w-full">
-                      <span className="h-full bg-ok" style={{ width: `${pct(ev.confirmed, ev.capacity)}%` }} />
-                      <span className="h-full bg-accent"
+                      <span className="h-full bg-gradient-to-r from-ok to-accent-2"
+                            style={{ width: `${pct(ev.confirmed, ev.capacity)}%` }} />
+                      <span className="h-full bg-gradient-to-r from-accent-2 to-accent"
                             style={{ width: `${pct(ev.registered - ev.confirmed, ev.capacity)}%` }} />
                     </div>
                   </div>
@@ -546,29 +580,33 @@ export default function EventPage() {
                 not have. The money that does exist is the deposit, so that slot says what the
                 deposit is and who is holding it. Left column had it as a banner; the sheet keeps
                 the left column for what the event *is* and the right for what it *costs*. */}
+            {/* The sheet's second card is 奖励池 — a prize pool this contract does not have. The
+                money that does exist is the deposit, so this slot says what the deposit is and who
+                holds it. The sheet draws a gold coin beside the figure; the deposit is the only
+                real money on this page, so it keeps the coin. */}
             <section
               aria-label={t("event.deposit")}
-              className="rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5"
+              className="flex items-center gap-4 rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5"
             >
-              <p className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums">
-                {ev ? mon(ev.deposit) : <Skeleton className="h-7 w-24 align-middle" />}
-              </p>
-              <p className="mt-2 text-[15px] font-medium leading-snug">
-                {t("event.heldBy")}
-                <span className="mt-0.5 block font-normal text-dim">{t("event.notByOrganizer")}</span>
-              </p>
+              <Coin />
+              <div className="min-w-0">
+                <p className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums">
+                  {ev ? mon(ev.deposit) : <Skeleton className="h-7 w-24 align-middle" />}
+                </p>
+                <p className="mt-2 text-[15px] font-medium leading-snug">
+                  {t("event.heldBy")}
+                  <span className="mt-0.5 block font-normal text-dim">{t("event.notByOrganizer")}</span>
+                </p>
+              </div>
             </section>
 
-            {/* The three fixed numbers, in the rail. The sheet keeps counts on this side; on the
-                left they sat between the description and the tabs, splitting what the event is
-                from what people say about it. */}
-            <section className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-line bg-line">
-              <StatTile value={ev && `${ev.registered}`} label={t("event.registered")} />
-              <StatTile value={ev && `${ev.k}`} label={t("event.vouchesNeededLbl")} />
-              <StatTile value={ev && `${ev.minQuorum}`} label={t("event.minimumToRun")} />
-            </section>
-
-            <Details ev={ev} />
+            {/* The sheet's right column is exactly two cards: 活动状态 and the money. It had four
+                here — a strip of three counts and a details panel — and those two extra cards are
+                what made this rail look nothing like the drawing.
+                They are not deleted. The counts (how many vouches, how few people it takes to run)
+                moved into the 验证规则 tab, and the timings moved into 日程安排 — both tabs the
+                sheet itself draws, and both the place somebody would look for exactly those facts.
+                Nothing on this page knows less than it did. */}
           </div>
         </main>
       </div>
@@ -600,16 +638,16 @@ function StatTile({ value, label }: { value: string | null; label: string }) {
 
 /// The logistics panel. Everything in it is read off the escrow, which is why there is no address
 /// line: the chain has never been told where the event is.
-function Details({ ev }: { ev: EventInfo | null }) {
+function Details({ ev, bare }: { ev: EventInfo | null; bare?: boolean }) {
   const { t, lang } = useLang();
   // The app's language, not the browser's: somebody who switched to Chinese on an
   // English-locale laptop was still reading "Thu, Sep 4" on this row.
   const locale = lang === "zh" ? "zh-CN" : "en-GB";
 
   return (
-    <section className="rounded-2xl border border-line bg-panel p-5 md:p-[22px]">
-      <h2 className="text-[16px] font-semibold">{t("event.details")}</h2>
-      <dl className="mt-4 space-y-4">
+    <section className={bare ? "" : "rounded-2xl border border-line bg-panel p-5 md:p-[22px]"}>
+      {!bare && <h2 className="text-[16px] font-semibold">{t("event.details")}</h2>}
+      <dl className={bare ? "space-y-4" : "mt-4 space-y-4"}>
         {!ev ? (
           <>
             <DetailRow term={<Skeleton className="h-4 w-36" />} detail={<Skeleton className="h-3.5 w-28" />} />
@@ -740,7 +778,9 @@ function VerifyTile({
       <span
         aria-hidden
         className={`flex h-11 w-11 items-center justify-center rounded-full ${
-          lit ? "bg-accent/20 text-accent-2" : "bg-line text-faint"
+          lit
+            ? "bg-gradient-to-br from-accent-2/45 to-accent/35 text-white shadow-[0_0_0_1px_rgba(154,136,255,0.28)]"
+            : "bg-line text-faint"
         }`}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -916,5 +956,39 @@ function TagGlyph({ tag }: { tag: string }) {
     <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent-2">
       <path d={hit[1]} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+/// The gold coin the sheet puts beside the money.
+///
+/// Drawn rather than an image file: it has to sit on a gradient panel in two themes and at two
+/// sizes, and a flat PNG of a coin on a violet card is the kind of thing that looks pasted on.
+function Coin() {
+  return (
+    <span aria-hidden className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+      <span className="absolute inset-0 rounded-full bg-[#f5a623]/25 blur-md" />
+      <svg viewBox="0 0 56 56" className="relative h-14 w-14">
+        <defs>
+          <linearGradient id="coinFace" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#ffd77a" />
+            <stop offset="55%" stopColor="#f5a623" />
+            <stop offset="100%" stopColor="#c9791a" />
+          </linearGradient>
+        </defs>
+        <circle cx="28" cy="28" r="20" fill="url(#coinFace)" />
+        <circle cx="28" cy="28" r="20" fill="none" stroke="#ffe6a8" strokeOpacity="0.55" strokeWidth="1.5" />
+        <circle cx="28" cy="28" r="14.5" fill="none" stroke="#8a4f10" strokeOpacity="0.35" strokeWidth="1.5" />
+        {/* A generic currency mark, not a token logo — this coin stands for a deposit in whatever
+            the chain's unit is, and stamping a brand on it would be a claim. */}
+        <path
+          d="M28 19v18M33 23.5h-6.6a3.4 3.4 0 0 0 0 6.8h4.2a3.4 3.4 0 0 1 0 6.8H23"
+          fill="none"
+          stroke="#7a4310"
+          strokeOpacity="0.8"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
   );
 }

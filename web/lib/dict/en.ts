@@ -259,6 +259,7 @@ export const en = {
   "event.registered": "registered",
   "event.snapshot": "Event status",
   "event.tabAbout": "About",
+  "event.tabAgenda": "Schedule",
   "event.tabVenue": "Venue",
   "event.openMap": "Open in maps",
   "event.venueNote": "The place is a line the organizer typed; the contract does not check it. Presence is proved by the people in the room, not by coordinates.",
