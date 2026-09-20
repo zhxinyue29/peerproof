@@ -90,7 +90,13 @@ export default function OrganizerPage() {
   /// leaves a reloadable link behind.
   const select = useCallback(
     (id: bigint) => {
-      window.history.replaceState(null, "", `${window.location.pathname}?event=${id}`);
+      // Keep the rest of the query. This wrote `?event=N` over the whole string, which erased
+      // `?tab=create` — so an organizer who already had an event could not reach the create form
+      // at all: the auto-select effect fired on arrival, rewrote the URL, and the page re-read the
+      // tab as absent and rendered the dashboard instead.
+      const params = new URLSearchParams(window.location.search);
+      params.set("event", id.toString());
+      window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
       void resolveEventId().then(refresh);
     },
     [refresh],
@@ -372,11 +378,19 @@ function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () =>
     <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[44%] bg-cover bg-center opacity-60 lg:block"
+        // 55% and flush to the edges, which is how the sheet sets it — the artwork is half the
+        // band, not a thumbnail floated in the corner. The fade starts at 30% so the picture is
+        // still a picture where it meets the words rather than a wash.
+        className="pointer-events-none absolute inset-0 left-auto hidden w-[55%] bg-cover bg-center opacity-90 lg:block"
         style={{
-          backgroundImage: `url(${basePath}/hero.webp)`,
-          WebkitMaskImage: "linear-gradient(to right, transparent, #000 58%)",
-          maskImage: "linear-gradient(to right, transparent, #000 58%)",
+          // A composite built for this band: the stage, the organizer with a laptop, and the
+          // handwritten lines — the three elements the dashboard sheet draws. Assembled from
+          // artwork the product already had (`hero`, `door-host`, `script-showup`) rather than
+          // left as the bare stage photo, which was the single biggest thing still reading as
+          // "a different design" when the sheet and the screenshot were put side by side.
+          backgroundImage: `url(${basePath}/organizer-banner.webp)`,
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 30%)",
+          maskImage: "linear-gradient(to right, transparent 0%, #000 30%)",
         }}
       />
       <div className="relative max-w-[42ch]">
@@ -393,6 +407,13 @@ function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () =>
         >
           {t("organizer.bannerTitle")}
         </h2>
+        {/* The sheet's English line under the headline — "Create events. Verify real people.
+            Build stronger communities." It is part of the type setting, not a translation. */}
+        <p className="mt-2 text-[15px] leading-snug text-faint">
+          Create events. Verify real people.
+          <br />
+          Build stronger communities.
+        </p>
         <p className="mt-2 text-[16px] leading-relaxed text-dim">{t("organizer.bannerBody")}</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button onClick={onCreate}>+ {t("nav.createEvent")}</Button>
@@ -486,20 +507,23 @@ function Kpi({
 }) {
   const { path, tone } = KPI_ICONS[icon];
   return (
+    // Icon and figure on one line, label underneath — the sheet's arrangement. Icon-and-label on
+    // one line with the number below made the number the third thing read on a card whose entire
+    // job is the number.
     <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
-      <div className="flex items-center gap-2.5">
-        <span aria-hidden className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${tone}`}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <div className="flex items-center gap-3">
+        <span aria-hidden className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone}`}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
             <path d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
-        <p className="min-w-0 text-[14px] text-dim">{label}</p>
+        {/* `break-words` on the value, not truncation: "4,820 MON" wrapping onto two lines is
+            legible and an ellipsis in the middle of an amount is not. */}
+        <p className="min-w-0 break-words text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] tabular-nums md:text-[30px]">
+          {value ?? <Skeleton className="h-7 w-16 align-middle" />}
+        </p>
       </div>
-      {/* `break-words` on the value, not truncation: "4,820 MON" wrapping onto two lines is legible
-          and an ellipsis in the middle of an amount is not. */}
-      <p className="mt-1.5 break-words text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] tabular-nums md:text-[32px]">
-        {value ?? <Skeleton className="h-7 w-16 align-middle" />}
-      </p>
+      <p className="mt-2 text-[14px] text-dim">{label}</p>
       {/* Green, per the render — and it is the right green by the spec's own rule: every one of
           these captions is a fact read off the chain rather than a hopeful label. */}
       <p className="mt-1 text-[14px] text-ok">{sub}</p>

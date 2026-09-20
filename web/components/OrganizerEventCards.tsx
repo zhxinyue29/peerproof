@@ -153,12 +153,14 @@ export default function OrganizerEventCards({
                 <div className="relative h-[96px]">
                   <CoverImage id={e.id} src={e.listing.cover} nodes={7} className="absolute inset-0 h-full w-full" />
                   <span
-                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[12px] font-medium backdrop-blur-sm ${
+                    // Solid colour, as the sheet draws them — 进行中 reads as a state the room is
+                    // in, and a translucent grey pill over a photograph reads as a caption.
+                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[13px] font-medium ${
                       e.phase === "live"
-                        ? "bg-ok/20 text-ok"
+                        ? "bg-ok text-[#06251a]"
                         : e.phase === "settled"
-                          ? "bg-[#0d1626]/85 text-faint"
-                          : "bg-[#0d1626]/85 text-dim"
+                          ? "bg-[#2b3350] text-dim"
+                          : "bg-accent text-white"
                     }`}
                   >
                     {t(`events.${e.phase === "live" ? "openNow" : e.phase === "settled" ? "settled" : "upcoming"}`)}
