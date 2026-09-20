@@ -1,6 +1,6 @@
 // 登录弹窗的回归探针:它该在按下按钮时出现,并且在关掉之后不再自己回来。
 //
-// 只能对着线上跑。Privy 的应用只允许线上那个域名,在 127.0.0.1 上它永远停在
+// 2026-09-20 线上四条全过。只能对着线上跑。Privy 的应用只允许线上那个域名,在 127.0.0.1 上它永远停在
 // 初始化,弹窗一次都不会出现——也就是说本机跑这个脚本,「修好了」和「彻底按不动了」
 // 看起来一模一样。2026-09-20 我就是这样把一个让登录按钮失灵的改动推上线的。
 //
@@ -35,11 +35,11 @@ await step("按 Esc", false);
 
 await p.reload({ waitUntil: "domcontentloaded" });
 await p.waitForTimeout(5000);
-await step("刷新之后 —— 这一条现在是坏的", false);
+await step("刷新之后", false);
 
 await p.goto(APP + "/events/", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(5000);
-await step("换一个页面 —— 这一条现在也是坏的", false);
+await step("换一个页面", false);
 
 await b.close();
 process.exit(opened ? 0 : 1);

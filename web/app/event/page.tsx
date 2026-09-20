@@ -225,6 +225,12 @@ export default function EventPage() {
               {phase === "open" ? t("event.goToFloor") : t("event.openMyCode")}
             </LinkButton>
           </div>
+        ) : sample ? (
+          /* A sample event cannot be joined — it is not on any chain. The register button was
+             fully live here: pressing it opened the sign-in sheet, asked somebody to make an
+             account, and led to an event that does not exist. The banner above already says this
+             page is an example; the primary action should agree with it rather than contradict it. */
+          <LinkButton href="/events">{t("events.seeRealOnes")}</LinkButton>
         ) : joinable ? (
           /* Signed in: the button is the whole thing. Not signed in: the button opens the
              sheet, and the three ways to sign in appear at the moment they become a question

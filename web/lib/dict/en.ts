@@ -177,6 +177,7 @@ export const en = {
   "events.vouchesNeeded": "{k} vouches to count as present",
   "events.sample": "Sample",
   "events.sampleDetail": "This is a sample event. Every figure below is a literal; no such event exists on any chain. It is here so the screen can be looked at.",
+  "events.seeRealOnes": "See the real ones →",
   "events.sampleNote": "Examples of how events will appear. No event has been opened on this contract yet.",
   "events.createFirst": "Create the first event",
   "events.noMatchTitle": "Nothing here yet",

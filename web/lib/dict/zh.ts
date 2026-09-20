@@ -178,6 +178,7 @@ export const zh: Dict = {
   "events.vouchesNeeded": "需要 {k} 个人作证才算到场",
   "events.sample": "示例",
   "events.sampleDetail": "这是一个示例活动。下面所有数字都是写死的,链上不存在这场活动——用来看页面长什么样。",
+  "events.seeRealOnes": "看真正在办的活动 →",
   "events.sampleNote": "以下是活动展示出来的样子。这个合约上还没有人开过活动。",
   "events.createFirst": "创建第一个活动",
   "events.noMatchTitle": "这里还没有",
