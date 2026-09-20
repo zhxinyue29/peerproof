@@ -36,6 +36,25 @@ function pct(n: number, of: number) {
   return Math.max(0, Math.min(100, (n / of) * 100));
 }
 
+/// The sheet puts a small outline glyph before the date and the place on every card.
+function Glyph({ kind }: { kind: "clock" | "pin" }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
+      <path
+        d={
+          kind === "clock"
+            ? "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"
+            : "M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+        }
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function OrganizerEventCards({
   events,
   selectedId,
@@ -74,9 +93,23 @@ export default function OrganizerEventCards({
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">
-          {t("organizer.yourEvents")}
-        </h2>
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">
+            {t("organizer.yourEvents")}
+          </h2>
+          {/* The sheet's "查看全部 →". It clears the chip rather than going anywhere: there is one
+              list and this is it, so a link to a second page would be a claim about how much there
+              is that is not true. Only shown while a filter is hiding something. */}
+          {filter !== "all" && counts.all > shown.length && (
+            <button
+              type="button"
+              onClick={() => setFilter("all")}
+              className="text-[15px] text-accent-2 transition-colors hover:text-fg"
+            >
+              {t("events.seeAll")} <span aria-hidden>→</span>
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -137,10 +170,21 @@ export default function OrganizerEventCards({
                   <p className="truncate text-[16px] font-medium">
                     {e.listing.title || t("common.eventNumber", { id: e.id.toString() })}
                   </p>
-                  <p className="truncate text-[14px] text-dim">
-                    {e.listing.venue ? `${e.listing.venue} · ` : ""}
-                    {when.toLocaleDateString(locale)}
+                  {/* Two lines with icons, as the sheet draws them. One line held both, and a
+                      venue of any length pushed the date past the truncation — so the card showed
+                      a place and no date, which is the half an organizer needs least. */}
+                  <p className="flex items-center gap-1.5 text-[14px] text-dim">
+                    <Glyph kind="clock" />
+                    <span className="truncate">
+                      {when.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
+                    </span>
                   </p>
+                  {e.listing.venue && (
+                    <p className="flex items-center gap-1.5 text-[14px] text-dim">
+                      <Glyph kind="pin" />
+                      <span className="truncate">{e.listing.venue}</span>
+                    </p>
+                  )}
 
                   <div className="mt-1">
                     <div className="flex items-baseline justify-between gap-2">

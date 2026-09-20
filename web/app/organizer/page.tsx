@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { parseEther } from "viem";
 import AppShell from "@/components/AppShell";
@@ -31,7 +31,9 @@ import { eventDirectoryAbi } from "@/lib/directoryArtifact";
 import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
 import OrganizerEventCards from "@/components/OrganizerEventCards";
+import EventManagement from "@/components/EventManagement";
 import EventTimeline from "@/components/EventTimeline";
+import TagInput from "@/components/TagInput";
 import LivePulse from "@/components/LivePulse";
 import VenueHandoff from "@/components/VenueHandoff";
 
@@ -102,6 +104,22 @@ export default function OrganizerPage() {
 
   const creating = tab === "create";
   const selected = mine?.find((e) => e.id === selectedId);
+
+  /// Land on one of your own events rather than on whatever the build was pinned to.
+  ///
+  /// `selectedId` comes from `?event=`, which falls back to the build's `NEXT_PUBLIC_EVENT_ID` —
+  /// somebody else's event, on a dashboard headed "your events". What it produced was a read-only
+  /// warning and an event detail panel about a stranger's evening, sitting underneath three cards
+  /// that were actually theirs. Only when nothing is selected that belongs to them, and only once,
+  /// so it never fights a click.
+  const nudged = useRef(false);
+  useEffect(() => {
+    if (nudged.current || !mine?.length || selectedId === null) return;
+    if (mine.some((e) => e.id === selectedId)) return;
+    nudged.current = true;
+    // Newest first: the one somebody just created is the one they came back to look at.
+    select(mine.reduce((a, b) => (b.id > a.id ? b : a)).id);
+  }, [mine, selectedId, select]);
 
   if (!hasDeployment) {
     return (
@@ -193,6 +211,14 @@ export default function OrganizerPage() {
             <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6">
               <div className="min-w-0 space-y-5">
                 <OrganizerEventCards events={mine} selectedId={selectedId} onSelect={select} />
+                {/* Panel 05 of the sheet. Shown only once an event is picked — the block is about
+                    one event, and a "management" panel with nothing to manage is furniture. */}
+                {selectedId !== null && (
+                  <EventManagement
+                    event={mine?.find((e) => e.id === selectedId) ?? null}
+                    loading={!mine}
+                  />
+                )}
                 <SelectedEvent
                   ev={ev}
                   refresh={refresh}
@@ -304,18 +330,25 @@ function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
   }, [events]);
 
   return (
+    // The sheet's four tiles, in its order: what is running now, who the room has vouched for,
+    // what the contract is holding, who has signed up. Its third and fourth are "已发放奖励" and
+    // "社区评分 4.8" — a reward pool this contract has no concept of, and a rating nothing in this
+    // product collects. The two that replace them are the two figures an organizer actually has.
     <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
       <Kpi
-        label={t("organizer.yourEvents")}
-        value={totals && `${totals.count}`}
-        sub={totals ? t("organizer.liveNow", { n: totals.live }) : ""}
+        icon="live"
+        label={t("organizer.liveEvents")}
+        value={totals && `${totals.live}`}
+        sub={totals ? t("organizer.ofNTotal", { n: totals.count }) : ""}
       />
       <Kpi
-        label={t("organizer.registered")}
-        value={totals && `${totals.registered}`}
-        sub={t("organizer.acrossAllEvents")}
+        icon="verified"
+        label={t("organizer.confirmedPresent")}
+        value={totals && `${totals.confirmed}`}
+        sub={t("organizer.peerVerified")}
       />
       <Kpi
+        icon="escrow"
         label={t("organizer.heldInEscrow")}
         // `mon()` prints sub-unit amounts to four places, which is right for a gas figure and
         // wrong for a card that will read "0.0000 MON" on an evening where nobody has registered
@@ -324,18 +357,47 @@ function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
         sub={t("organizer.notInYourWallet")}
       />
       <Kpi
-        label={t("organizer.confirmedPresent")}
-        value={totals && `${totals.confirmed}`}
-        sub={t("organizer.peerVerified")}
+        icon="registered"
+        label={t("organizer.registered")}
+        value={totals && `${totals.registered}`}
+        sub={t("organizer.acrossAllEvents")}
       />
     </div>
   );
 }
 
-function Kpi({ label, value, sub }: { label: string; value: string | null; sub: string }) {
+/// The sheet gives every tile a tinted round icon. It is not decoration at this size: four cards
+/// of identical dark grey with a number in each is a row somebody's eye slides off, and the icon
+/// is what makes "which one was the money" answerable without reading the captions again.
+const KPI_ICONS: Record<string, { path: string; tone: string }> = {
+  live: { path: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z", tone: "text-accent-2 bg-accent/15" },
+  verified: { path: "m9 12 2 2 4-4M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z", tone: "text-ok bg-ok/15" },
+  escrow: { path: "M3 8h18M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M16 13h2", tone: "text-warn bg-warn/15" },
+  registered: { path: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M17 11h4M19 9v4", tone: "text-accent-2 bg-accent/15" },
+};
+
+function Kpi({
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: keyof typeof KPI_ICONS;
+  label: string;
+  value: string | null;
+  sub: string;
+}) {
+  const { path, tone } = KPI_ICONS[icon];
   return (
     <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
-      <p className="text-[14px] text-dim">{label}</p>
+      <div className="flex items-center gap-2.5">
+        <span aria-hidden className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${tone}`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        <p className="min-w-0 text-[14px] text-dim">{label}</p>
+      </div>
       {/* `break-words` on the value, not truncation: "4,820 MON" wrapping onto two lines is legible
           and an ellipsis in the middle of an amount is not. */}
       <p className="mt-1.5 break-words text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] tabular-nums md:text-[32px]">
@@ -561,6 +623,21 @@ function FallbackForm({
 /*                             Create event                           */
 /* ------------------------------------------------------------------ */
 
+/// The four steps of the create sheet, in its order. Its third is 奖励与资金 — money paid *to*
+/// attendees out of a pool the organizer funds — and this contract has no such pool. What it does
+/// have is the deposit, which is the only money in the product, so the step keeps its position and
+/// changes its subject rather than being dropped and leaving a three-step flow the sheet does not
+/// draw.
+const STEPS = ["about", "verify", "money", "publish"] as const;
+type Step = (typeof STEPS)[number];
+
+const STEP_LABEL: Record<Step, string> = {
+  about: "create.stepAbout",
+  verify: "create.stepVerify",
+  money: "create.stepMoney",
+  publish: "create.stepPublish",
+};
+
 function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onDone: () => void }) {
   const { signer } = useIdentity();
   const t = useT();
@@ -573,7 +650,11 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
   const [doorsMins, setDoorsMins] = useState("30");
   const [runsMins, setRunsMins] = useState("180");
   const [walkIns, setWalkIns] = useState(true);
-  const [step, setStep] = useState<"about" | "rules">("about");
+  // Four steps, as the create sheet draws them. Its third is 奖励与资金 — a reward pool this
+  // contract has no concept of — but the money in this product is the deposit, so that step keeps
+  // its place and its subject changes to the thing that is actually financial here.
+  const [step, setStep] = useState<Step>("about");
+  const [tags, setTags] = useState("");
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
@@ -591,7 +672,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       // Descriptions live in a second contract. Whether it exists yet is our problem, not the
       // organizer's — so if it does not, deploy it as part of this action rather than putting a
       // "deploy a contract" button in front of somebody who wanted to create an event.
-      const wantsWords = !!(title || blurb || url || venue);
+      const wantsWords = !!(title || blurb || url || venue || tags);
       if (wantsWords && !(await checkDirectory())) {
         setBusyLabel(t("listing.settingUp"));
         await deployDirectory(signer.sendRaw);
@@ -650,8 +731,8 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             // which is not a value bug — viem refuses to encode at all — so every listing write in
             // the product, here and in the editor, was failing before it reached the chain.
             // Tags are not collected in the create flow; the listing editor has that field.
-            args: [id, title, blurb, url, venue, ""],
-            gas: describeGas(title, blurb, url, venue),
+            args: [id, title, blurb, url, venue, tags],
+            gas: describeGas(title, blurb, url, venue, tags),
             to: directoryAddress(),
             abi: eventDirectoryAbi,
           });
@@ -694,45 +775,59 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {/* Two steps rather than two stacked panels. Everything was visible at once, so the financial
-          rules — the part that locks forever — competed for attention with the title field. One
-          question at a time, and the irreversible one on its own screen. */}
-      <div className="flex gap-2">
-        {(["about", "rules"] as const).map((sName, i) => (
-          <div key={sName} className="flex flex-1 items-center gap-2.5">
-            <span
-              className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[14px] ${
-                step === sName
-                  ? "border-accent-2 bg-accent text-white"
-                  : "border-line-2 bg-raised text-faint"
-              }`}
-            >
-              {i + 1}
-            </span>
-            <span className={`text-[15px] ${step === sName ? "text-fg" : "text-faint"}`}>
-              {sName === "about" ? t("create.stepAbout") : t("create.stepRules")}
-            </span>
-          </div>
-        ))}
-      </div>
+  const stepIndex = STEPS.indexOf(step);
+  const go = (by: number) => setStep(STEPS[Math.min(STEPS.length - 1, Math.max(0, stepIndex + by))]);
 
-      <div className="space-y-4">
-        {/* Description first. Somebody creating an event thinks about what it is before they think
-            about deposit mechanics, and a form that opens with six numbers reads as a config screen
-            rather than a way to invite people. */}
-        <section className={`space-y-2.5 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
+  return (
+    // A rail on the left and the current step on the right, which is what the create sheet draws.
+    // Four stacked panels with everything visible at once was the old shape, and the financial
+    // rules — the part that locks forever — competed for attention with the title field.
+    <div className="grid gap-5 lg:grid-cols-[232px_minmax(0,1fr)] lg:items-start">
+      {/* Horizontal and scrollable on a phone, vertical beside the form on a desktop. A four-item
+          vertical rail on a 390px screen costs 200px before the first field. */}
+      <ol className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:px-0">
+        {STEPS.map((name, i) => {
+          const done = i < stepIndex;
+          const here = i === stepIndex;
+          return (
+            <li key={name} className="shrink-0 lg:w-full">
+              <button
+                type="button"
+                // Backwards only. Skipping ahead would let somebody land on "publish" without the
+                // deposit being set, and the numbers it reviews would be defaults they never saw.
+                onClick={() => i < stepIndex && setStep(name)}
+                disabled={i > stepIndex}
+                className={`flex min-h-[44px] w-full items-center gap-2.5 rounded-xl px-3 text-left transition-colors ${
+                  here ? "bg-accent/15" : done ? "hover:bg-raised" : ""
+                } ${i > stepIndex ? "cursor-default" : ""}`}
+              >
+                <span
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[14px] ${
+                    here
+                      ? "border-accent-2 bg-accent text-white"
+                      : done
+                        ? "border-ok/50 bg-ok/15 text-ok"
+                        : "border-line-2 bg-raised text-faint"
+                  }`}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                <span className={`whitespace-nowrap text-[15px] ${here ? "text-fg" : "text-faint"}`}>
+                  {t(STEP_LABEL[name])}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="min-w-0 space-y-4">
+        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "about" ? "" : "hidden"}`}>
           <div>
             <p className="text-[22px] font-medium tracking-tight">{t("create.aboutTitle")}</p>
             <p className="mt-1 text-[15px] text-dim">{t("create.aboutSub")}</p>
           </div>
-          <Field
-            label={t("listing.title")}
-            value={title}
-            onChange={setTitle}
-            hint={t("listing.titleHint")}
-          />
+          <Field label={t("listing.title")} value={title} onChange={setTitle} hint={t("listing.titleHint")} />
           <label className="block">
             <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
               {t("listing.description")}
@@ -746,43 +841,32 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               className="w-full rounded-xl border border-line-2 bg-ink px-3.5 py-3 text-[16px] text-fg"
             />
           </label>
-          {/* Where it happens, asked at creation rather than only in the editor afterwards. The
-              organizer's own cards print the venue under the title, so an event created here and
-              never edited showed a title with a blank line beneath it — the one field the dashboard
-              displays was the one field the create flow never collected. */}
-          <Field
-            label={t("listing.venue")}
-            value={venue}
-            onChange={setVenue}
-            hint={t("listing.venueHint")}
-          />
-          <Field
-            label={t("listing.link")}
-            value={url}
-            onChange={setUrl}
-            hint={t("listing.linkHint")}
-          />
+          <Field label={t("listing.venue")} value={venue} onChange={setVenue} hint={t("listing.venueHint")} />
+          {/* Chips, as the sheet draws them. Stored as the same comma-separated string either way —
+              this is a way of typing it, not a different shape on chain. */}
+          <TagInput value={tags} onChange={setTags} />
+          <Field label={t("listing.link")} value={url} onChange={setUrl} hint={t("listing.linkHint")} />
           {/* Not a block. An event with no title is a legitimate thing to create — the escrow does
-              not need one, and the directory may not even be deployed yet — but it is listed to
-              strangers as "Event #7", and finding that out on the events page is too late. */}
+              not need one — but it is listed to strangers as "Event #7", and finding that out on
+              the events page is too late. */}
           {!title.trim() && <p className="text-[14px] text-faint">{t("listing.noTitleWarn")}</p>}
         </section>
 
-        {step === "about" && (
-          <Button onClick={() => setStep("rules")} className="w-full">
-            {t("create.next")}
-          </Button>
-        )}
-
-        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "rules" ? "" : "hidden"}`}>
+        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "verify" ? "" : "hidden"}`}>
           <div>
-            <p className="text-[22px] font-medium tracking-tight">{t("create.rulesTitle")}</p>
-            <p className="mt-1 text-[15px] font-medium text-dim">{t("create.rulesSub")}</p>
+            <p className="text-[22px] font-medium tracking-tight">{t("create.verifyTitle")}</p>
+            <p className="mt-1 text-[15px] text-dim">{t("create.verifySub")}</p>
+          </div>
+          {/* The sheet offers four methods — wallet, on-site check-in, geolocation, peer vouching —
+              with toggles. This contract has one: people in the room sign for each other. Drawing
+              three switches that do nothing would be the single most dishonest thing on a screen
+              whose product is "you do not have to trust the organizer". So the one that exists is
+              stated as what it is, and its parameter is the question. */}
+          <div className="rounded-xl border border-accent/35 bg-accent/[0.07] p-4">
+            <p className="text-[16px] font-medium">{t("create.methodPeer")}</p>
+            <p className="mt-1 text-[14px] leading-relaxed text-dim">{t("create.methodPeerBody")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Field label={t("create.deposit")} value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
-            <Field label={t("create.capacity")} value={capacity} onChange={setCapacity} />
-            <Field label={t("organizer.runsIfAtLeast")} value={minQuorum} onChange={setMinQuorum} hint={t("create.quorumHint")} />
             <Field label={t("create.vouchesNeeded")} value={k} onChange={setK} hint={t("create.kHint")} />
             <Field label={t("create.doorsMins")} value={doorsMins} onChange={setDoorsMins} hint={t("create.doorsHint")} />
             <Field label={t("create.runsMins")} value={runsMins} onChange={setRunsMins} hint={t("create.runsHint")} />
@@ -801,28 +885,67 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               </span>
             </span>
           </label>
-
           <EventTimeline
             doorsMins={Number(doorsMins) || 0}
             runsMins={Number(runsMins) || 0}
             walkIns={walkIns}
           />
+        </section>
 
+        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "money" ? "" : "hidden"}`}>
+          <div>
+            <p className="text-[22px] font-medium tracking-tight">{t("create.moneyTitle")}</p>
+            <p className="mt-1 text-[15px] text-dim">{t("create.moneySub")}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <Field label={t("create.deposit")} value={deposit} onChange={setDeposit} hint={fiat(parseEther(deposit || "0"))} />
+            <Field label={t("create.capacity")} value={capacity} onChange={setCapacity} />
+            <Field label={t("organizer.runsIfAtLeast")} value={minQuorum} onChange={setMinQuorum} hint={t("create.quorumHint")} />
+          </div>
           <p className="text-[14px] leading-relaxed text-faint">{t("create.noCustodyNote")}</p>
+        </section>
+
+        <section className={`space-y-3 rounded-2xl border border-line bg-panel p-4 md:p-5 ${step === "publish" ? "" : "hidden"}`}>
+          <div>
+            <p className="text-[22px] font-medium tracking-tight">{t("create.publishTitle")}</p>
+            <p className="mt-1 text-[15px] text-dim">{t("create.publishSub")}</p>
+          </div>
+          {/* Everything back, in one place, before the irreversible press. The numbers below are
+              fixed at creation — the contract has no function that changes any of them — so this is
+              the last screen on which a typo is cheap. */}
+          <dl className="space-y-2 rounded-xl border border-line-2 bg-ink p-4">
+            <Row label={t("listing.title")} value={title || t("create.untitled")} />
+            {venue && <Row label={t("listing.venue")} value={venue} />}
+            {tags && <Row label={t("listing.tags")} value={tags} />}
+            <Row label={t("create.deposit")} value={`${deposit} MON`} />
+            <Row label={t("create.capacity")} value={capacity} />
+            <Row label={t("organizer.runsIfAtLeast")} value={minQuorum} />
+            <Row label={t("create.vouchesNeeded")} value={k} />
+            <Row label={t("create.doorsMins")} value={doorsMins} />
+            <Row label={t("create.runsMins")} value={runsMins} />
+            <Row label={t("create.walkIns")} value={t(walkIns ? "common.yes" : "common.no")} />
+          </dl>
+          <p className="text-[14px] leading-relaxed text-faint">{t("create.lockedNote")}</p>
         </section>
 
         {notice && <Notice tone="bad">{notice}</Notice>}
 
-        {step === "rules" && (
-          <div className="flex gap-2.5">
-            <Button onClick={() => setStep("about")} variant="ghost" disabled={busy}>
+        <div className="flex gap-2.5">
+          {stepIndex > 0 && (
+            <Button onClick={() => go(-1)} variant="ghost" disabled={busy}>
               ← {t("common.back")}
             </Button>
+          )}
+          {step === "publish" ? (
             <Button onClick={() => void submit()} disabled={busy} className="flex-1">
               {busy ? busyLabel : t("nav.createEvent")}
             </Button>
-          </div>
-        )}
+          ) : (
+            <Button onClick={() => go(1)} className="flex-1">
+              {t("create.nextStep", { name: t(STEP_LABEL[STEPS[stepIndex + 1]]) })} →
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
