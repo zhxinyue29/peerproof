@@ -30,7 +30,7 @@ export default function CoverImage({
   // a `javascript:` or `data:text/html` string in a src is not an image problem, and the contract
   // does not validate, so every render site has to. This rejected `data:` outright at first, which
   // meant a cover somebody had just paid gas to store on chain rendered as the fallback pattern.
-  const ok = /^(https?:\/\/\S+|data:image\/[a-z+]+;base64,)/i.test(url) && !broken;
+  const ok = /^https?:\/\/\S+$/i.test(url) && !broken;
 
   if (!ok) return <EventCover id={id} nodes={nodes} className={className} />;
   return (
