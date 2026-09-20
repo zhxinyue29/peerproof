@@ -44,7 +44,7 @@ export default function EarnedRewards({
   const peak = buckets.reduce((m, b) => (b.total > m ? b.total : m), 0n);
 
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5 md:p-6">
+    <section className="flex h-full min-w-0 flex-col">
       <SectionTitle zh={t("me.earned")} en="At stake" />
       <p className="mt-3 text-[28px] font-semibold leading-none tracking-[-0.02em] tabular-nums md:text-[32px]">
         {loading ? <Skeleton className="h-8 w-28 align-middle" /> : mon(staked)}

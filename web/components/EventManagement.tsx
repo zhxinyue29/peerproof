@@ -31,7 +31,7 @@ export default function EventManagement({
   const { t, lang } = useLang();
   const locale = lang === "zh" ? "zh-CN" : "en-GB";
 
-  if (loading) return <Skeleton className="h-[168px] w-full rounded-2xl" />;
+  if (loading) return <Skeleton className="h-[168px] w-full rounded-xl" />;
   if (!event) return null;
 
   const pending = Math.max(0, event.registered - event.confirmed);
@@ -39,7 +39,7 @@ export default function EventManagement({
   const when = new Date(Number(event.attestOpen) * 1000);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-line bg-panel">
+    <section className="overflow-hidden rounded-xl border border-line-2/60 bg-raised/25">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
         <SectionTitle zh={t("organizer.management")} en="Event Management" />
         <Link

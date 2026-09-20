@@ -286,19 +286,36 @@ export default function ProofNetwork({
         const pt = pos.get(key)!;
         const n = degree.get(key) ?? 0;
         const dim = selected !== null && !activeNodes.has(key);
-        // Mint is spent here and nowhere else on this page: it means the contract confirmed
-        // this person present, which is the one thing on screen that is not an opinion.
+
+        // A person, not a counter.
         //
-        // A ring and a wash rather than a solid disc. Six filled mint circles read as the loudest
-        // thing in the picture, and the loudest thing in this picture has to be the proofs — the
-        // confirmation is what the lines *produced*, so it glows where the person stands instead
-        // of shouting over them.
+        // The disc used to hold the vouch count in 17px type, which made the number the subject:
+        // nine circles with numerals in them is a network monitor. What stands in a room is a
+        // person, so the disc now holds a mark derived from their own address — the same input the
+        // chain identifies them by, so it is theirs and nobody else's — and the count moves out to
+        // the caption, where it reads as something that happened *to* them.
+        //
+        // Not an avatar and not a photograph: three points and the lines between them, which is
+        // the product's own motif at the smallest size it survives.
+        const seedHex = p.address.slice(2, 10);
+        const seed = parseInt(seedHex, 16);
+        const marks = [0, 1, 2].map((i) => {
+          const a = (((seed >> (i * 5)) & 31) / 32) * Math.PI * 2;
+          const rr = nodeR * (0.34 + (((seed >> (i * 3 + 2)) & 3) / 3) * 0.3);
+          return { x: pt.x + rr * Math.cos(a), y: pt.y + rr * Math.sin(a) };
+        });
+
+        // Mint is spent on one thing only: the contract confirmed this person present. Everybody
+        // else is left at low contrast rather than given a colour of their own — "not yet" is an
+        // absence, and drawing it as a state would make it look like a verdict.
+        const ink = p.confirmed ? "#02d2a1" : "#3a4470";
+
         return (
           <g key={p.address} opacity={dim ? 0.3 : 1} className="pp-node">
             {p.confirmed && (
               <>
-                <circle cx={pt.x} cy={pt.y} r={nodeR + 9} fill="#02d2a1" opacity={0.08} />
-                <circle cx={pt.x} cy={pt.y} r={nodeR + 4} fill="#02d2a1" opacity={0.12} />
+                <circle cx={pt.x} cy={pt.y} r={nodeR + 9} fill="#02d2a1" opacity={0.07} />
+                <circle cx={pt.x} cy={pt.y} r={nodeR + 4} fill="#02d2a1" opacity={0.1} />
               </>
             )}
             <circle
@@ -306,37 +323,51 @@ export default function ProofNetwork({
               cy={pt.y}
               r={nodeR}
               fill="#09162a"
-              stroke={p.confirmed ? "#02d2a1" : "#242e5a"}
-              strokeWidth={p.confirmed ? 2.5 : 2}
+              stroke={ink}
+              strokeWidth={p.confirmed ? 2.4 : 1.4}
+              strokeOpacity={p.confirmed ? 1 : 0.85}
             />
-            {/* Below about 11px the numeral is smaller than the stroke around it, so the disc alone
-                carries the state and the count lives in the roster underneath. */}
-            {nodeR >= 11 && (
-              <text
-                x={pt.x}
-                y={pt.y + 6}
-                textAnchor="middle"
-                fontSize={17}
-                className="tabular-nums"
-                fill={p.confirmed ? "#02d2a1" : "#b2becf"}
-                fontWeight={600}
-              >
-                {n}
-              </text>
-            )}
+            {/* Their mark. Three points and two lines, at a size where it reads as texture from
+                across the page and as a person's own sign when you lean in. */}
+            <g opacity={p.confirmed ? 0.9 : 0.5}>
+              <path
+                d={`M ${marks[0].x} ${marks[0].y} L ${marks[1].x} ${marks[1].y} L ${marks[2].x} ${marks[2].y}`}
+                fill="none"
+                stroke={p.confirmed ? "#02d2a1" : "#8a97b8"}
+                strokeWidth={1}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {marks.map((m, i) => (
+                <circle key={i} cx={m.x} cy={m.y} r={1.9} fill={p.confirmed ? "#02d2a1" : "#8a97b8"} />
+              ))}
+            </g>
+
             {named && (
-              <text
-                // Pushed outward along the node's own radius, so a label never crosses the ring
-                // and never sits on the edges inside it.
-                x={cx + (r + nodeR + 20) * Math.cos(pt.a)}
-                y={cy + (r + nodeR + 20) * Math.sin(pt.a) + 5}
-                textAnchor={Math.abs(Math.cos(pt.a)) < 0.25 ? "middle" : Math.cos(pt.a) > 0 ? "start" : "end"}
-                fontSize={15}
-                fill={p.confirmed ? "#cdd7e5" : "#b2becf"}
-                fontFamily="var(--font-mono)"
-              >
-                {shortAddress(p.address)}
-              </text>
+              <>
+                <text
+                  x={cx + (r + nodeR + 20) * Math.cos(pt.a)}
+                  y={cy + (r + nodeR + 20) * Math.sin(pt.a) + 5}
+                  textAnchor={Math.abs(Math.cos(pt.a)) < 0.25 ? "middle" : Math.cos(pt.a) > 0 ? "start" : "end"}
+                  fontSize={15}
+                  fill={p.confirmed ? "#cdd7e5" : "#8a97b8"}
+                  fontFamily="var(--font-mono)"
+                >
+                  {shortAddress(p.address)}
+                </text>
+                {/* The count, demoted to a caption under the name. It is still every vouch this
+                    person received; it is just no longer the biggest thing about them. */}
+                <text
+                  x={cx + (r + nodeR + 20) * Math.cos(pt.a)}
+                  y={cy + (r + nodeR + 20) * Math.sin(pt.a) + 24}
+                  textAnchor={Math.abs(Math.cos(pt.a)) < 0.25 ? "middle" : Math.cos(pt.a) > 0 ? "start" : "end"}
+                  fontSize={13}
+                  fill={p.confirmed ? "#8fa0bb" : "#6f7c9c"}
+                  className="tabular-nums"
+                >
+                  {n > 0 ? t("graph.vouchCount", { n }) : t("graph.notYet")}
+                </text>
+              </>
             )}
           </g>
         );

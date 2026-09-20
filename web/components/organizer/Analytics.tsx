@@ -29,7 +29,7 @@ export default function Analytics({ events }: { events: EventSummary[] | null })
   const { t, lang } = useLang();
   const locale = lang === "zh" ? "zh-CN" : "en-GB";
 
-  if (!events) return <Skeleton className="h-[320px] w-full rounded-2xl" />;
+  if (!events) return <Skeleton className="h-[320px] w-full rounded-xl" />;
 
   const ordered = [...events].sort((a, b) => Number(a.attestOpen - b.attestOpen)).slice(-8);
   const settled = events.filter((e) => e.phase === "settled");
@@ -47,7 +47,10 @@ export default function Analytics({ events }: { events: EventSummary[] | null })
   const peak = Math.max(1, ...ordered.map((e) => Math.max(e.registered, e.capacity ? 0 : 0)));
 
   return (
-    <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+    // Charts do not need a panel; they need a baseline and something to say. The border and the
+    // fill went with the rest of the dashboard's boxes — what separates this from the list above
+    // is a rule and a screenful of air.
+    <section className="border-t border-line pt-8">
       <SectionTitle zh={t("organizer.analytics")} en="Analytics & Payout" />
 
       <div className="mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">

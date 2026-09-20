@@ -705,7 +705,7 @@ export const en = {
   "venue.notAKey": "That doesn't look like a private key (64 hex characters).",
   "venue.invalidKey": "That key isn't valid.",
   "verify.openOnExplorer": "Open on explorer",
-  "verify.roomDecided": "The room decided this",
+  "verify.roomDecided": "The people in the room vouched for each other",
   "verify.eachLine": "Each line is a real accepted vouch.",
   "verify.settlement": "Settlement",
   "verify.settlementRow": "settlement",
@@ -817,6 +817,12 @@ export const en = {
   "verify.whoWasThere": "who was in the room",
   "verify.showAll": "show all {n}",
   "verify.showLess": "show fewer",
+  "graph.vouchCount": "{n} vouched for them",
+  "verify.figureNoteVerified": "the contract's own finding",
+  "verify.figureNoteProofs": "each one is a transaction",
+  "verify.newestFirst": "newest first",
+  "verify.blockAt": "block {n}",
+  "verify.projectedLabel": "not settled · projected below",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

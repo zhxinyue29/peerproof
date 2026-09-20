@@ -61,7 +61,12 @@ export default function VouchResult({
       <p className="text-[15px] uppercase tracking-[0.09em] text-dim">{t("vouch.landedIn")}</p>
       {/* Tabular so the digits do not reflow while it animates in — this number is the evidence,
           and jitter reads as a graphic rather than a measurement. */}
-      <p className="mb-2.5 mt-0.5 text-[48px] font-black leading-none tracking-[-0.05em] tabular-nums">
+      {/* The real confirmation time, and for two seconds the largest thing on the screen.
+          It is the product's whole claim in one figure and the only proof anybody at a venue sees
+          with their own eyes — and mint here is earned: the chain accepted this vouch, which is
+          the one thing on this screen that is not an opinion. Then the card goes away, because a
+          number that stays is a number nobody reads. */}
+      <p className="mb-2.5 mt-0.5 text-[72px] font-black leading-none tracking-[-0.05em] tabular-nums text-ok">
         {(latencyMs / 1000).toFixed(2)}s
       </p>
 

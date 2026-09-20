@@ -34,7 +34,7 @@ export default function ProfileRoles({
 }) {
   const t = useT();
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5 md:p-6">
+    <section className="flex h-full min-w-0 flex-col">
       <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.roles")}</h2>
       {/* `flex-1` so the pair fills the height the calendar beside it sets, instead of
           leaving a panel-coloured gap under a half-height card. */}

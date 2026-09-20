@@ -18,15 +18,14 @@ import { useT } from "@/lib/i18n";
 /// that is worth nothing if the only way to check it is to believe our own UI. Everything here is
 /// read straight from chain events, so a sceptic can reconstruct the same numbers themselves.
 ///
-/// The page is one stage and four captions, in that order: who this is about, the graph at the
-/// size of the room, the three facts the graph produces, what the contract therefore pays, and
-/// every transaction behind all of it. Nothing on this page is computed from anything but the
-/// contract's own logs.
+/// Nothing on this page is in a box. The graph stands on the page's own canvas, the figures it
+/// produces are hung in the whitespace the ring leaves empty, the settlement is arithmetic set as
+/// type, and the transactions are a register — hairlines, a monospace column and nothing drawn
+/// around any of it. Three versions of this page were a dashboard with progressively fewer
+/// borders; a page arguing "inspect the evidence" should not look like a tool that has already
+/// done the inspecting for you.
 ///
-/// What it is not, any more, is a dashboard. Two earlier versions put the graph beside a 380px
-/// settlement rail, and however few borders that rail had it was still an equal — a page arguing
-/// "look at the evidence" that gave the evidence half the width. The rail is now a panel floating
-/// under the stage, narrower than the graph and unmistakably after it.
+/// Every figure below is computed from the contract's own logs and from nothing else.
 export default function VerifyPage() {
   const t = useT();
   const back = useBack("/event");
@@ -37,8 +36,8 @@ export default function VerifyPage() {
 
   // Two sources for one highlight. Clicking pins an edge (a phone has no hover, and reading a hash
   // off a line you have to keep your finger on is not reading); moving the pointer previews one
-  // without disturbing what is pinned. Resolved here rather than in the graph because the vouch
-  // list lights the same edges from the other end.
+  // without disturbing what is pinned. Resolved here rather than in the graph because the ledger
+  // lights the same edges from the other end.
   const [pinned, setPinned] = useState<EdgeKey | null>(null);
   const [hovered, setHovered] = useState<EdgeKey | null>(null);
   const active = hovered ?? pinned;
@@ -88,156 +87,192 @@ export default function VerifyPage() {
   const forfeited =
     ev && history ? ev.deposit * BigInt(Math.max(0, ev.registered - ev.confirmed)) : 0n;
 
-  // The newest thing this event did on chain. The stage's one outbound action is a way out of our
-  // own UI, and the only honest target for it is a transaction we can prove exists — a settlement
-  // once there is one, otherwise the latest accepted vouch. Before anything has happened there is
+  // The newest thing this event did on chain. The one outbound action is a way out of our own UI,
+  // and the only honest target for it is a transaction we can prove exists — a settlement once
+  // there is one, otherwise the latest accepted vouch. Before anything has happened there is
   // nothing to open, and the action is withheld rather than pointed at a guess.
   const latestTx = history?.settlement?.hash ?? history?.vouches.at(-1)?.hash ?? null;
   const explorerHref = latestTx ? explorerTxUrl(latestTx) : "";
 
   return (
     <Frame>
-      {/* ═══ 1. whose record this is ═══
-          One line, small, quiet. The page's subject is the graph; this is the label on the
-          exhibit, and an event title at hero scale would compete with its own evidence. */}
-      <header className="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-baseline sm:justify-between">
-        <div className="min-w-0">
-          <h1
-            className="bg-clip-text pb-[0.08em] text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] text-transparent md:text-[30px]"
-            style={{
-              fontFamily: '"Montserrat", var(--font-sans)',
-              backgroundImage:
-                "linear-gradient(97deg, #ffffff 0%, #efeaff 28%, #d6c9fd 58%, #e6ddfe 82%, #cfc2fb 100%)",
-            }}
-          >
-            {t("verify.title")}
-          </h1>
-          <p className="mt-1 truncate text-[15px] text-faint">
+      {/* ── the exhibit label ──────────────────────────────────────────────
+          A byline, not a page header: eyebrow, the claim, one rule, and on the right the room and
+          the stretch of chain these numbers were read out of. */}
+      <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-accent-2">
+        {t("verify.title")}
+      </p>
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-line pb-5">
+        <h1
+          className="text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-fg md:text-[34px]"
+          style={{ fontFamily: '"Montserrat", var(--font-sans)' }}
+        >
+          {t("verify.roomDecided")}
+        </h1>
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[15px] text-faint">
+          <span className="truncate">
             {meta.title} · {t("common.eventNumber", { id: eventId().toString() })}
-          </p>
+            {history &&
+              ` · ${t("verify.blocks", { from: `${history.fromBlock}`, to: `${history.toBlock}` })}`}
+          </span>
+          {explorerHref && (
+            <a
+              href={explorerHref}
+              target="_blank"
+              rel="noreferrer"
+              className="text-dim underline decoration-line-2 underline-offset-4 transition-colors hover:text-fg"
+            >
+              {t("verify.openOnExplorer")} ↗
+            </a>
+          )}
         </div>
-
-        {explorerHref && (
-          <a
-            href={explorerHref}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-[44px] shrink-0 items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4 transition-colors hover:text-fg"
-          >
-            {t("verify.openOnExplorer")} ↗
-          </a>
-        )}
-      </header>
+      </div>
 
       {isLocalChain && (
-        <div className="pb-4">
+        <div className="pt-5">
           <Notice tone="warn">{t("common.localChain")}</Notice>
         </div>
       )}
 
-      {/* ═══ 2. the stage ═══
-          Sized in viewport units rather than in pixels of content: whatever the room contains, the
-          graph is what you are looking at when the page opens. */}
-      <section className="flex min-h-[58vh] flex-col justify-center md:min-h-[64vh]">
-        {history ? (
-          <ProofNetwork
-            participants={history.participants}
-            vouches={history.vouches}
-            selected={active}
-            onSelect={setPinned}
-            onHover={setHovered}
-          />
-        ) : (
-          <NetworkSkeleton />
-        )}
+      {/* ── the stage ──────────────────────────────────────────────────────
+          The figures hang in the corners the ring leaves empty, sized as captions rather than as
+          headlines. Parked out at the page edges they read as three numbers in the margin; here
+          they read as annotations on the picture — which is what they are, since every one of them
+          is produced by the lines underneath them. */}
+      <section className="relative mt-6">
+        <div className="md:px-[150px] lg:px-[210px]">
+          {history ? (
+            <ProofNetwork
+              participants={history.participants}
+              vouches={history.vouches}
+              selected={active}
+              onSelect={setPinned}
+              onHover={setHovered}
+            />
+          ) : (
+            <NetworkSkeleton />
+          )}
+        </div>
 
-        {/* The line where a selected edge names its transaction. Fixed height whether or not
-            anything is selected: if it appeared only on hover, every pass of the mouse would shove
-            the page down a row — on the page whose whole point is careful inspection. */}
-        <InspectBar history={history} active={active} loading={!history} />
+        <div className="pointer-events-none absolute left-2 top-[16%] hidden md:block lg:left-[86px]">
+          <Figure
+            value={ev ? `${ev.confirmed}` : "—"}
+            label={t("verify.statVerified")}
+            note={t("verify.figureNoteVerified")}
+            tone={ev && ev.confirmed > 0 ? "ok" : "fg"}
+          />
+        </div>
+        <div className="pointer-events-none absolute left-2 top-[16%] mt-[128px] hidden md:block lg:left-[86px]">
+          <p className="border-t border-line pt-3 text-[15px] text-faint">
+            {history?.settlement ? t("verify.statSettled") : t("verify.statPending")}
+          </p>
+        </div>
+        <div className="pointer-events-none absolute right-2 top-[16%] hidden text-right md:block lg:right-[86px]">
+          <Figure
+            value={history ? `${history.vouches.length}` : "—"}
+            label={t("verify.statProofs")}
+            note={t("verify.figureNoteProofs")}
+            align="right"
+          />
+        </div>
+
+        {/* The phone has no spare corners, so they go in a row under the picture, on one hairline. */}
+        <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-5 md:hidden">
+          <Figure
+            value={ev ? `${ev.confirmed}` : "—"}
+            label={t("verify.statVerified")}
+            tone={ev && ev.confirmed > 0 ? "ok" : "fg"}
+            small
+          />
+          <Figure value={history ? `${history.vouches.length}` : "—"} label={t("verify.statProofs")} small />
+          <Figure
+            value={history?.settlement ? "✓" : "—"}
+            label={history?.settlement ? t("verify.statSettled") : t("verify.statPending")}
+            tone={history?.settlement ? "ok" : "faint"}
+            small
+          />
+        </div>
       </section>
 
-      {/* ═══ 3. the three facts the graph produces ═══
-          Under the picture, because they are what the picture says — not above it as a summary you
-          read instead of looking. No boxes: scale and one hairline do the separating. */}
-      <div className="flex flex-wrap items-stretch justify-center gap-y-6 pt-10 text-center">
-        <Fact
-          value={ev ? `${ev.confirmed}` : "—"}
-          label={t("verify.statVerified")}
-          tone={ev && ev.confirmed > 0 ? "ok" : "fg"}
-        />
-        <Fact
-          value={history ? `${history.vouches.length}` : "—"}
-          label={t("verify.statProofs")}
-          divider
-        />
-        <Fact
-          value={history?.settlement ? "✓" : "—"}
-          label={history?.settlement ? t("verify.statSettled") : t("verify.statPending")}
-          tone={history?.settlement ? "ok" : "faint"}
-          divider
-        />
-      </div>
+      {/* Where a selected edge names its transaction. Fixed height whether or not anything is
+          selected: if it appeared only on hover, every pass of the mouse would shove the page down
+          a row — on the page whose whole point is careful inspection. */}
+      <InspectBar history={history} active={active} loading={!history} />
 
-      {/* The one sentence that says where all of the above came from. It sits under the figures
-          rather than under the page title because that is where somebody first wonders. */}
-      <p className="mx-auto mt-6 max-w-[62ch] text-center text-[15px] leading-relaxed text-faint">
+      <p className="mx-auto mt-8 max-w-[64ch] text-center text-[16px] leading-relaxed text-dim">
         {t("verify.subtitle")}
       </p>
 
-      {/* ═══ 4. what the contract therefore pays ═══ */}
-      {ev && (
-        <Settlement
-          deposit={ev.deposit}
-          registered={ev.registered}
-          confirmed={ev.confirmed}
-          forfeited={forfeited}
-          settlement={history?.settlement ?? null}
-        />
+      {/* ── settlement, as type ────────────────────────────────────────────
+          A figure, the three lines that get to it, and two sentences of provenance. Hairlines and a
+          baseline do what a panel was doing, and the page stops looking like it has a widget in it. */}
+      <section className="mx-auto mt-16 w-full max-w-[1000px]">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-line pb-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.18em] text-faint">
+            {t("verify.settlement")}
+          </h2>
+          <span className="text-[14px] text-faint">
+            {history?.settlement ? t("verify.statSettled") : t("verify.projectedLabel")}
+          </span>
+        </div>
+
+        {ev ? (
+          <Settlement
+            deposit={ev.deposit}
+            registered={ev.registered}
+            confirmed={ev.confirmed}
+            forfeited={forfeited}
+            settlement={history?.settlement ?? null}
+          />
+        ) : (
+          <p className="py-10 text-center text-[15px] text-faint">{t("common.loading")}</p>
+        )}
+      </section>
+
+      {/* ── the register ───────────────────────────────────────────────────
+          A public record reads like a printed one: monospace, right-aligned hashes, one hairline a
+          row, no zebra, no chrome. The only ink that is not grey is the link out of this UI. */}
+      {history && (history.vouches.length > 0 || history.settlement) && (
+        <section className="mx-auto mt-20 w-full max-w-[1000px]">
+          <div className="flex items-baseline justify-between border-b border-line pb-3">
+            <h2 className="text-[13px] font-bold uppercase tracking-[0.18em] text-faint">
+              {t("verify.everyVouch", { n: history.vouches.length })}
+            </h2>
+            <span className="text-[14px] text-faint">{t("verify.newestFirst")}</span>
+          </div>
+          <Ledger history={history} active={active} onHover={setHovered} onSelect={setPinned} />
+        </section>
       )}
 
-      {/* ═══ 5. every transaction behind all of it ═══ */}
-      <div className="mx-auto mt-16 w-full max-w-[880px] space-y-10">
-        {history && (history.vouches.length > 0 || history.settlement) && (
-          <div className="min-w-0 space-y-3">
-            <SectionLabel>{t("verify.everyVouch", { n: history.vouches.length })}</SectionLabel>
-            <ProofList history={history} active={active} onHover={setHovered} onSelect={setPinned} />
-          </div>
-        )}
+      {history && history.participants.length > 0 && (
+        <section className="mx-auto mt-16 w-full max-w-[1000px]">
+          <h2 className="border-b border-line pb-3 text-[13px] font-bold uppercase tracking-[0.18em] text-faint">
+            {t("verify.whoWasThere")}
+          </h2>
+          <Roster history={history} />
+        </section>
+      )}
 
-        {history && history.participants.length > 0 && (
-          <div className="min-w-0 space-y-3">
-            <SectionLabel>{t("verify.whoWasThere")}</SectionLabel>
-            <Roster history={history} />
-          </div>
-        )}
-
-        <div className="space-y-2 text-[14px] leading-relaxed text-faint">
-          <p className="break-all">
-            <span className="font-mono">{ESCROW_ADDRESS}</span> ·{" "}
-            {t("common.eventNumber", { id: eventId().toString() })}
-            {history &&
-              ` · ${t("verify.blocks", { from: `${history.fromBlock}`, to: `${history.toBlock}` })}`}
-          </p>
-          {/* Named, not hidden. A page arguing "do not take our word for it" has to say which
-              reader produced the numbers on it — and if the index is gone, that it fell back
-              rather than quietly showing less. */}
-          {history && (
-            <p>{history.source === "envio" ? t("verify.viaEnvio") : t("verify.viaLogs")}</p>
-          )}
-          <p>{t("verify.noPayoutFunction")}</p>
-          <Link
-            {...back}
-            className="inline-flex min-h-[44px] items-center text-dim underline decoration-line-2"
-          >
-            {t("verify.backToEvent")}
-          </Link>
-        </div>
+      <div className="mx-auto mt-14 w-full max-w-[1000px] space-y-2 text-[14px] leading-relaxed text-faint">
+        <p className="break-all font-mono">
+          {ESCROW_ADDRESS} · {t("common.eventNumber", { id: eventId().toString() })}
+        </p>
+        {/* Named, not hidden. A page arguing "do not take our word for it" has to say which reader
+            produced the numbers on it — and if the index is gone, that it fell back rather than
+            quietly showing less. */}
+        {history && <p>{history.source === "envio" ? t("verify.viaEnvio") : t("verify.viaLogs")}</p>}
+        <p>{t("verify.noPayoutFunction")}</p>
+        <Link
+          {...back}
+          className="inline-flex min-h-[44px] items-center text-dim underline decoration-line-2 underline-offset-4"
+        >
+          {t("verify.backToEvent")}
+        </Link>
       </div>
 
-      {/* An RPC failure is a fact about the network, not about this event, and it used to take the
-          full width at the top of the page in red — louder than anything it was interrupting. It
-          is now a corner notice carrying the one control that helps. */}
+      {/* An RPC failure is a fact about the network, not about this event, and a full-width red
+          banner gave it more authority than the evidence it was interrupting. Whatever was last
+          read stays on screen underneath: the page is not wrong, it is behind. */}
       <RetryToast message={error} onRetry={() => void load()} onDismiss={() => setError(null)} />
     </Frame>
   );
@@ -247,40 +282,35 @@ export default function VerifyPage() {
 /*                              Pieces                                */
 /* ------------------------------------------------------------------ */
 
-/// One of the three figures under the graph.
-///
-/// Mint only where the chain has actually confirmed something: a green zero, or a green "pending",
-/// is a claim nothing on chain supports.
-function Fact({
+/// A figure standing on the canvas — no tile, no rule around it. Mint only where the chain has
+/// actually confirmed something: a green zero is a claim nothing on chain supports.
+function Figure({
   value,
   label,
+  note,
   tone = "fg",
-  divider = false,
+  align = "left",
+  small = false,
 }: {
   value: string;
   label: string;
+  note?: string;
   tone?: "fg" | "ok" | "faint";
-  divider?: boolean;
+  align?: "left" | "right";
+  small?: boolean;
 }) {
   return (
-    <div className={`min-w-[150px] px-6 sm:px-10 ${divider ? "sm:border-l sm:border-line" : ""}`}>
+    <div className={align === "right" ? "text-right" : ""}>
       <p
-        className={`text-[40px] font-semibold leading-none tracking-[-0.03em] tabular-nums md:text-[52px] ${
-          tone === "ok" ? "text-ok" : tone === "faint" ? "text-faint" : "text-fg"
-        }`}
+        className={`font-semibold leading-none tracking-[-0.035em] tabular-nums ${
+          small ? "text-[30px]" : "text-[44px] lg:text-[50px]"
+        } ${tone === "ok" ? "text-ok" : tone === "faint" ? "text-faint" : "text-fg"}`}
       >
         {value}
       </p>
-      <p className="mt-2.5 text-[15px] text-dim">{label}</p>
+      <p className={`mt-2.5 ${small ? "text-[13px]" : "text-[15px]"} text-dim`}>{label}</p>
+      {note && !small && <p className="mt-1 text-[13px] text-faint">{note}</p>}
     </div>
-  );
-}
-
-/// A heading for the reference material at the foot of the page. Small, wide-tracked, quiet — what
-/// sits under it is evidence to be checked, not a section to be browsed.
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-faint">{children}</h2>
   );
 }
 
@@ -328,11 +358,6 @@ function InspectBar({
 }
 
 /// What the contract pays, and the arithmetic that gets there.
-///
-/// One floating panel rather than a sidebar: narrower than the stage above it, so it reads as the
-/// conclusion of the picture rather than as a second column competing with it. Blur and a dropped
-/// shadow are what hold it off the page — the one border is white at 6%, doing far less work than
-/// a drawn frame would.
 function Settlement({
   deposit,
   registered,
@@ -359,20 +384,20 @@ function Settlement({
       : null;
 
   return (
-    <section className="mx-auto mt-14 w-full max-w-[880px] rounded-[26px] border border-white/[0.06] bg-panel/55 px-6 py-7 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.95)] backdrop-blur-xl md:px-9 md:py-8">
-      <div className="grid gap-7 md:grid-cols-2 md:gap-10">
+    <>
+      <div className="grid gap-10 pt-7 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-16">
         <div className="min-w-0">
           {/* `mon()` rather than `both()`: at this size a mainnet build's `$0.35 (13.33 MON)` wraps
               to two lines and stops reading as a single figure. The fiat equivalent is on every row
               of the breakdown beside it, so nothing is hidden. */}
           <p
-            className={`text-[44px] font-semibold leading-none tracking-[-0.03em] tabular-nums md:text-[52px] ${
+            className={`text-[46px] font-semibold leading-none tracking-[-0.035em] tabular-nums md:text-[62px] ${
               settlement ? "text-ok" : "text-fg"
             }`}
           >
             {share === null ? "—" : mon(share)}
           </p>
-          <p className="mt-3 text-[16px] leading-relaxed text-dim">
+          <p className="mt-4 text-[17px] leading-relaxed text-dim">
             {settlement ? t("verify.eachReceives") : t("verify.eachWouldReceive")}
           </p>
           <p className="mt-1.5 text-[15px] leading-relaxed text-faint">
@@ -385,26 +410,21 @@ function Settlement({
           </p>
         </div>
 
-        <div className="min-w-0 space-y-2.5 md:border-l md:border-line md:pl-10">
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-faint">
-            {t("verify.arithmetic")}
-          </p>
+        <dl className="min-w-0 self-end">
+          <Line term={`${registered} × ${both(deposit)}`} value={fiat(deposit * BigInt(registered))} />
           <Line
-            label={`${registered} × ${both(deposit)}`}
-            value={fiat(deposit * BigInt(registered))}
-          />
-          <Line
-            label={t("verify.confirmedPresent", { n: confirmed })}
+            term={t("verify.confirmedPresent", { n: confirmed })}
             value={t("verify.getDepositBack")}
           />
           <Line
-            label={t("verify.neverConfirmed", { n: Math.max(0, registered - confirmed) })}
+            term={t("verify.neverConfirmed", { n: Math.max(0, registered - confirmed) })}
             value={t("verify.forfeit", { amount: fiat(forfeited) })}
+            last
           />
-        </div>
+        </dl>
       </div>
 
-      <div className="mt-7 space-y-2 border-t border-line pt-5 text-[14px] leading-relaxed text-faint">
+      <div className="mt-8 grid gap-6 border-t border-line pt-6 text-[14px] leading-relaxed text-faint md:grid-cols-2 md:gap-14">
         <p>
           {settlement ? (
             <>
@@ -431,31 +451,34 @@ function Settlement({
           {t("verify.payoutFollowsGraph")}
         </p>
       </div>
-    </section>
+    </>
   );
 }
 
-/// One row of the arithmetic. No rule between rows: label and figure are far enough apart in
-/// weight that the eye pairs them without being told to.
-function Line({ label, value }: { label: string; value: string }) {
+/// One line of the arithmetic. A hairline under each, nothing around any of them.
+function Line({ term, value, last = false }: { term: string; value: string; last?: boolean }) {
   return (
-    <div className="flex min-w-0 items-baseline justify-between gap-4 text-[15px]">
-      <span className="min-w-0 truncate text-dim">{label}</span>
-      <span className="shrink-0 tabular-nums text-fg">{value}</span>
+    <div
+      className={`flex items-baseline justify-between gap-6 py-3 text-[16px] ${
+        last ? "" : "border-b border-line/70"
+      }`}
+    >
+      <dt className="min-w-0 truncate text-dim">{term}</dt>
+      <dd className="shrink-0 tabular-nums text-fg">{value}</dd>
     </div>
   );
 }
 
 /// Every transaction behind the numbers above, newest first, each one a link out of this UI.
 ///
-/// The settlement sits at the head of the list rather than in its own block: it is the last thing
-/// that happened to this event, and separating it would suggest it came from somewhere other than
-/// the same log stream as the vouches.
+/// The settlement sits at the head rather than in its own block: it is the last thing that happened
+/// to this event, and separating it would suggest it came from somewhere other than the same log
+/// stream as the vouches.
 ///
-/// Collapsed past three, because the full list is reference material and the graph above is the
+/// Collapsed past six, because the register is reference material and the graph above is the
 /// argument — but the count in the heading is always the true one, so collapsing can never be
 /// mistaken for there being less evidence than there is.
-function ProofList({
+function Ledger({
   history,
   active,
   onHover,
@@ -469,74 +492,89 @@ function ProofList({
   const t = useT();
   const [all, setAll] = useState(false);
 
-  const rows: Array<{ key: string; edge: EdgeKey | null; label: string; hash: string }> = [];
+  const rows: Array<{
+    key: string;
+    edge: EdgeKey | null;
+    n: number | null;
+    label: string;
+    block: bigint | null;
+    hash: string;
+  }> = [];
   if (history.settlement) {
     rows.push({
       key: history.settlement.hash,
       edge: null,
+      n: null,
       label: t("verify.settlementRow"),
+      block: null,
       hash: history.settlement.hash,
     });
   }
-  for (const v of [...history.vouches].reverse()) {
+  history.vouches.forEach((v, i) => {
     rows.push({
       key: edgeKey(v),
       edge: edgeKey(v),
-      label: `${shortAddress(v.from)} → ${shortAddress(v.to)}`,
+      n: i + 1,
+      label: t("verify.inspectVouch", { from: shortAddress(v.from), to: shortAddress(v.to) }),
+      block: v.block,
       hash: v.hash,
     });
-  }
-
-  const shown = all ? rows : rows.slice(0, 3);
+  });
+  // Newest first, but the settlement keeps the head of the list.
+  const body = rows.slice(history.settlement ? 1 : 0).reverse();
+  const ordered = history.settlement ? [rows[0], ...body] : body;
+  const shown = all ? ordered : ordered.slice(0, 6);
 
   return (
     <div className="min-w-0">
-      <ul className="min-w-0">
+      <ul className="font-mono text-[14px]">
         {shown.map((r) => {
           const url = explorerTxUrl(r.hash);
-          const short = `${r.hash.slice(0, 6)}…${r.hash.slice(-4)}`;
+          const short = `${r.hash.slice(0, 8)}…${r.hash.slice(-6)}`;
           const isActive = r.edge !== null && r.edge === active;
           return (
             <li
               key={r.key}
-              // Hovering a row lights its line in the graph above, and clicking pins it. The list
-              // and the picture are the same evidence seen twice; nothing here is a separate table.
+              // Hovering a row lights its line in the graph above, and clicking pins it. The
+              // register and the picture are the same evidence seen twice.
               onMouseEnter={() => onHover(r.edge)}
               onMouseLeave={() => onHover(null)}
               onClick={() => r.edge && onSelect(isActive ? null : r.edge)}
-              className={`-mx-3 flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                isActive ? "bg-white/[0.04]" : ""
-              } ${r.edge ? "cursor-pointer" : ""}`}
+              className={`flex min-w-0 items-center gap-4 border-b border-line/70 py-3 transition-colors sm:gap-6 ${
+                isActive ? "text-fg" : "text-dim"
+              } ${r.edge ? "cursor-pointer hover:text-fg" : ""}`}
             >
-              <span
-                className={`min-w-0 truncate font-mono text-[14px] ${isActive ? "text-fg" : "text-dim"}`}
-              >
-                {r.label}
-              </span>
+              <span className="w-[3.5ch] shrink-0 tabular-nums text-faint">{r.n ?? "—"}</span>
+              <span className="min-w-0 flex-1 truncate">{r.label}</span>
+              {r.block !== null && (
+                <span className="hidden shrink-0 tabular-nums text-faint sm:inline">
+                  {t("verify.blockAt", { n: r.block.toString() })}
+                </span>
+              )}
               {url ? (
                 <a
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 font-mono text-[14px] text-accent-2 underline decoration-line-2 underline-offset-4"
+                  className="shrink-0 text-accent-2 underline decoration-line-2 underline-offset-4"
                 >
                   {short} ↗
                 </a>
               ) : (
-                <span className="shrink-0 font-mono text-[14px] text-faint">{short}</span>
+                <span className="shrink-0 text-faint">{short}</span>
               )}
             </li>
           );
         })}
       </ul>
 
-      {rows.length > 3 && (
+      {ordered.length > 6 && (
         <button
           type="button"
           onClick={() => setAll((x) => !x)}
-          className="mt-1 inline-flex min-h-[44px] items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4"
+          className="mt-3 inline-flex min-h-[44px] items-center text-[15px] text-dim underline decoration-line-2 underline-offset-4"
         >
-          {all ? t("verify.showLess") : t("verify.showAll", { n: rows.length })}
+          {all ? t("verify.showLess") : t("verify.showAll", { n: ordered.length })}
         </button>
       )}
     </div>
@@ -548,9 +586,12 @@ function ProofList({
 function Roster({ history }: { history: EventHistory }) {
   const t = useT();
   return (
-    <ul className="grid gap-x-10 gap-y-2 font-mono text-[14px] sm:grid-cols-2">
+    <ul className="grid gap-x-16 font-mono text-[14px] sm:grid-cols-2">
       {history.participants.map((p) => (
-        <li key={p.address} className="flex items-center justify-between gap-3">
+        <li
+          key={p.address}
+          className="flex items-center justify-between gap-4 border-b border-line/70 py-2.5"
+        >
           <span className={p.confirmed ? "text-dim" : "text-faint"}>{shortAddress(p.address)}</span>
           <span className={p.confirmed ? "text-ok" : "text-faint"}>
             {/* "Deposit forfeited" is a claim about money that has already moved. Before settlement
@@ -572,10 +613,6 @@ function Roster({ history }: { history: EventHistory }) {
 }
 
 /// The read failed. Say so where a failure belongs — beside the work, not on top of it.
-///
-/// The old banner was full width, red, and at the top of the page, which gave an RPC hiccup more
-/// visual authority than the evidence it was interrupting. Whatever was last read stays on screen
-/// underneath this, which is the honest state of things: the page is not wrong, it is behind.
 function RetryToast({
   message,
   onRetry,
@@ -623,7 +660,7 @@ function Frame({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh overflow-x-hidden">
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
         <TopNav page={t("verify.title")} />
-        <main className="pb-20 pt-4 md:pt-6">{children}</main>
+        <main className="pb-24 pt-6 md:pt-10">{children}</main>
       </div>
     </div>
   );

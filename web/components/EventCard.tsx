@@ -66,6 +66,7 @@ const Root = ({ href, ...rest }: { href?: string } & React.ComponentPropsWithout
 export default function EventCard({
   event: e,
   sample = false,
+  bare = false,
 }: {
   event: EventSummary;
   /// Renders the card as a marked example and stops it pretending to be a destination.
@@ -74,6 +75,9 @@ export default function EventCard({
   /// a page that either invents one or reports it missing. Both are worse than a card that plainly
   /// is not clickable.
   sample?: boolean;
+  /// The listing's containerless treatment. Default keeps the boxed card the landing page's
+  /// featured row is signed off with.
+  bare?: boolean;
 }) {
   const t = useT();
   const { lang } = useLang();
@@ -115,11 +119,23 @@ export default function EventCard({
         href: `/event?event=${e.id}`,
         "aria-label": e.listing.title || t("common.eventNumber", { id: e.id.toString() }),
       }}
-      className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-panel transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-        sample ? "border-line-2/70 hover:border-line-2" : "border-line hover:border-line-2"
-      }`}
+      // `bare` is the listing's treatment: no border, no panel. An event is a picture with four
+      // facts under it, and a drawn box around each one turns a page of events into a page of
+      // boxes — which is what /events was, twelve identical rectangles where the covers should
+      // have been doing the work. The picture keeps its own radius; everything under it sits on
+      // the page.
+      //
+      // The boxed treatment stays the default because the landing page's featured row uses it and
+      // the landing page is signed off. One component, two settings, no fork.
+      className={
+        bare
+          ? "group flex min-w-0 flex-col focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          : `group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-panel transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              sample ? "border-line-2/70 hover:border-line-2" : "border-line hover:border-line-2"
+            }`
+      }
     >
-      <div className="relative h-[112px] md:h-[128px]">
+      <div className={`relative overflow-hidden ${bare ? "h-[164px] rounded-xl md:h-[176px]" : "h-[112px] md:h-[128px]"}`}>
         {sample && (
           /* Top-right, because top-left is where the phase pill already lives — both were pinned
              to `left-3 top-3` and rendered on top of each other, which put "Sample" over "Ongoing"
@@ -147,7 +163,7 @@ export default function EventCard({
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 md:p-5">
+      <div className={`flex min-w-0 flex-1 flex-col ${bare ? "gap-2.5 pt-4" : "gap-3 p-4 md:p-5"}`}>
         {/* Two lines, then ellipsis. One line cuts real event names mid-word at this width; three
             would let one card push every other card in the row taller. */}
         <h3 className="line-clamp-2 text-[18px] font-semibold leading-snug">
@@ -181,7 +197,7 @@ export default function EventCard({
         </div>
 
         {/* `mt-auto` so the footers of a row line up no matter how long the titles are. */}
-        <div className="mt-auto flex items-end justify-between gap-3 border-t border-line pt-4">
+        <div className={`mt-auto flex items-end justify-between gap-3 border-t pt-3 ${bare ? "border-line/70" : "border-line pt-4"}`}>
           <div className="min-w-0 space-y-1.5">
             <p className="text-[16px] font-semibold leading-none">{both(e.deposit)}</p>
             <Vouches k={e.k} t={t} />

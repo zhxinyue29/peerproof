@@ -80,9 +80,9 @@ export default function OrganizerEventCards({
 
   if (!events) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="space-y-3">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-[236px] w-full rounded-2xl" />
+          <Skeleton key={i} className="h-[76px] w-full rounded-xl" />
         ))}
       </div>
     );
@@ -108,7 +108,7 @@ export default function OrganizerEventCards({
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-6 border-b border-line">
           {(
             [
               ["all", t("me.filterAllN", { n: counts.all })],
@@ -121,10 +121,13 @@ export default function OrganizerEventCards({
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`min-h-[44px] rounded-full border px-4 text-[14px] transition-colors ${
+              // Text, not pills. What is selected is said in colour and a rule under it — four
+              // bordered capsules above a list of events is four more rectangles on a page whose
+              // subject is the events.
+              className={`relative min-h-[40px] px-1 text-[15px] transition-colors ${
                 filter === key
-                  ? "border-accent bg-accent/15 text-fg"
-                  : "border-line-2 text-dim hover:text-fg"
+                  ? "font-medium text-fg after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-accent"
+                  : "text-dim hover:text-fg"
               }`}
             >
               {label}
@@ -134,111 +137,94 @@ export default function OrganizerEventCards({
       </div>
 
       {shown.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-panel p-6 text-[16px] text-dim">
+        <p className="border-t border-line py-8 text-[16px] text-dim">
           {events.length === 0 ? t("organizer.yourEventsEmpty") : t("events.noMatchBody")}
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul
+          // Rows, not a grid of cards.
+          // An organizer scanning for the room they are running tonight reads down one column of
+          // titles; a three-across grid of bordered cards makes the same eight events into eight
+          // rectangles the eye has to enter one at a time. Everything each card carried is still
+          // here — cover, title, when, where, the two counts, the bar and the way in — laid along
+          // a line instead of stacked inside a box.
+          className="min-w-0"
+        >
           {shown.map((e) => {
             const chosen = selectedId === e.id;
             const when = new Date(Number(e.attestOpen) * 1000);
+            const phaseWord = t(
+              `events.${e.phase === "live" ? "openNow" : e.phase === "settled" ? "settled" : "upcoming"}`,
+            );
             return (
-              <div
+              <li
                 key={e.id.toString()}
-                className={`flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-panel transition-colors ${
-                  chosen ? "border-accent" : "border-line hover:border-line-2"
+                className={`flex min-w-0 flex-wrap items-center gap-x-4 gap-y-3 border-b py-4 transition-colors sm:flex-nowrap sm:gap-x-6 ${
+                  chosen ? "border-accent/40 bg-white/[0.02]" : "border-line/70 hover:bg-white/[0.02]"
                 }`}
               >
-                <div className="relative h-[96px]">
-                  <CoverImage id={e.id} src={e.listing.cover} nodes={7} className="absolute inset-0 h-full w-full" />
-                  <span
-                    // Solid colour, as the sheet draws them — 进行中 reads as a state the room is
-                    // in, and a translucent grey pill over a photograph reads as a caption.
-                    className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[13px] font-medium ${
-                      e.phase === "live"
-                        ? "bg-ok text-[#06251a]"
-                        : e.phase === "settled"
-                          ? "bg-[#2b3350] text-dim"
-                          : "bg-accent text-white"
-                    }`}
-                  >
-                    {t(`events.${e.phase === "live" ? "openNow" : e.phase === "settled" ? "settled" : "upcoming"}`)}
-                  </span>
-                </div>
+                <CoverImage
+                  id={e.id}
+                  src={e.listing.cover}
+                  nodes={7}
+                  className="h-[52px] w-[84px] shrink-0 rounded-lg"
+                />
 
-                <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
-                  <p className="truncate text-[16px] font-medium">
+                <div className="min-w-0 flex-1 basis-[46%] sm:basis-auto">
+                  <p className="text-[16px] font-medium leading-snug sm:truncate sm:text-[17px]">
                     {e.listing.title || t("common.eventNumber", { id: e.id.toString() })}
                   </p>
-                  {/* Two lines with icons, as the sheet draws them. One line held both, and a
-                      venue of any length pushed the date past the truncation — so the card showed
-                      a place and no date, which is the half an organizer needs least. */}
-                  <p className="flex items-center gap-1.5 text-[14px] text-dim">
-                    <Glyph kind="clock" />
-                    <span className="truncate">
-                      {when.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
-                    </span>
+                  <p className="mt-1 truncate text-[14px] text-faint">
+                    {when.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
+                    {e.listing.venue ? ` · ${e.listing.venue}` : ""}
                   </p>
-                  {e.listing.venue && (
-                    <p className="flex items-center gap-1.5 text-[14px] text-dim">
-                      <Glyph kind="pin" />
-                      <span className="truncate">{e.listing.venue}</span>
-                    </p>
-                  )}
+                </div>
 
-                  <div className="mt-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[15px] font-medium tabular-nums">
-                        {e.registered} / {e.capacity || "∞"}
-                        <span className="ml-1.5 text-[13px] font-normal text-faint">
-                          {t("organizer.registeredShort")}
-                        </span>
-                      </span>
-                      {/* The percentage, right-aligned above the bar, as the sheet sets it. A bar
-                          on its own is a shape; the number is what somebody reads out loud when
-                          they are deciding whether to worry. */}
-                      <span className="text-[13px] tabular-nums text-faint">
-                        {Math.round(pct(e.registered, e.capacity))}%
-                      </span>
-                    </div>
-                    <div
-                      className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-line"
-                      role="img"
-                      aria-label={`${e.registered} / ${e.capacity}`}
-                    >
-                      <div className="flex h-full w-full">
-                        <span className="h-full bg-ok" style={{ width: `${pct(e.confirmed, e.capacity)}%` }} />
-                        <span
-                          className="h-full bg-accent"
-                          style={{ width: `${pct(e.registered - e.confirmed, e.capacity)}%` }}
-                        />
-                      </div>
-                    </div>
-                    {e.confirmed > 0 && (
-                      <p className="mt-1.5 text-[13px] text-ok">
-                        {e.confirmed} {t("event.confirmedPresentShort")}
-                      </p>
-                    )}
+                {/* State in a word and a colour. Mint only where the chain has confirmed somebody;
+                    a room that has not opened yet is not a state worth colouring. */}
+                <span
+                  className={`w-[4.5em] shrink-0 text-[14px] ${
+                    e.phase === "live" ? "text-ok" : e.phase === "settled" ? "text-faint" : "text-dim"
+                  }`}
+                >
+                  {phaseWord}
+                </span>
+
+                <div className="w-[128px] shrink-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[15px] tabular-nums text-dim">
+                      {e.registered}
+                      <span className="text-faint">/{e.capacity || "∞"}</span>
+                    </span>
+                    <span className="text-[14px] tabular-nums text-ok">{e.confirmed || ""}</span>
                   </div>
-
-                  {/* One button. The second was "查看", which opened the participant's page for
-                      the same event — a screen the organizer has no use for, and which looked
-                      empty to them because everything on it is addressed to somebody deciding
-                      whether to come. */}
-                  <div className="mt-auto pt-2">
-                    <button
-                      type="button"
-                      onClick={() => onSelect(e.id)}
-                      className="min-h-[44px] w-full rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
-                    >
-                      {t("organizer.manage")}
-                    </button>
+                  <div
+                    className="mt-1.5 h-[3px] w-full overflow-hidden rounded-full bg-line"
+                    role="img"
+                    aria-label={`${e.registered} / ${e.capacity}`}
+                  >
+                    <div className="flex h-full w-full">
+                      <span className="h-full bg-ok" style={{ width: `${pct(e.confirmed, e.capacity)}%` }} />
+                      <span
+                        className="h-full bg-accent"
+                        style={{ width: `${pct(e.registered - e.confirmed, e.capacity)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* The one control on the row, and the only thing here with a boundary. */}
+                <button
+                  type="button"
+                  onClick={() => onSelect(e.id)}
+                  className="min-h-[40px] shrink-0 rounded-lg border border-line-2 px-4 text-[14px] text-dim transition-colors hover:border-accent hover:text-fg"
+                >
+                  {t("organizer.manage")}
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </section>
   );

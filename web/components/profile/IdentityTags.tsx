@@ -36,7 +36,7 @@ export default function IdentityTags({
   ].filter(Boolean) as string[];
 
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5">
+    <section className="flex h-full min-w-0 flex-col">
       <SectionTitle zh={t("me.identityTags")} en="Identity" />
       {loading ? (
         <p className="mt-3 text-[15px] text-faint">{t("common.loading")}</p>

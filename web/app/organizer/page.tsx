@@ -210,11 +210,10 @@ export default function OrganizerPage() {
                 half the width the drawing gives it. */}
             <div className="grid min-w-0 gap-5">
               <div className="min-w-0 space-y-5">
-                {/* Panel 06, on arrival rather than behind a selection. An organizer opening this
-                    page wants the shape of everything they run; picking an event first is a step
-                    between them and the only question they came with. */}
-                <Analytics events={mine} />
-
+                {/* The events first, the analysis after. An organizer opening this page is
+                    looking for a room they are running tonight, not for a trend line — and the
+                    trend was above the list, so the first thing on the page was the one thing
+                    nobody comes here to do. */}
                 <OrganizerEventCards
                   events={mine}
                   selectedId={selectedId}
@@ -227,6 +226,8 @@ export default function OrganizerPage() {
                     setManaging(id);
                   }}
                 />
+
+                <Analytics events={mine} />
               </div>
             </div>
 
@@ -443,7 +444,9 @@ function Frame({
 function GreetingBanner({ who, onCreate }: { who: string | null; onCreate: () => void }) {
   const t = useT();
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
+    // A masthead, not a banner card. The artwork stays and washes out of the page's own darkness;
+    // what goes is the box that made a greeting look like a widget.
+    <section className="relative overflow-hidden border-b border-line pb-8 pt-2 md:pb-10">
       <div
         aria-hidden
         // 55% and flush to the edges, which is how the sheet sets it — the artwork is half the
@@ -520,7 +523,7 @@ function Kpis({ events, t }: { events: EventSummary[] | null; t: TFn }) {
     // what the contract is holding, who has signed up. Its third and fourth are "已发放奖励" and
     // "社区评分 4.8" — a reward pool this contract has no concept of, and a rating nothing in this
     // product collects. The two that replace them are the two figures an organizer actually has.
-    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-y-8 border-b border-line py-9 lg:grid-cols-4">
       <Kpi
         icon="live"
         label={t("organizer.liveEvents")}
@@ -578,20 +581,23 @@ function Kpi({
     // Icon and figure on one line, label underneath — the sheet's arrangement. Icon-and-label on
     // one line with the number below made the number the third thing read on a card whose entire
     // job is the number.
-    <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
-      <div className="flex items-center gap-3">
-        <span aria-hidden className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone}`}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    // Four figures on the canvas, divided by a hairline. Four bordered tiles in a row is the
+    // house style of every admin dashboard ever shipped, and these are not controls — they are the
+    // state of everything this organizer runs.
+    <div className="min-w-0 px-1 md:px-7 md:first:pl-0 md:[&+&]:border-l md:[&+&]:border-line">
+      <div className="flex items-baseline gap-2.5">
+        <span aria-hidden className={`hidden shrink-0 self-center ${tone.split(" ")[0]} sm:block`}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path d={path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
         {/* `break-words` on the value, not truncation: "4,820 MON" wrapping onto two lines is
             legible and an ellipsis in the middle of an amount is not. */}
-        <p className="min-w-0 break-words text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] tabular-nums md:text-[30px]">
+        <p className="min-w-0 break-words text-[34px] font-semibold leading-[1.1] tracking-[-0.03em] tabular-nums md:text-[40px]">
           {value ?? <Skeleton className="h-7 w-16 align-middle" />}
         </p>
       </div>
-      <p className="mt-2 text-[14px] text-dim">{label}</p>
+      <p className="mt-2.5 text-[14px] leading-snug text-dim">{label}</p>
       {/* Green, per the render — and it is the right green by the spec's own rule: every one of
           these captions is a fact read off the chain rather than a hopeful label. */}
       <p className="mt-1 text-[14px] text-ok">{sub}</p>

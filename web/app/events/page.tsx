@@ -303,7 +303,7 @@ export default function EventsPage() {
         />
 
         {tags.length > 0 && (
-          <div className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:px-0">
+          <div className="-mx-4 flex min-w-0 gap-7 overflow-x-auto px-4 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:px-0">
             <TagChip label={t("events.allCategories")} on={tag === null} onPick={() => setTag(null)} />
             {tags.map((k) => (
               <TagChip key={k} label={k} on={tag === k} onPick={() => setTag(tag === k ? null : k)} />
@@ -341,7 +341,7 @@ export default function EventsPage() {
         ) : !events || (active === "mine" && !mine) ? (
           <Grid>
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-[300px] w-full rounded-2xl" />
+              <Skeleton key={i} className="h-[300px] w-full rounded-xl" />
             ))}
           </Grid>
         ) : events.length === 0 ? (
@@ -359,7 +359,7 @@ export default function EventsPage() {
             <p className="text-[15px] text-dim">{t("events.sampleNote")}</p>
             <Grid>
               {sampleEvents().map((e) => (
-                <EventCard key={e.id.toString()} event={e} sample />
+                <EventCard key={e.id.toString()} event={e} sample bare />
               ))}
             </Grid>
             <GateIntro kind="floor" />
@@ -380,7 +380,7 @@ export default function EventsPage() {
         ) : (
           <Grid>
             {visible.map((e) => (
-              <EventCard key={e.id.toString()} event={e} />
+              <EventCard key={e.id.toString()} event={e} bare />
             ))}
           </Grid>
         )}
@@ -444,7 +444,7 @@ function Chips({
   labels: Record<Filter, string>;
 }) {
   return (
-    <div className="flex min-w-0 flex-wrap gap-2">
+    <div className="flex min-w-0 flex-wrap gap-7 border-b border-line">
       {ORDER.map((f) => {
         const on = active === f;
         return (
@@ -453,10 +453,13 @@ function Chips({
             onClick={() => onPick(f)}
             // A toggle, not a tab: pressing the selected chip clears it and shows everything.
             aria-pressed={on}
-            className={`flex min-h-[44px] items-center rounded-full border px-4 text-[15px] transition-colors ${
+            // Text with a rule under it, not a capsule. Four bordered pills above a wall of
+            // covers is four more rectangles on a page whose subject is the covers — and what is
+            // selected reads perfectly well in colour and a 2px line.
+            className={`relative flex min-h-[44px] items-center px-1 text-[16px] transition-colors ${
               on
-                ? "border-accent bg-accent/15 font-medium text-fg"
-                : "border-line-2 bg-panel text-dim hover:text-fg"
+                ? "font-medium text-fg after:absolute after:inset-x-0 after:bottom-1.5 after:h-[2px] after:bg-accent"
+                : "text-dim hover:text-fg"
             }`}
           >
             {labels[f]}
@@ -471,7 +474,7 @@ function Empty({ title, children }: { title: string; children: React.ReactNode }
   return (
     // Sized so a list that goes empty does not make the page jump — it occupies roughly the row of
     // cards it replaces.
-    <div className="flex min-h-[220px] flex-col items-start justify-center gap-2 rounded-2xl border border-dashed border-line-2 bg-panel/40 p-6 md:p-8">
+    <div className="flex min-h-[180px] flex-col items-start justify-center gap-2 border-t border-line py-10">
       <p className="text-[18px] font-medium">{title}</p>
       {children}
     </div>

@@ -66,7 +66,7 @@ export default function ActivityCalendar({
   const atEnd = year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
 
   return (
-    <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+    <section className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.calendar")}</h2>
         <div className="flex items-center gap-1">

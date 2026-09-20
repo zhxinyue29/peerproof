@@ -23,7 +23,7 @@ type Stats = { joined: number; confirmed: number; hosted: number; reach: number 
 export default function Achievements({ stats, loading }: { stats: Stats; loading: boolean }) {
   const t = useT();
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5 md:p-6">
+    <section className="flex h-full min-w-0 flex-col">
       <SectionTitle zh={t("me.achievements")} en="Achievements" />
       <ul className="mt-4 grid grid-cols-4 gap-2">
         {BADGES.map((b) => {

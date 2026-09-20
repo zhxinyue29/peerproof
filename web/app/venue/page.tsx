@@ -171,7 +171,12 @@ export default function VenuePage() {
   return (
     <Stage right={meta.title}>
       <div className="grid w-full flex-1 items-center gap-8 py-6 md:grid-cols-[minmax(0,58vh)_minmax(300px,1fr)] md:gap-14">
-        <div className="mx-auto w-full max-w-[min(74vw,58vh)] min-w-0">
+        <div
+          // On a phone width is the limit, so take all of it bar the gutters: the code is read from
+          // arm's length by somebody walking past, and 74vw left a quarter of the screen empty
+          // beside it. `RotatingCode`'s own white plate is the quiet zone.
+          className="mx-auto w-full min-w-0 max-w-[min(calc(100vw-32px),58vh)]"
+        >
           <RotatingCode
             payload={payload}
             secondsLeft={secondsLeft}
@@ -193,7 +198,9 @@ export default function VenuePage() {
             {t("venue.subtitle")}
           </p>
 
-          <div className="mt-6 rounded-[18px] border border-line-2 bg-panel/70 p-5 md:mt-7 md:p-[22px]">
+          {/* A countdown is information, not a control. The panel around it was the only drawn
+              box left on a screen whose whole argument is that it is furniture in a room. */}
+          <div className="mx-auto mt-6 max-w-[320px] border-t border-line pt-5 md:mx-0 md:mt-8 md:max-w-none md:pt-6">
             <p className="text-[16px] text-dim">{t("venue.refreshesIn")}</p>
             {/* Seconds, not m:ss. The beacon rotates every 30s now, and "0:27" on a timer that
                 never reaches a minute reads as a clock that is broken. */}

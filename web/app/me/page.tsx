@@ -234,7 +234,7 @@ export default function MePage() {
         <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start">
           <nav
             aria-hidden
-            className="hidden rounded-2xl border border-line bg-panel p-2 lg:block"
+            className="hidden p-2 lg:block"
           >
             {[t("me.tabOverview"), t("me.tabJoined"), t("me.tabHosted"), t("me.tabSettings")].map(
               (label, i) => (
@@ -319,7 +319,7 @@ export default function MePage() {
             rail cost 250px of navigation above the first thing anybody came here to read, on the
             screen with the least room. */}
         <div className="lg:sticky lg:top-6 lg:space-y-4">
-          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:rounded-2xl lg:border lg:border-line lg:bg-panel lg:p-2">
+          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:p-0">
             {RAIL.filter(({ key }) => !(guest && key === "settings")).map(({ key, label, icon }) => (
               <button
                 key={key}
@@ -341,7 +341,7 @@ export default function MePage() {
               is the one column tall enough to carry one, and the page is otherwise all figures. */}
           <div
             aria-hidden
-            className="hidden aspect-[210/150] rounded-2xl border border-line bg-cover bg-center lg:block"
+            className="hidden aspect-[210/150] rounded-xl bg-cover bg-center lg:block [mask-image:linear-gradient(to_bottom,#000_70%,rgba(0,0,0,0)_100%)]"
             style={{ backgroundImage: `url(${basePath}/rail-card.webp)` }}
           />
         </div>
@@ -353,7 +353,11 @@ export default function MePage() {
           {guest && <Notice>{t("me.viewingPublic", { who: shortAddress(address) })}</Notice>}
           {/* The sheet's banner: a large round avatar, the identity beside it, artwork filling
               the right half and bleeding to the edges. */}
-          <section className="relative overflow-hidden rounded-2xl border border-line bg-panel">
+          {/* No panel. A person's record is not a widget on a page — it is the page, so the
+              portrait, the name and the two facts about where they are live straight on the
+              canvas. The artwork that used to fill the right half of a card now washes out of the
+              page's own darkness behind it. */}
+          <section className="relative">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 left-auto hidden w-[48%] bg-cover bg-center lg:block"
@@ -363,14 +367,8 @@ export default function MePage() {
                 maskImage: "linear-gradient(to right, transparent 0%, #000 32%)",
               }}
             />
-            <div className="relative flex min-h-[188px] flex-wrap items-start gap-5 p-6 md:min-h-[212px] md:p-8">
-              <span
-                aria-hidden
-                className="h-[112px] w-[112px] shrink-0 rounded-full border border-line-2 md:h-[128px] md:w-[128px]"
-                style={{
-                  background: `linear-gradient(145deg, hsl(${hue} 58% 64%), hsl(${(hue + 45) % 360} 52% 44%))`,
-                }}
-              />
+            <div className="relative flex min-h-[188px] flex-wrap items-center gap-6 py-6 md:min-h-[236px] md:gap-10 md:py-8">
+              <PortraitNetwork hue={hue} joined={rows?.length ?? 0} confirmed={attended} />
               <div className="min-w-0 max-w-[44ch] flex-1">
                 <h1
                   className="bg-clip-text pb-[0.08em] text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-transparent md:text-[38px]"
@@ -421,7 +419,7 @@ export default function MePage() {
 
           {/* Four figures and the tag panel on one row, as the sheet sets them. */}
           <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_296px]">
-            <dl className="grid min-w-0 grid-cols-2 gap-4 lg:grid-cols-4">
+            <dl className="grid min-w-0 grid-cols-2 gap-y-7 border-y border-line py-8 lg:grid-cols-4">
               <Tile value={rows ? String(rows.length) : null} label={t("me.eventsJoined")} icon="ticket" />
               <Tile value={hosted ? String(hosted.length) : null} label={t("me.eventsHosted")} icon="flag" />
               <Tile
@@ -449,23 +447,11 @@ export default function MePage() {
 
           {failed && <Notice tone="bad">{t("me.unreachable")}</Notice>}
 
-          {/* Three across, as the sheet draws: what is at stake, the two roles, the calendar. */}
-          {tab === "overview" && (
-            <div className="grid min-w-0 gap-4 lg:grid-cols-3 lg:items-stretch">
-              <EarnedRewards rows={rows} loading={!rows} />
-              <ProfileRoles
-                joined={rows?.length ?? 0}
-                turnout={rate}
-                hosted={hosted?.length ?? 0}
-                reach={reach}
-                loading={!rows || !hosted}
-              />
-              <ActivityCalendar
-                joined={(rows ?? []).map(({ event, confirmed }) => ({ event, confirmed }))}
-                hosted={hosted ?? []}
-              />
-            </div>
-          )}
+          {/* Overview used to open with three analysis panels — what is at stake, the two roles
+              and a calendar — before it said anything about where this person has actually been.
+              A verifiable attendance identity leads with the attendance. All three are still one
+              tap away in the strip directly above this, which is where somebody goes when they
+              want them. */}
 
           {tab === "calendar" && (
             <ActivityCalendar
@@ -485,7 +471,7 @@ export default function MePage() {
 
           {/* Side by side on a wide screen, the way the sheet lays them out — and stacked below
               `lg`, because two lists of event rows at half width start wrapping their titles. */}
-          <div className="grid min-w-0 gap-4 lg:grid-cols-3 lg:items-stretch">
+          <div className="grid min-w-0 gap-10 lg:grid-cols-3 lg:items-start">
           {(tab === "overview" || tab === "joined") && (
             <EventList
               title={t("me.recentJoined")}
@@ -530,10 +516,23 @@ export default function MePage() {
           </div>
 
           {tab === "overview" && (
+            <div className="grid min-w-0 gap-10 border-t border-line pt-8 lg:grid-cols-2">
+              <EarnedRewards rows={rows} loading={!rows} />
+              <ProfileRoles
+                joined={rows?.length ?? 0}
+                turnout={rate}
+                hosted={hosted?.length ?? 0}
+                reach={reach}
+                loading={!rows || !hosted}
+              />
+            </div>
+          )}
+
+          {tab === "overview" && (
             /* The sheet's impact row. Four figures and the share button, full width.
                活动满意度 92% is the one the sheet has and this does not: nothing in this product
                collects a rating, so that figure could only ever have been made up. */
-            <section className="rounded-2xl border border-line bg-panel p-5 md:p-6">
+            <section className="border-t border-line pt-7">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <SectionTitle zh={t("me.impact")} en="My Impact" />
                 <ShareProfile address={address} />
@@ -553,11 +552,11 @@ export default function MePage() {
                   page. The i18n audit is what caught it: `profile.title` showed up as an unused
                   key, which for a string that is supposed to be a section heading can only mean
                   the section is not there. */}
-              <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
+              <section className="space-y-4 border-t border-line pt-6">
                 <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("profile.title")}</h2>
                 <EditProfile onSaved={setProfile} />
               </section>
-              <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
+              <section className="space-y-4 border-t border-line pt-6">
                 <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{t("me.tabSettings")}</h2>
                 <div>
                   <p className="mb-2 text-[13px] text-faint">{t("lang.label")}</p>
@@ -633,24 +632,27 @@ function Tile({
 }) {
   const { path, tone: iconTone } = TILE_ICONS[icon];
   return (
-    <div className="rounded-2xl border border-line bg-panel p-4 md:p-5">
-      <div className="flex items-center gap-3">
-        <span aria-hidden className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${iconTone}`}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+    // A figure on the page, with a hairline to its left instead of a box around it. The glyph
+    // stays but stops being a filled badge: four tinted circles in a row is a dashboard, and what
+    // these four numbers are is a sentence about somebody.
+    <div className="min-w-0 px-1 md:px-7 md:first:pl-0 md:[&+&]:border-l md:[&+&]:border-line">
+      <div className="flex items-baseline gap-2.5">
+        <span aria-hidden className={`hidden shrink-0 ${iconTone.split(" ")[0]} sm:block`}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path d={path} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
         <dt
           // `truncate`, not `whitespace-nowrap`: "0.0000 MON" is wider than a quarter of the row
           // at this size, and nowrap let it run out of the card rather than fit inside it.
-          className={`min-w-0 truncate text-[22px] font-semibold leading-none tracking-[-0.025em] tabular-nums md:text-[26px] ${
+          className={`min-w-0 truncate text-[34px] font-semibold leading-none tracking-[-0.03em] tabular-nums md:text-[42px] ${
             tone === "ok" ? "text-ok" : "text-fg"
           }`}
         >
           {value ?? <Skeleton className="h-7 w-14 align-middle" />}
         </dt>
       </div>
-      <dd className="mt-2.5 text-[14px] text-dim">{label}</dd>
+      <dd className="mt-2.5 text-[14px] leading-snug text-dim">{label}</dd>
       {sub && <dd className="mt-1 text-[13px] text-faint">{sub}</dd>}
     </div>
   );
@@ -727,9 +729,9 @@ function EventList({
   t: (k: string, v?: Record<string, string | number>) => string;
 }) {
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-line bg-panel p-5 md:p-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em] md:text-[22px]">{title}</h2>
+    <section className="flex h-full min-w-0 flex-col">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-3">
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.18em] text-faint">{title}</h2>
         {/* The sheet's "查看全部 →". Only when the list is longer than what fits — a link that
             shows the same rows you are already looking at is a control that does nothing. */}
         {more && items.length > 3 && (
@@ -741,7 +743,7 @@ function EventList({
       {loading ? (
         <div className="mt-3 space-y-3">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-[88px] w-full rounded-2xl" />
+            <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -757,7 +759,7 @@ function EventList({
           )}
         </div>
       ) : (
-        <ul className="mt-3 space-y-3">
+        <ul className="min-w-0">
           {items.slice(0, showAll ? undefined : 3).map(({ event, right }) => (
             <li key={event.id.toString()}>
               {/* The badge and the amount sit under the title, not beside it. At a third of the
@@ -765,9 +767,9 @@ function EventList({
                   truncated to a single character while the deposit kept its full width. */}
               <Link
                 href={`/event?event=${event.id}`}
-                className="flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-raised/40 p-3 transition-colors hover:border-line-2"
+                className="flex min-w-0 items-center gap-4 border-b border-line/70 py-3.5 transition-colors hover:bg-white/[0.02]"
               >
-                <EventCover id={event.id} nodes={5} className="h-[54px] w-[54px] shrink-0 rounded-xl" />
+                <EventCover id={event.id} nodes={5} className="h-[52px] w-[84px] shrink-0 rounded-lg" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15.5px] font-medium">
                     {event.listing.title || t("common.eventNumber", { id: event.id.toString() })}
@@ -778,9 +780,7 @@ function EventList({
                   </p>
                   <p className="mt-1.5 flex flex-wrap items-center gap-2">
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[12.5px] ${
-                        right.ok ? "bg-ok/15 font-medium text-ok" : "border border-line-2 text-faint"
-                      }`}
+                      className={`text-[13px] ${right.ok ? "font-medium text-ok" : "text-faint"}`}
                     >
                       {right.text}
                     </span>
@@ -795,5 +795,98 @@ function EventList({
         </ul>
       )}
     </section>
+  );
+}
+
+/// The portrait, standing in its own proof network.
+///
+/// Nine positions on a ring: the lit ones are events this account was confirmed present at, each
+/// joined to the centre by a line, the hollow ones are events it registered for and was never
+/// confirmed at. Drawn, because a record that shows only the wins is not a record.
+///
+/// The same motif as /verify at a different scale — there it is a room proving each other, here it
+/// is one person and everything that has vouched for them. The avatar itself keeps the colour it
+/// has always been derived from, so nobody's picture changes.
+function PortraitNetwork({
+  hue,
+  joined,
+  confirmed,
+}: {
+  hue: number;
+  joined: number;
+  confirmed: number;
+}) {
+  const n = 9;
+  // Positions stand for events, capped at the ring's size: past nine the ring stops being a
+  // picture of a record and starts being a chart, and the figures underneath carry the exact
+  // numbers anyway.
+  const lit = Math.max(0, Math.min(n, confirmed));
+  const shown = Math.max(lit, Math.min(n, joined));
+  const cx = 150;
+  const cy = 150;
+  const r = 116;
+  const pts = Array.from({ length: shown }, (_, i) => {
+    const a = (i / Math.max(shown, 1)) * Math.PI * 2 - Math.PI / 2;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), on: i < lit };
+  });
+
+  return (
+    <svg
+      viewBox="0 0 300 300"
+      aria-hidden
+      className="h-[190px] w-[190px] shrink-0 md:h-[240px] md:w-[240px]"
+    >
+      <defs>
+        <radialGradient id="me-halo">
+          <stop offset="0%" stopColor="#6e54ff" stopOpacity="0.2" />
+          <stop offset="70%" stopColor="#6e54ff" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#6e54ff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx={cx} cy={cy} r={140} fill="url(#me-halo)" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#242e5a" strokeWidth="1" strokeDasharray="2 10" />
+
+      {pts.map((p, i) =>
+        p.on ? (
+          <line
+            key={`l${i}`}
+            x1={p.x}
+            y1={p.y}
+            x2={cx}
+            y2={cy}
+            stroke="#6e54ff"
+            strokeOpacity={0.4}
+            strokeWidth={1.4}
+            className="pp-edge"
+            style={{ animationDelay: `${i * 0.12}s` }}
+          />
+        ) : null,
+      )}
+
+      {pts.map((p, i) => (
+        <g key={i}>
+          {p.on && <circle cx={p.x} cy={p.y} r={13} fill="#02d2a1" opacity={0.1} />}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={8}
+            fill="#09162a"
+            stroke={p.on ? "#02d2a1" : "#3a4470"}
+            strokeWidth={p.on ? 2.2 : 1.3}
+          />
+        </g>
+      ))}
+
+      <circle
+        cx={cx}
+        cy={cy}
+        r={62}
+        fill={`hsl(${hue} 48% 30%)`}
+        stroke="#242e5a"
+        strokeWidth="1.5"
+      />
+      <circle cx={cx} cy={cy - 14} r={20} fill={`hsl(${hue} 52% 52%)`} />
+      <path d={`M ${cx - 34} ${cy + 46} a 34 30 0 0 1 68 0`} fill={`hsl(${hue} 52% 52%)`} />
+    </svg>
   );
 }

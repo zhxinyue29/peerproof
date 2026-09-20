@@ -140,19 +140,36 @@ export default function EventPage() {
             that argues for coming can wait until after somebody has decided to read on.
 
             `isolate` because the scrim and the text are positioned against this box, not the page. */}
-        <section className="relative isolate mt-2 overflow-hidden rounded-[28px] border border-accent/20 shadow-[0_0_0_1px_rgba(110,84,255,0.10),0_30px_70px_-40px_rgba(110,84,255,0.55)]">
-          <CoverImage
-            id={eventId()}
-            src={meta.cover}
-            nodes={11}
-            className="h-[300px] w-full md:h-[clamp(340px,44vh,460px)]"
-          />
+        <section className="relative isolate mt-2">
+          {/* The picture has no edge. A mask takes it to nothing at the bottom and along both
+              sides, so it ends where the page's own darkness begins rather than at a drawn line —
+              which is the whole difference between artwork on a canvas and a photo in a frame.
+              On the wrapper, because CoverImage owns its own box. */}
+          <div
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000 10%, #000 72%, rgba(0,0,0,0) 100%)",
+              maskImage:
+                "linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000 10%, #000 72%, rgba(0,0,0,0) 100%)",
+            }}
+          >
+            <CoverImage
+              id={eventId()}
+              src={meta.cover}
+              nodes={11}
+              // The drawn constellation over the photograph comes down from 35% to 16%. It is the
+              // second thing the picture says, not the first: a real room with real people in it,
+              // and then — faintly — the network they are about to make. At full strength it was
+              // reading as a filter applied to the photo rather than as something happening in it.
+              className="h-[320px] w-full [&_svg]:opacity-[0.16] [mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,#000_7%,#000_93%,rgba(0,0,0,0)_100%)] md:h-[clamp(380px,50vh,520px)]"
+            />
+          </div>
           {/* Deep at the bottom, gone by halfway. The title has to hold against whatever photograph
               an organizer uploads — including a bright one — and a flat wash over the whole image
               would dull the picture everywhere to protect two lines of text in one corner. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/78 to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/28 to-transparent"
           />
           <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 md:p-8">
             <h1
@@ -200,7 +217,7 @@ export default function EventPage() {
                   .map((tag: string) => (
                     <span
                       key={tag}
-                      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-white/10 bg-ink/50 px-3.5 text-[14px] text-fg backdrop-blur-sm"
+                      className="inline-flex min-h-[28px] items-center gap-1.5 text-[14px] text-dim"
                     >
                       <TagGlyph tag={tag} />
                       {tag}
@@ -357,13 +374,21 @@ export default function EventPage() {
           {t("common.back")}
           </Link>
 
-          {sample && <Notice tone="warn">{t("events.sampleDetail")}</Notice>}
-          {isLocalChain && <Notice tone="warn">{t("common.localChain")}</Notice>}
+          {sample && (
+            <p className="border-l-2 border-warn/60 py-1 pl-3 text-[15px] leading-relaxed text-warn/90">
+              {t("events.sampleDetail")}
+            </p>
+          )}
+          {isLocalChain && (
+            <p className="border-l-2 border-warn/60 py-1 pl-3 text-[15px] leading-relaxed text-warn/90">
+              {t("common.localChain")}
+            </p>
+          )}
         </div>
 
         <div className="pt-3">{heroSlot}</div>
 
-        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:items-start lg:gap-8 md:pt-8">
+        <main className="flex min-w-0 flex-col gap-8 pb-16 pt-6 lg:grid lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:items-start lg:gap-8 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {/* Said once, at the top, before anything below it is read.
             Everything on this screen — the deposit, the count, the window, the rules — is a literal
@@ -432,7 +457,7 @@ export default function EventPage() {
             </div>
           </div>
 
-          <div className="mt-3 space-y-3 rounded-2xl border border-line bg-panel p-5 text-[15.5px] leading-relaxed text-dim md:p-6">
+          <div className="mt-5 space-y-3 text-[16px] leading-relaxed text-dim">
             {detailTab === "about" && (
               <>
                 {meta.blurb ? (
@@ -488,11 +513,11 @@ export default function EventPage() {
                     tab: "how many people have to vouch" is the rule, not a statistic. */}
                 {ev && (
                   <dl className="grid grid-cols-2 gap-3 pb-1">
-                    <div className="rounded-xl border border-line bg-raised p-4">
+                    <div className="border-l border-line-2 pl-4">
                       <dt className="text-[13.5px] text-faint">{t("event.vouchesNeededLbl")}</dt>
                       <dd className="mt-1 text-[22px] font-semibold tabular-nums text-fg">{ev.k}</dd>
                     </div>
-                    <div className="rounded-xl border border-line bg-raised p-4">
+                    <div className="border-l border-line-2 pl-4">
                       <dt className="text-[13.5px] text-faint">{t("event.minimumToRun")}</dt>
                       <dd className="mt-1 text-[22px] font-semibold tabular-nums text-fg">{ev.minQuorum}</dd>
                     </div>
@@ -543,16 +568,17 @@ export default function EventPage() {
             separating for nothing. */}
         <section className="border-t border-line pt-7">
           <h2 className="text-[20px] font-semibold text-fg">{t("event.methodTitle")}</h2>
-          <div className="mt-5 grid grid-cols-2 gap-y-6 divide-line sm:grid-cols-4 sm:gap-y-0 sm:divide-x">
+          <div className="mt-6 grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
             <VerifyTile
+              n="01"
               icon="peers"
               title={t("create.methodPeer")}
               body={ev ? t("event.vTilePeers", { k: String(ev.k) }) : ""}
               lit
             />
-            <VerifyTile icon="qr" title={t("event.vDoorTitle")} body={t("event.vDoorBody")} lit />
-            <VerifyTile icon="chain" title={t("event.vChainTitle")} body={t("event.vChainBody")} lit />
-            <VerifyTile icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
+            <VerifyTile n="02" icon="qr" title={t("event.vDoorTitle")} body={t("event.vDoorBody")} lit />
+            <VerifyTile n="03" icon="chain" title={t("event.vChainTitle")} body={t("event.vChainBody")} lit />
+            <VerifyTile n="04" icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
           </div>
 
         </section>
@@ -572,7 +598,12 @@ export default function EventPage() {
           </IdentityGate>
         </Sheet>
       )}
-          <div className="min-w-0 space-y-4 lg:sticky lg:top-9">
+          {/* On a phone the rail is a section, not a column, and section order is reading order:
+              what it costs and whether you can still get in comes straight after the invitation.
+              Underneath the tabs it sat after five screens of explanation — the decision arriving
+              last, on the page whose job is the decision. `order` rather than a second copy of the
+              markup, so there is exactly one join button in the document. */}
+          <div className="order-first min-w-0 space-y-4 lg:order-none lg:sticky lg:top-9">
             {/* 活动状态, laid out as the sheet draws it: the phase as a lit dot, the count, the
                 bar, the faces, then the button. The dot is the piece that was missing — the card
                 said how full the room was without ever saying whether you could still join it. */}
@@ -580,7 +611,7 @@ export default function EventPage() {
                 how full the room is, and the button. It was three cards plus a repeat of the cover
                 photograph — and the deposit, which is the number somebody actually decides on, was
                 in the second of them, below the fold on a laptop. */}
-            <section className="space-y-4 rounded-[26px] border border-white/[0.06] bg-panel/55 p-5 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.95)] backdrop-blur-xl md:p-6">
+            <section className="space-y-4 rounded-2xl border border-line-2/70 bg-raised/25 p-5 md:p-6">
               <div>
                 <p className="text-[15px] text-dim">{t("event.deposit")}</p>
                 <p className="mt-1 text-[38px] font-extrabold leading-none tracking-[-0.02em] tabular-nums">
@@ -677,7 +708,7 @@ function StatTile({ value, label }: { value: string | null; label: string }) {
   return (
     // No border of its own: these three sit in one strip in the rail now, divided by the gap of
     // the grid that holds them. A card inside a card reads as two things.
-    <div className="min-w-0 bg-panel p-3.5">
+    <div className="min-w-0 p-3.5">
       <div className="text-[22px] font-semibold leading-none tabular-nums md:text-[24px]">
         {value || <Skeleton className="h-6 w-10 align-middle" />}
       </div>
@@ -697,7 +728,7 @@ function Details({ ev, bare }: { ev: EventInfo | null; bare?: boolean }) {
   const locale = lang === "zh" ? "zh-CN" : "en-GB";
 
   return (
-    <section className={bare ? "" : "rounded-2xl border border-line bg-panel p-5 md:p-[22px]"}>
+    <section className="">
       {!bare && <h2 className="text-[16px] font-semibold">{t("event.details")}</h2>}
       <dl className={bare ? "space-y-4" : "mt-4 space-y-4"}>
         {!ev ? (
@@ -812,38 +843,49 @@ function VerifyTile({
   title,
   body,
   lit,
+  n,
 }: {
   icon: keyof typeof VERIFY_ICONS;
   title: string;
   body: string;
-  /// Every tile here is true of this event, so every one is lit. The prop exists because the block
-  /// is the place a future method would land, and a tile that is not available has to be able to
+  /// Every property here is true of this event, so every one is lit. The prop stays because this
+  /// block is where a future method would land, and one that is not available has to be able to
   /// look unavailable rather than be quietly dropped.
   lit?: boolean;
+  n: string;
 }) {
-  // Read off the hi-res sheet, which settled three things the low-res crop could not show:
-  // the badge is a rounded square and not a circle, each item keeps its second line, and the four
-  // are separated by hairline rules rather than by their own boxes.
-  //
-  // I had deleted the second lines in the previous pass and moved them into a `title` tooltip, on
-  // the grounds that the sheet drew "a glyph over a word". It draws a glyph over two. On a phone a
-  // tooltip is nothing at all, so that was information removed rather than tidied.
+  // Four filled purple squares with white glyphs in them is the house style of every Web3 landing
+  // page ever shipped, and it was the loudest thing on a page whose subject is a photograph of a
+  // room. These are four true sentences about one mechanism, so they are set as four numbered
+  // notes: the numeral carries the rhythm, a hairline stroke carries the glyph, and neither of
+  // them competes with the picture above.
   return (
-    <div className="flex flex-col items-center px-2 text-center">
-      <span
-        aria-hidden
-        className={`flex h-[42px] w-[42px] items-center justify-center rounded-[13px] ${
-          lit
-            ? "bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_6px_18px_-8px_rgba(110,84,255,0.9)]"
-            : "bg-line text-faint"
-        }`}
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d={VERIFY_ICONS[icon]} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+    <div className="flex gap-3.5 px-1 sm:gap-4">
+      <span className="flex shrink-0 flex-col items-center gap-2 pt-0.5">
+        <span
+          aria-hidden
+          className={`font-mono text-[13px] tabular-nums ${lit ? "text-accent-2" : "text-faint"}`}
+        >
+          {n}
+        </span>
+        <span aria-hidden className={lit ? "text-dim" : "text-faint/60"}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path
+              d={VERIFY_ICONS[icon]}
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
       </span>
-      <p className={`mt-3 text-[16px] font-semibold ${lit ? "text-fg" : "text-faint"}`}>{title}</p>
-      <p className="mt-1.5 text-[14px] leading-snug text-faint">{body}</p>
+      <span className="min-w-0">
+        <span className={`block text-[16px] font-semibold ${lit ? "text-fg" : "text-faint"}`}>
+          {title}
+        </span>
+        <span className="mt-1.5 block text-[14px] leading-snug text-faint">{body}</span>
+      </span>
     </div>
   );
 }
