@@ -10,6 +10,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
 import IdentityGate from "@/components/IdentityGate";
 import EventCover from "@/components/EventCover";
+import CoverImage from "@/components/CoverImage";
 import Funding, { needFor } from "@/components/Funding";
 import RegisteredResult from "@/components/RegisteredResult";
 import { Accordion, Button, LinkButton, Notice, Sheet, Skeleton } from "@/components/ui";
@@ -270,12 +271,14 @@ export default function EventPage() {
           {t("common.back")}
         </Link>
 
-        {/* Drawn, not fetched — see EventCover. Denser here than on a card because this surface is
-            several times the area, and six points on it read as an accident rather than a figure. */}
-        <EventCover
+        {/* The organizer's picture when there is one, and one of the product's own otherwise —
+            the sheet's cover is a photograph, and a drawn constellation beside it read as a slot
+            waiting to be filled. */}
+        <CoverImage
           id={eventId()}
+          src={meta.cover}
           nodes={11}
-          className="h-[170px] shrink-0 rounded-2xl border border-line md:h-[210px]"
+          className="h-[200px] w-full shrink-0 rounded-2xl border border-line md:h-[260px]"
         />
 
         <div className="space-y-2">
