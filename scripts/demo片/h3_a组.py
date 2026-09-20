@@ -112,8 +112,30 @@ def build(prompt, seed, tag):
     }
 
 
+def settled(path, quiet=6, limit=180):
+    """等文件不再长大。
+
+    实测栽过:a2 出片时脚本在文件刚出现、只有 **48 字节** 的瞬间就去判,判成坏文件,
+    而完整文件是 291KB。SaveVideo 是边编码边写盘,文件"存在"远早于"写完"。
+    固定 sleep 3 秒对小文件够、对大文件不够——所以不睡固定时长,盯着大小不变为止。
+    """
+    last, same, t0 = -1, 0, time.time()
+    while time.time() - t0 < limit:
+        try:
+            n = os.path.getsize(path)
+        except OSError:
+            n = -1
+        same = same + 1 if n == last and n > 0 else 0
+        if same >= quiet:
+            return True
+        last = n
+        time.sleep(1)
+    return False
+
+
 def usable(path):
     """真数帧。别用 ffprobe —— PATH 上那个是 compat 包装,忽略 -show_entries 只回显时长。"""
+    settled(path)
     r = subprocess.run(["/home/liyakun/bin/ffmpeg", "-v", "error", "-i", path, "-f", "null", "-"],
                        capture_output=True, text=True)
     return r.returncode == 0 and os.path.getsize(path) > 100_000
@@ -139,7 +161,6 @@ def main():
             new = set(hit()) - before
             if new:
                 f = sorted(new)[0]
-                time.sleep(3)
                 ok = usable(f)
                 print("%s %s  %.0fs  %d 字节" % ("OK" if ok else "坏文件", f,
                                                  time.time() - t0, os.path.getsize(f)), flush=True)

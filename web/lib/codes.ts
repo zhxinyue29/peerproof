@@ -96,14 +96,36 @@ function fromB64(s: string): string | null {
 }
 
 /// Payload rendered into the attendee's rotating QR.
+///
+/// Two different addresses are involved and conflating them broke every scan on the routes people
+/// actually use.
+///
+/// `subject` is the **registered** address — the account that paid the deposit and that the
+/// contract knows. `account` is the **attest key**, a separate key held in memory so the code can
+/// rotate every few seconds without a wallet prompt. The contract checks
+/// `isRegistered[eventId][subject]` and then requires the signature to recover to
+/// `attestKeyOf[eventId][subject]`: the digest is over the registered address, and the signature
+/// over it comes from the attest key.
+///
+/// This used to take one account and use `account.address` for both, which is only correct when
+/// they are the same object. They are for a passkey — `passkeySigner` sets `attest: account` — and
+/// they are not for email or a browser wallet, where the wallet is a Privy account and the attest
+/// key is derived separately. So the QR carried the attest key as its subject, the contract looked
+/// up a registration for an address that had never registered, and both phones were told the other
+/// one had not signed up. Two people standing in a room with the event page in front of them
+/// saying they were both registered.
+///
+/// It survived every automated run because the local `?dev=1` signer is a single throwaway key
+/// used for both roles, which is exactly the shape that hides this.
 export async function makePeerCode(
   account: LocalAccount,
+  subject: Address,
   escrow: Address,
   eventId: bigint,
   epoch: bigint,
 ): Promise<string> {
-  const sig = await signInner(account, codeInner(escrow, eventId, account.address, epoch));
-  return `pp2:${eventId}:${toB64(account.address)}:${epoch}:${toB64(sig)}`;
+  const sig = await signInner(account, codeInner(escrow, eventId, subject, epoch));
+  return `pp2:${eventId}:${toB64(subject)}:${epoch}:${toB64(sig)}`;
 }
 
 /// Payload rendered on the venue display.

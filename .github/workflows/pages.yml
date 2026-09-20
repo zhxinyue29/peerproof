@@ -46,6 +46,13 @@ jobs:
       - run: npm ci
         working-directory: web
 
+      # 现场互扫的那个不变量:二维码里的 subject 必须是报名地址,不是作证密钥地址。
+      # 2026-09-20 两部真手机在现场互扫,双方都被告知「对方没报名」,而活动页写着
+      # 两人都已报名。全部自动化测试都没抓到——因为 ?dev=1 用一把一次性密钥同时
+      # 充当钱包和作证密钥,正是能把这个 bug 盖住的那种形状。
+      - name: Peer code invariant
+        run: node scripts/check-peer-code.mjs
+
       - name: Build static site
         working-directory: web
         env:

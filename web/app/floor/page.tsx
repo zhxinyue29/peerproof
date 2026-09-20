@@ -103,7 +103,7 @@ export default function FloorPage() {
       const e = currentEpoch();
       if (e !== shown) {
         shown = e;
-        setPayload(await makePeerCode(signer.attest, ESCROW_ADDRESS, eventId(), e));
+        setPayload(await makePeerCode(signer.attest, signer.address, ESCROW_ADDRESS, eventId(), e));
       }
     };
     void tick();
@@ -331,7 +331,9 @@ export default function FloorPage() {
       devPeerIndex.current += 1;
       const peer = privateKeyToAccount(pk);
       const epoch = currentEpoch();
-      const p = parsePeerCode(await makePeerCode(peer, ESCROW_ADDRESS, eventId(), epoch))!;
+      // The dev peer is a single key acting as both roles, which is the shape that hid the
+      // subject/attest mix-up for so long. Passed explicitly here so it reads as a choice.
+      const p = parsePeerCode(await makePeerCode(peer, peer.address, ESCROW_ADDRESS, eventId(), epoch))!;
       await submitAttest(p.subject, p.epoch, p.sig);
     });
 
