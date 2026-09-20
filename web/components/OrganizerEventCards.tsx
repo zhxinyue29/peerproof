@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
 import { mon } from "@/lib/format";
@@ -222,20 +221,18 @@ export default function OrganizerEventCards({
                     )}
                   </div>
 
-                  <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                  {/* One button. The second was "查看", which opened the participant's page for
+                      the same event — a screen the organizer has no use for, and which looked
+                      empty to them because everything on it is addressed to somebody deciding
+                      whether to come. */}
+                  <div className="mt-auto pt-2">
                     <button
                       type="button"
                       onClick={() => onSelect(e.id)}
-                      className="min-h-[44px] flex-1 rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
+                      className="min-h-[44px] w-full rounded-xl bg-accent px-4 text-[15px] font-medium text-white transition-transform duration-100 active:scale-[0.985]"
                     >
                       {t("organizer.manage")}
                     </button>
-                    <Link
-                      href={`/event?event=${e.id}`}
-                      className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
-                    >
-                      {t("common.view")}
-                    </Link>
                   </div>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import TopNav from "@/components/TopNav";
 import { SectionTitle } from "@/components/SectionTitle";
 import IdentityGate from "@/components/IdentityGate";
 import GateIntro from "@/components/GateIntro";
-import { Button, Card, CopyableCode, Field, Notice, Skeleton } from "@/components/ui";
+import { Button, Card, CopyableCode, Field, Notice, Sheet, Skeleton } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
 import {
@@ -32,6 +32,7 @@ import DeployDirectory from "@/components/DeployDirectory";
 import EditListing from "@/components/EditListing";
 import OrganizerEventCards from "@/components/OrganizerEventCards";
 import EventManagement from "@/components/EventManagement";
+import Analytics from "@/components/organizer/Analytics";
 import EventTimeline from "@/components/EventTimeline";
 import TagInput from "@/components/TagInput";
 import CoverField from "@/components/CoverField";
@@ -64,6 +65,9 @@ export default function OrganizerPage() {
   const { ev, refresh } = useEvent(signer?.address ?? null);
   const [tab, goTo] = useUrlTab();
   const [all, setAll] = useState<EventSummary[] | null>(null);
+  /// Which event's management sheet is open. `null` is the dashboard.
+  const [managing, setManaging] = useState<bigint | null>(null);
+  const [manageTab, setManageTab] = useState<"data" | "edit">("data");
 
   const loadAll = useCallback(() => {
     if (!hasDeployment) return;
@@ -200,24 +204,84 @@ export default function OrganizerPage() {
                 half the width the drawing gives it. */}
             <div className="grid min-w-0 gap-5">
               <div className="min-w-0 space-y-5">
-                <OrganizerEventCards events={mine} selectedId={selectedId} onSelect={select} />
-                {/* Panel 05 of the sheet. Shown only once an event is picked — the block is about
-                    one event, and a "management" panel with nothing to manage is furniture. */}
-                {selectedId !== null && (
-                  <EventManagement
-                    event={mine?.find((e) => e.id === selectedId) ?? null}
-                    loading={!mine}
-                  />
-                )}
-                <SelectedEvent
-                  ev={ev}
-                  refresh={refresh}
+                {/* Panel 06, on arrival rather than behind a selection. An organizer opening this
+                    page wants the shape of everything they run; picking an event first is a step
+                    between them and the only question they came with. */}
+                <Analytics events={mine} />
+
+                <OrganizerEventCards
+                  events={mine}
                   selectedId={selectedId}
-                  title={selected?.listing.title}
+                  // Two things, deliberately separate. The auto-select effect below calls `select`
+                  // alone — folding the sheet into it meant landing on the dashboard popped a
+                  // modal nobody asked for.
+                  onSelect={(id) => {
+                    select(id);
+                    setManageTab("data");
+                    setManaging(id);
+                  }}
                 />
               </div>
-                <LivePulse eventId={selectedId} live={selected?.phase === "live"} />
             </div>
+
+            {/* "管理活动" opens this rather than appending four panels to the dashboard.
+                Everything about one event was stacked under the grid, so the page grew a second
+                page's worth of content that only made sense after a click — and the click that
+                produced it was two screens above what it produced. A sheet keeps the dashboard
+                about all the events and this about one. */}
+            {managing && (
+              <Sheet
+                title={selected?.listing.title || t("common.eventNumber", { id: managing.toString() })}
+                sub={t("organizer.manageSub")}
+                onClose={() => setManaging(null)}
+              >
+                <div className="space-y-4">
+                  <div className="flex gap-1 border-b border-line">
+                    {(
+                      [
+                        ["data", "organizer.manageData"],
+                        ["edit", "organizer.manageEdit"],
+                      ] as const
+                    ).map(([key, label]) => {
+                      const on = manageTab === key;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setManageTab(key)}
+                          aria-current={on ? "page" : undefined}
+                          className={`relative flex min-h-[46px] items-center px-3.5 text-[15px] transition-colors ${
+                            on ? "font-medium text-fg" : "text-dim hover:text-fg"
+                          }`}
+                        >
+                          {t(label)}
+                          {on && (
+                            <span aria-hidden className="absolute inset-x-2.5 -bottom-px h-[2px] rounded-full bg-accent" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {manageTab === "data" ? (
+                    <div className="space-y-4">
+                      <EventManagement
+                        event={mine?.find((e) => e.id === managing) ?? null}
+                        loading={!mine}
+                      />
+                      <LivePulse eventId={managing} live={selected?.phase === "live"} />
+                    </div>
+                  ) : (
+                    <SelectedEvent
+                      ev={ev}
+                      refresh={refresh}
+                      selectedId={managing}
+                      title={selected?.listing.title}
+                    />
+                  )}
+                </div>
+              </Sheet>
+            )}
           </div>
         )}
 
