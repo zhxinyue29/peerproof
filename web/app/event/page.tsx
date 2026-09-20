@@ -297,26 +297,6 @@ export default function EventPage() {
           {meta.blurb && <p className="text-[16px] leading-relaxed text-dim md:max-w-[58ch]">{meta.blurb}</p>}
         </div>
 
-        {/* One unit, because it is one argument: this is the amount, and this is who holds it.
-            Split across two cards it was two facts; together it is the reason to keep reading. The
-            spec calls this weld out by name, so the two never get separated by a breakpoint either —
-            the row stays a row at every width and the sentence wraps instead. */}
-        <section
-          aria-label={t("event.deposit")}
-          className="flex items-center gap-4 rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5 md:gap-5 md:p-6"
-        >
-          <p className="whitespace-nowrap text-[32px] font-extrabold leading-none tracking-tight tabular-nums md:text-[38px]">
-            {ev ? mon(ev.deposit) : <Skeleton className="h-8 w-32 align-middle" />}
-          </p>
-          {/* `break-words` so a four-figure deposit on a 320px phone breaks the sentence rather than
-              the row: the weld is the point, and a flex child that cannot shrink would push the card
-              sideways instead. */}
-          <p className="min-w-0 break-words text-[15px] font-medium leading-snug md:text-[16px]">
-            {t("event.heldBy")}
-            <span className="mt-0.5 block font-normal text-dim">{t("event.notByOrganizer")}</span>
-          </p>
-        </section>
-
         {/* Place and time, directly under the title, as the sheet sets them. They were only in
             the right rail — which is where the logistics belong once you are deciding, but the
             first question somebody has when the page opens is "where and when", and a rail is not
@@ -388,16 +368,6 @@ export default function EventPage() {
             </span>
           </button>
         </section>
-
-        {/* Three numbers, left-aligned under their values the way the render shows them. `capacity`
-            is deliberately not folded in here as "128/200" — how full the room is belongs next to the
-            rest of the logistics, in the detail panel, and a fraction reads as a ratio to reach
-            rather than as a count of people. */}
-        <div className="grid grid-cols-3 gap-2 md:gap-3">
-          <StatTile value={ev && `${ev.registered}`} label={t("event.registered")} />
-          <StatTile value={ev && `${ev.k}`} label={t("event.vouchesNeededLbl")} />
-          <StatTile value={ev && `${ev.minQuorum}`} label={t("event.minimumToRun")} />
-        </div>
 
         {/* The sheet's tab strip: 活动介绍 / 日程安排 / 场地信息 / 验证规则 / 常见问题.
             Three of those five are here. 日程安排 and 场地信息 are not: this contract stores one
@@ -534,6 +504,33 @@ export default function EventPage() {
               )}
               {action}
             </section>
+
+            {/* The sheet's second right-hand block is 活动奖励 — a prize pool this contract does
+                not have. The money that does exist is the deposit, so that slot says what the
+                deposit is and who is holding it. Left column had it as a banner; the sheet keeps
+                the left column for what the event *is* and the right for what it *costs*. */}
+            <section
+              aria-label={t("event.deposit")}
+              className="rounded-2xl border border-line-2 bg-gradient-to-br from-accent/15 to-ok/[0.06] p-5"
+            >
+              <p className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums">
+                {ev ? mon(ev.deposit) : <Skeleton className="h-7 w-24 align-middle" />}
+              </p>
+              <p className="mt-2 text-[15px] font-medium leading-snug">
+                {t("event.heldBy")}
+                <span className="mt-0.5 block font-normal text-dim">{t("event.notByOrganizer")}</span>
+              </p>
+            </section>
+
+            {/* The three fixed numbers, in the rail. The sheet keeps counts on this side; on the
+                left they sat between the description and the tabs, splitting what the event is
+                from what people say about it. */}
+            <section className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-line bg-line">
+              <StatTile value={ev && `${ev.registered}`} label={t("event.registered")} />
+              <StatTile value={ev && `${ev.k}`} label={t("event.vouchesNeededLbl")} />
+              <StatTile value={ev && `${ev.minQuorum}`} label={t("event.minimumToRun")} />
+            </section>
+
             <Details ev={ev} />
           </div>
         </main>
@@ -551,13 +548,15 @@ export default function EventPage() {
 /// that has only two.
 function StatTile({ value, label }: { value: string | null; label: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-line bg-panel/70 p-3.5 md:p-4">
-      <div className="text-[24px] font-semibold leading-none tabular-nums md:text-[27px]">
+    // No border of its own: these three sit in one strip in the rail now, divided by the gap of
+    // the grid that holds them. A card inside a card reads as two things.
+    <div className="min-w-0 bg-panel p-3.5">
+      <div className="text-[22px] font-semibold leading-none tabular-nums md:text-[24px]">
         {value || <Skeleton className="h-6 w-10 align-middle" />}
       </div>
       {/* `dim`, not `faint` — the spec keeps low-contrast grey for optional metadata, and a number
           without its unit is not information. */}
-      <div className="mt-2 break-words text-[14px] leading-snug text-dim md:text-[14px]">{label}</div>
+      <div className="mt-1.5 break-words text-[13px] leading-snug text-faint">{label}</div>
     </div>
   );
 }
