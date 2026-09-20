@@ -43,7 +43,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(30),
       attestOpen: at(30),
       attestClose: at(34),
-      listing: { title: "Monad Builders Meetup", blurb: "", url: "", tags: "", venue: "Tokyo, Japan", updatedAt: 0n },
+      listing: { title: "Monad Builders Meetup", blurb: "", url: "", tags: "", cover: "", venue: "Tokyo, Japan", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -55,7 +55,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(74),
       attestOpen: at(74),
       attestClose: at(77),
-      listing: { title: "DeFi x AI Workshop", blurb: "", url: "", tags: "", venue: "Singapore", updatedAt: 0n },
+      listing: { title: "DeFi x AI Workshop", blurb: "", url: "", tags: "", cover: "", venue: "Singapore", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -67,7 +67,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(122),
       attestOpen: at(122),
       attestClose: at(125),
-      listing: { title: "RWA & Onchain Finance", blurb: "", url: "", tags: "", venue: "Seoul, Korea", updatedAt: 0n },
+      listing: { title: "RWA & Onchain Finance", blurb: "", url: "", tags: "", cover: "", venue: "Seoul, Korea", updatedAt: 0n },
       phase: "registering",
     },
     {
@@ -79,7 +79,7 @@ export function sampleEvents(): EventSummary[] {
       registerDeadline: at(170),
       attestOpen: at(170),
       attestClose: at(172),
-      listing: { title: "ZK Proofs 101", blurb: "", url: "", tags: "", venue: "Online", updatedAt: 0n },
+      listing: { title: "ZK Proofs 101", blurb: "", url: "", tags: "", cover: "", venue: "Online", updatedAt: 0n },
       phase: "registering",
     },
   ];

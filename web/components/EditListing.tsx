@@ -6,6 +6,7 @@ import { Button, Field, Notice } from "@/components/ui";
 import { eventId } from "@/lib/chain";
 import { shortenError } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import CoverField from "@/components/CoverField";
 import {
   checkDirectory,
   deployDirectory,
@@ -33,6 +34,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
   const [url, setUrl] = useState("");
   const [venue, setVenue] = useState("");
   const [tags, setTags] = useState("");
+  const [cover, setCover] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         setUrl(l.url);
         setVenue(l.venue);
         setTags(l.tags);
+        setCover(l.cover);
       })
       .catch(() => {})
       .finally(() => live && setLoaded(true));
@@ -71,8 +74,10 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
       setBusy(t("listing.saving"));
       await signer.write({
         functionName: "describe",
-        args: [id, title, blurb, url, venue, tags],
-        gas: describeGas(title, blurb, url, venue, tags),
+        // One named struct, not six positional strings. The positional form is what let two call
+        // sites keep passing five arguments after the function grew a sixth.
+        args: [id, { title, blurb, url, venue, tags, cover }],
+        gas: describeGas(title, blurb, url, venue, tags, cover),
         to: directoryAddress(),
         abi: eventDirectoryAbi,
       });
@@ -136,6 +141,7 @@ export default function EditListing({ id = eventId() }: { id?: bigint }) {
         onChange={setTags}
         hint={t("listing.tagsHint")}
       />
+      <CoverField value={cover} onChange={setCover} />
       <Field
         label={t("listing.link")}
         value={url}

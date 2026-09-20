@@ -54,9 +54,38 @@ contract EventDirectory {
         /// `string[]` because the only consumer is a chip row and a filter, and an array of short
         /// strings costs a slot each to store and a loop to read back. Split on the client.
         string tags;
+        /// A link to a picture for the event, or empty.
+        ///
+        /// A link and not the image, because a contract is the most expensive storage that exists
+        /// and this app has no server to upload to — those are the two facts, and a URL is what is
+        /// left when both are true. The organizer hosts the picture wherever they already host
+        /// pictures; this records where.
+        ///
+        /// Not validated here. A string that is not a URL renders as a broken image on one card,
+        /// which is a cost paid by the person who typed it; making the chain adjudicate what a URL
+        /// is would be a permanent rule written for a temporary problem.
+        string cover;
         /// Zero until described. Lets a reader tell "no description" from "described with empty
         /// strings", which a caller is free to do.
         uint64 updatedAt;
+    }
+
+    /// What `describe` takes: the same fields as a Listing, minus the timestamp the contract
+    /// stamps itself.
+    ///
+    /// A struct rather than six positional strings for two reasons. Solidity runs out of stack
+    /// with seven calldata strings in one signature — the immediate cause — and, more usefully,
+    /// positional arguments are how a caller silently sends a venue as a tag. The frontend already
+    /// shipped one bug of exactly that family: `describe` grew a parameter, two call sites kept
+    /// passing the old count, and every listing write in the product failed before it left the
+    /// browser. Named fields cannot be transposed.
+    struct ListingInput {
+        string title;
+        string blurb;
+        string url;
+        string venue;
+        string tags;
+        string cover;
     }
 
     /// What an account says about itself.
@@ -140,6 +169,7 @@ contract EventDirectory {
     uint256 public constant MAX_URL = 300;
     uint256 public constant MAX_VENUE = 160;
     uint256 public constant MAX_TAGS = 200;
+    uint256 public constant MAX_COVER = 300;
 
     constructor(address escrowAddress) {
         escrow = IAttendanceEscrow(escrowAddress);
@@ -147,32 +177,27 @@ contract EventDirectory {
 
     /// Only the organizer of that event, and only for an event that exists. There is no admin
     /// override: an organizer who writes something wrong fixes it by writing again.
-    function describe(
-        uint256 eventId,
-        string calldata title,
-        string calldata blurb,
-        string calldata url,
-        string calldata venue,
-        string calldata tags
-    ) external {
+    function describe(uint256 eventId, ListingInput calldata l) external {
         if (eventId == 0 || eventId >= escrow.nextEventId()) revert NoSuchEvent();
         if (escrow.getEvent(eventId).organizer != msg.sender) revert NotOrganizer();
-        if (bytes(title).length > MAX_TITLE) revert TooLong();
-        if (bytes(blurb).length > MAX_BLURB) revert TooLong();
-        if (bytes(url).length > MAX_URL) revert TooLong();
-        if (bytes(venue).length > MAX_VENUE) revert TooLong();
-        if (bytes(tags).length > MAX_TAGS) revert TooLong();
+        if (bytes(l.title).length > MAX_TITLE) revert TooLong();
+        if (bytes(l.blurb).length > MAX_BLURB) revert TooLong();
+        if (bytes(l.url).length > MAX_URL) revert TooLong();
+        if (bytes(l.venue).length > MAX_VENUE) revert TooLong();
+        if (bytes(l.tags).length > MAX_TAGS) revert TooLong();
+        if (bytes(l.cover).length > MAX_COVER) revert TooLong();
 
         _listings[eventId] = Listing({
-            title: title,
-            blurb: blurb,
-            url: url,
-            venue: venue,
-            tags: tags,
+            title: l.title,
+            blurb: l.blurb,
+            url: l.url,
+            venue: l.venue,
+            tags: l.tags,
+            cover: l.cover,
             updatedAt: uint64(block.timestamp)
         });
 
-        emit Described(eventId, msg.sender, title);
+        emit Described(eventId, msg.sender, l.title);
     }
 
     function listingOf(uint256 eventId) external view returns (Listing memory) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import EventCover from "@/components/EventCover";
+import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
 import { useLang } from "@/lib/i18n";
 import type { EventSummary } from "@/lib/events";
@@ -51,7 +51,7 @@ export default function EventManagement({
 
       <div className="flex flex-wrap items-center gap-4 p-5">
         <div className="relative h-[72px] w-[112px] shrink-0 overflow-hidden rounded-xl">
-          <EventCover id={event.id} nodes={6} className="absolute inset-0 h-full w-full" />
+          <CoverImage id={event.id} src={event.listing.cover} nodes={6} className="absolute inset-0 h-full w-full" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

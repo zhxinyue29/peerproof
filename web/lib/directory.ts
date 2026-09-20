@@ -41,6 +41,9 @@ export type Listing = {
   /// Comma-separated, exactly as typed. The contract stores the string and nothing parses it into
   /// a list — the events page searches it as prose, which is also how somebody reads it.
   tags: string;
+  /// A link to a picture, or empty. There is no server to upload to, so the organizer points at
+  /// one they already host.
+  cover: string;
   /// 0 when the organizer never described the event.
   updatedAt: bigint;
 };
@@ -54,6 +57,7 @@ export const EMPTY_LISTING: Listing = {
   url: "",
   venue: "",
   tags: "",
+  cover: "",
   updatedAt: 0n,
 };
 const EMPTY = EMPTY_LISTING;
@@ -107,8 +111,9 @@ export function describeGas(
   url: string,
   venue = "",
   tags = "",
+  cover = "",
 ): bigint {
-  const parts = [title, blurb, url, venue, tags];
+  const parts = [title, blurb, url, venue, tags, cover];
   return (fit(83_000n, 11_000n, parts) * PAD) / 10n;
 }
 

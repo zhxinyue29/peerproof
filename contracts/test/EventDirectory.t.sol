@@ -37,7 +37,7 @@ contract EventDirectoryTest is Test {
 
     function test_organizerCanDescribe() public {
         vm.prank(organizer);
-        dir.describe(eventId, "Reading group", "Thursdays, upstairs.", "https://example.com/rg", "", "");
+        dir.describe(eventId, EventDirectory.ListingInput({title: "Reading group", blurb: "Thursdays, upstairs.", url: "https://example.com/rg", venue: "", tags: "", cover: ""}));
 
         EventDirectory.Listing memory l = dir.listingOf(eventId);
         assertEq(l.title, "Reading group");
@@ -49,23 +49,23 @@ contract EventDirectoryTest is Test {
     function test_strangerCannotDescribe() public {
         vm.prank(stranger);
         vm.expectRevert(EventDirectory.NotOrganizer.selector);
-        dir.describe(eventId, "Spam", "", "", "", "");
+        dir.describe(eventId, EventDirectory.ListingInput({title: "Spam", blurb: "", url: "", venue: "", tags: "", cover: ""}));
     }
 
     function test_unknownEventRejected() public {
         vm.prank(organizer);
         vm.expectRevert(EventDirectory.NoSuchEvent.selector);
-        dir.describe(eventId + 1, "Nope", "", "", "", "");
+        dir.describe(eventId + 1, EventDirectory.ListingInput({title: "Nope", blurb: "", url: "", venue: "", tags: "", cover: ""}));
 
         vm.prank(organizer);
         vm.expectRevert(EventDirectory.NoSuchEvent.selector);
-        dir.describe(0, "Nope", "", "", "", "");
+        dir.describe(0, EventDirectory.ListingInput({title: "Nope", blurb: "", url: "", venue: "", tags: "", cover: ""}));
     }
 
     function test_rewritingReplaces() public {
         vm.startPrank(organizer);
-        dir.describe(eventId, "First", "a", "", "", "");
-        dir.describe(eventId, "Second", "b", "", "", "");
+        dir.describe(eventId, EventDirectory.ListingInput({title: "First", blurb: "a", url: "", venue: "", tags: "", cover: ""}));
+        dir.describe(eventId, EventDirectory.ListingInput({title: "Second", blurb: "b", url: "", venue: "", tags: "", cover: ""}));
         vm.stopPrank();
 
         EventDirectory.Listing memory l = dir.listingOf(eventId);
@@ -77,7 +77,7 @@ contract EventDirectoryTest is Test {
         string memory tooLong = _repeat("x", 121);
         vm.prank(organizer);
         vm.expectRevert(EventDirectory.TooLong.selector);
-        dir.describe(eventId, tooLong, "", "", "", "");
+        dir.describe(eventId, EventDirectory.ListingInput({title: tooLong, blurb: "", url: "", venue: "", tags: "", cover: ""}));
     }
 
     function test_undescribedReadsEmpty() public view {
@@ -100,7 +100,7 @@ contract EventDirectoryTest is Test {
         );
 
         vm.prank(organizer);
-        dir.describe(second, "Only this one", "", "", "", "");
+        dir.describe(second, EventDirectory.ListingInput({title: "Only this one", blurb: "", url: "", venue: "", tags: "", cover: ""}));
 
         EventDirectory.Listing[] memory ls = dir.listingsIn(1, escrow.nextEventId());
         assertEq(ls.length, 2);
@@ -115,7 +115,7 @@ contract EventDirectoryTest is Test {
         uint256 before = address(escrow).balance;
 
         vm.prank(organizer);
-        dir.describe(eventId, _repeat("a", 120), _repeat("b", 600), _repeat("c", 300), "", "");
+        dir.describe(eventId, EventDirectory.ListingInput({title: _repeat("a", 120), blurb: _repeat("b", 600), url: _repeat("c", 300), venue: "", tags: "", cover: ""}));
 
         assertEq(address(escrow).balance, before);
         assertEq(address(dir).balance, 0);

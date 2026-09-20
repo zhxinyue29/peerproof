@@ -57,7 +57,7 @@ contract DirectoryGasTest is Test {
 
             vm.prank(organizer);
             uint256 before = gasleft();
-            dir.describe(id, t, b, u, "", "");
+            dir.describe(id, EventDirectory.ListingInput({title: t, blurb: b, url: u, venue: "", tags: "", cover: ""}));
             uint256 used = before - gasleft();
 
             console.log("bytes", sizes[i], "gas", used);

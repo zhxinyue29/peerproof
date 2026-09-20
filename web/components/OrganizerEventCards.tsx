@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import EventCover from "@/components/EventCover";
+import CoverImage from "@/components/CoverImage";
 import { Skeleton } from "@/components/ui";
 import { mon } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
@@ -152,7 +152,7 @@ export default function OrganizerEventCards({
                 }`}
               >
                 <div className="relative h-[96px]">
-                  <EventCover id={e.id} nodes={7} className="absolute inset-0 h-full w-full" />
+                  <CoverImage id={e.id} src={e.listing.cover} nodes={7} className="absolute inset-0 h-full w-full" />
                   <span
                     className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[12px] font-medium backdrop-blur-sm ${
                       e.phase === "live"

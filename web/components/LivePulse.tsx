@@ -25,6 +25,10 @@ const BARS = 8;
 type Pulse = {
   /// Vouch count per bucket, oldest first. Empty when nothing has happened yet.
   bars: number[];
+  /// Cumulative registrations at the end of each bucket, or null when the reader could not say
+  /// when people registered — the indexer does not return registration blocks, and a second line
+  /// guessed from a total would be a drawing rather than a reading.
+  registrations: number[] | null;
   /// Cumulative vouches at the end of each bucket — the same data read as a curve rather than as
   /// a histogram, which is what panel 06 of the organizer sheet draws.
   ///
@@ -40,7 +44,8 @@ type Pulse = {
 
 async function readPulse(id: bigint): Promise<Pulse> {
   const history = await readHistory(id);
-  if (history.vouches.length === 0) return { bars: [], cumulative: [], total: 0, spanSeconds: null };
+  if (history.vouches.length === 0)
+    return { bars: [], cumulative: [], registrations: null, total: 0, spanSeconds: null };
 
   let first = history.vouches[0].block;
   for (const v of history.vouches) if (v.block < first) first = v.block;
@@ -67,7 +72,25 @@ async function readPulse(id: bigint): Promise<Pulse> {
   let running = 0;
   const cumulative = bars.map((n) => (running += n));
 
-  return { bars, cumulative, total: history.vouches.length, spanSeconds };
+  // The sheet's second series. Only drawn when every registration carries a block — a partial
+  // series would show the room filling up less than it did, on the one panel an organizer reads
+  // to decide whether to worry.
+  const regBlocks = history.participants.map((p) => p.block);
+  let registrations: number[] | null = null;
+  if (regBlocks.length > 0 && regBlocks.every((b) => b !== null)) {
+    const perBucket = new Array<number>(BARS).fill(0);
+    for (const b of regBlocks as bigint[]) {
+      // Registrations happen before the first vouch, so they fall outside the window the bars are
+      // bucketed over. Clamped into it rather than dropped: "everybody had registered by the time
+      // the first person scanned" is true and is what the flat leading segment says.
+      const i = b <= first ? 0 : Number(((b - first) * BigInt(BARS)) / span);
+      perBucket[Math.min(BARS - 1, Math.max(0, i))] += 1;
+    }
+    let r = 0;
+    registrations = perBucket.map((n) => (r += n));
+  }
+
+  return { bars, cumulative, registrations, total: history.vouches.length, spanSeconds };
 }
 
 export default function LivePulse({ eventId, live }: { eventId: bigint | null; live: boolean }) {
@@ -133,14 +156,28 @@ function Bars({ pulse, caption, t }: { pulse: Pulse; caption: string; t: TFn }) 
   // A cumulative line, as the sheet draws it, over the per-bucket bars it replaces. The bars said
   // "how busy was each stretch"; the line says "how far has the room got", which is the question
   // somebody standing in it is actually asking.
-  const peak = Math.max(1, pulse.cumulative[pulse.cumulative.length - 1] ?? 1);
   const W = 100;
   const H = 40;
+  // Both series share one vertical scale. Drawn against separate maxima they would both end at the
+  // top of the box, and "28 of 40 have been vouched for" would look identical to "40 of 40".
+  const peak = Math.max(
+    1,
+    pulse.cumulative[pulse.cumulative.length - 1] ?? 1,
+    pulse.registrations?.[pulse.registrations.length - 1] ?? 1,
+  );
+  const path = (series: number[]) =>
+    series
+      .map((n, i) => {
+        const x = series.length === 1 ? W : (i / (series.length - 1)) * W;
+        return `${i ? "L" : "M"}${x.toFixed(2)} ${(H - (n / peak) * H).toFixed(2)}`;
+      })
+      .join(" ");
+  const line = path(pulse.cumulative);
+  const regLine = pulse.registrations ? path(pulse.registrations) : null;
   const pts = pulse.cumulative.map((n, i) => {
     const x = pulse.cumulative.length === 1 ? W : (i / (pulse.cumulative.length - 1)) * W;
     return [x, H - (n / peak) * H] as const;
   });
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
   const area = `${line} L${W} ${H} L0 ${H} Z`;
 
   return (
@@ -164,6 +201,19 @@ function Bars({ pulse, caption, t }: { pulse: Pulse; caption: string; t: TFn }) 
             </linearGradient>
           </defs>
           <path d={area} fill="url(#pulse-fill)" />
+          {/* Registrations, dashed and behind. Dashed because it is the ceiling rather than the
+              achievement — the number of people who could still be confirmed. */}
+          {regLine && (
+            <path
+              d={regLine}
+              fill="none"
+              stroke="var(--color-dim, #8b93a7)"
+              strokeWidth="1.2"
+              strokeDasharray="3 2.5"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
           <path
             d={line}
             fill="none"
@@ -179,6 +229,21 @@ function Bars({ pulse, caption, t }: { pulse: Pulse; caption: string; t: TFn }) 
         </svg>
       </div>
 
+      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-dim">
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden className="inline-block h-[2px] w-4 rounded-full bg-ok" />
+          {t("organizer.seriesConfirmed")}
+        </span>
+        {pulse.registrations && (
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-0 w-4 border-t-2 border-dashed border-faint"
+            />
+            {t("organizer.seriesRegistered")}
+          </span>
+        )}
+      </p>
       <p className="text-[14px] leading-relaxed text-dim">{caption}</p>
 
       {/* Two events on a testnet is what this will show on the night, so the panel states its own

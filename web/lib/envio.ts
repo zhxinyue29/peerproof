@@ -136,6 +136,10 @@ export async function readHistoryFromEnvio(eventId: bigint): Promise<EventHistor
     address: p.address as Address,
     confirmed: p.confirmed,
     viaOrganizer: p.confirmedViaOrganizer,
+    // The indexer's Participant entity has no registration block. `null` rather than 0n, so a
+    // chart can tell "we do not know when" from "at the very start" — the second would draw every
+    // registration as having happened before the event opened.
+    block: null,
   }));
 
   const vouches: Vouch[] = rawVouches.map((v) => ({

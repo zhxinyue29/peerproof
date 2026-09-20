@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLang, useT, type TFn } from "@/lib/i18n";
-import EventCover from "@/components/EventCover";
+import CoverImage from "@/components/CoverImage";
 import { both, countdown, shortAddress } from "@/lib/format";
 import { chainNowMs } from "@/lib/chain";
 import { stillJoinable, type EventSummary, type Phase } from "@/lib/events";
@@ -135,9 +135,10 @@ export default function EventCard({
         {/* Only the picture moves, and only by 2.5%. Scaling the whole card would shift the text
             inside it, and text that grows under the cursor is harder to read, not more alive. The
             band already clips, so nothing escapes the card. */}
-        <EventCover
+        <CoverImage
           id={e.id}
-          className="absolute inset-0 transition-transform duration-300 ease-out motion-safe:group-hover:scale-[1.025]"
+          src={e.listing.cover}
+          className="absolute inset-0 h-full w-full transition-transform duration-300 ease-out motion-safe:group-hover:scale-[1.025]"
         />
         <span
           className={`absolute left-3 top-3 rounded-full bg-ink/60 px-2.5 py-1 text-[14px] font-medium backdrop-blur-sm ${PHASE_TONE[e.phase]}`}

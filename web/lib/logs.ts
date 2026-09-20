@@ -77,7 +77,15 @@ const settledEvent = parseAbiItem(
 );
 
 export type Vouch = { from: Address; to: Address; hash: Hex; block: bigint };
-export type Participant = { address: Address; confirmed: boolean; viaOrganizer: boolean };
+export type Participant = {
+  address: Address;
+  confirmed: boolean;
+  viaOrganizer: boolean;
+  /// The block their registration landed in. `null` from the indexer, which does not return it —
+  /// so anything drawing registrations against time has to cope with not knowing, rather than
+  /// assuming zero and putting every registration at the start of the window.
+  block: bigint | null;
+};
 
 export type EventHistory = {
   participants: Participant[];
@@ -100,7 +108,7 @@ export async function readHistoryFromRpc(
   const tip = await logsClient.getBlockNumber();
   const floor = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : tip > maxBlocks ? tip - maxBlocks : 0n;
 
-  type RegLog = { args: { eventId: bigint; attendee: Address } };
+  type RegLog = { args: { eventId: bigint; attendee: Address }; blockNumber: bigint };
   type AttLog = { args: { eventId: bigint; attester: Address; subject: Address }; transactionHash: Hex; blockNumber: bigint };
   type ConfLog = { args: { eventId: bigint; attendee: Address; viaOrganizer: boolean } };
   type SetLog = { args: { eventId: bigint; confirmed: number; noShows: number; sharePerAttendee: bigint }; transactionHash: Hex };
@@ -166,6 +174,7 @@ export async function readHistoryFromRpc(
     address: r.args.attendee,
     confirmed: confirmedBy.has(r.args.attendee.toLowerCase()),
     viaOrganizer: confirmedBy.get(r.args.attendee.toLowerCase()) ?? false,
+    block: r.blockNumber,
   }));
 
   const vouches: Vouch[] = mine(atts).map((a) => ({

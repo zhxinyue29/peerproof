@@ -34,6 +34,7 @@ import OrganizerEventCards from "@/components/OrganizerEventCards";
 import EventManagement from "@/components/EventManagement";
 import EventTimeline from "@/components/EventTimeline";
 import TagInput from "@/components/TagInput";
+import CoverField from "@/components/CoverField";
 import LivePulse from "@/components/LivePulse";
 import VenueHandoff from "@/components/VenueHandoff";
 
@@ -678,6 +679,7 @@ type Draft = {
   blurb: string;
   venue: string;
   tags: string;
+  cover: string;
   url: string;
   deposit: string;
   capacity: string;
@@ -763,6 +765,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
   // its place and its subject changes to the thing that is actually financial here.
   const [step, setStep] = useState<Step>("about");
   const [tags, setTags] = useState("");
+  const [cover, setCover] = useState("");
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
   const [url, setUrl] = useState("");
@@ -781,6 +784,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
     if (d.blurb) setBlurb(d.blurb);
     if (d.venue) setVenue(d.venue);
     if (d.tags) setTags(d.tags);
+    if (d.cover) setCover(d.cover);
     if (d.url) setUrl(d.url);
     if (d.deposit) setDeposit(d.deposit);
     if (d.capacity) setCapacity(d.capacity);
@@ -796,7 +800,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
 
   const saveDraft = () => {
     const draft: Draft = {
-      title, blurb, venue, tags, url,
+      title, blurb, venue, tags, cover, url,
       deposit, capacity, minQuorum, k, startAt, runsMins, walkIns,
     };
     try {
@@ -818,7 +822,7 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
       // Descriptions live in a second contract. Whether it exists yet is our problem, not the
       // organizer's — so if it does not, deploy it as part of this action rather than putting a
       // "deploy a contract" button in front of somebody who wanted to create an event.
-      const wantsWords = !!(title || blurb || url || venue || tags);
+      const wantsWords = !!(title || blurb || url || venue || tags || cover);
       if (wantsWords && !(await checkDirectory())) {
         setBusyLabel(t("listing.settingUp"));
         await deployDirectory(signer.sendRaw);
@@ -891,8 +895,8 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
             // which is not a value bug — viem refuses to encode at all — so every listing write in
             // the product, here and in the editor, was failing before it reached the chain.
             // Tags are not collected in the create flow; the listing editor has that field.
-            args: [id, title, blurb, url, venue, tags],
-            gas: describeGas(title, blurb, url, venue, tags),
+            args: [id, { title, blurb, url, venue, tags, cover }],
+            gas: describeGas(title, blurb, url, venue, tags, cover),
             to: directoryAddress(),
             abi: eventDirectoryAbi,
           });
@@ -997,6 +1001,8 @@ function CreateForm({ onCreated, onDone }: { onCreated: () => Promise<void>; onD
               {savedDraft ? t("create.draftSaved") : t("create.saveDraft")}
             </button>
           </div>
+          {/* First in step one, where the sheet puts the cover. */}
+          <CoverField value={cover} onChange={setCover} />
           <Field label={t("listing.title")} value={title} onChange={setTitle} hint={t("listing.titleHint")} />
           <label className="block">
             <span className="mb-1.5 block text-[14px] uppercase tracking-wide text-faint">
