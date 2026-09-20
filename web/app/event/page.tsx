@@ -243,7 +243,12 @@ export default function EventPage() {
       <div className="mx-auto w-full max-w-[1380px] px-4 sm:px-6 md:px-[17px]">
         <TopNav page={t("event.pageName")} />
 
-        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start lg:gap-6 md:pt-8">
+        {/* 61.5 : 38.5, measured off the sheet rather than guessed. The rail was a fixed 320px,
+            which on a wide screen came out at about a quarter of the content — so the four tiles
+            in 验证方式 were stretched thin across a left column that was too wide, and the status
+            card was squeezed into a column too narrow for the row of faces the sheet puts in it.
+            Both problems were the same number. */}
+        <main className="grid min-w-0 gap-5 pb-16 pt-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-7 md:pt-8">
       <div className="flex min-w-0 flex-col gap-5 md:gap-6">
         {/* Said once, at the top, before anything below it is read.
             Everything on this screen — the deposit, the count, the window, the rules — is a literal
@@ -590,6 +595,7 @@ export default function EventPage() {
             >
               <Coin />
               <div className="min-w-0">
+                <p className="mb-1.5 text-[15.5px] font-medium text-dim">{t("event.deposit")}</p>
                 <p className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums">
                   {ev ? mon(ev.deposit) : <Skeleton className="h-7 w-24 align-middle" />}
                 </p>
