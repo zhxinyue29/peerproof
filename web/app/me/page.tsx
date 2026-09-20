@@ -6,6 +6,9 @@ import TopNav from "@/components/TopNav";
 import EventCover from "@/components/EventCover";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import EditProfile from "@/components/EditProfile";
+import ProfileRoles from "@/components/ProfileRoles";
+import ActivityCalendar from "@/components/ActivityCalendar";
+import ShareProfile from "@/components/ShareProfile";
 import { useIdentity } from "@/components/IdentityProvider";
 import { Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
@@ -67,7 +70,25 @@ function ProfileLink({ href, label }: { href: string; label: string }) {
 export default function MePage() {
   const t = useT();
   const { signer, setUpPrivy, useDevKey, devMode, busy } = useIdentity();
-  const address = signer?.address ?? null;
+
+  /// Somebody else's page, when the URL names one. This is what makes a profile stored on chain
+  /// worth the gas: "只有自己看得见等于没有" was the reason it went on chain, and until now there
+  /// was still no way for anyone else to look at it.
+  ///
+  /// Read from the URL at mount rather than during render — `location` does not exist at export
+  /// time, and reading it in a `useState` initialiser would produce markup that disagrees with the
+  /// HTML being hydrated.
+  const [viewing, setViewing] = useState<`0x${string}` | null>(null);
+  useEffect(() => {
+    const a = new URLSearchParams(window.location.search).get("a");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (a && /^0x[0-9a-fA-F]{40}$/.test(a)) setViewing(a as `0x${string}`);
+  }, []);
+
+  /// True when this page is about somebody else. Nothing on it can be edited, and none of it is
+  /// phrased as "your".
+  const guest = viewing !== null && viewing.toLowerCase() !== signer?.address.toLowerCase();
+  const address = viewing ?? signer?.address ?? null;
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [hosted, setHosted] = useState<EventSummary[] | null>(null);
@@ -202,7 +223,12 @@ export default function MePage() {
               ["hosted", t("me.tabHosted")],
               ["settings", t("me.tabSettings")],
             ] as const
-          ).map(([key, label]) => (
+          )
+            // A guest has nothing to set. The tab would open a form that writes to their own
+            // profile while the page around it is somebody else's — which is the kind of confusion
+            // that ends with the wrong account being edited.
+            .filter(([key]) => !(guest && key === "settings"))
+            .map(([key, label]) => (
             <button
               key={key}
               type="button"
@@ -219,6 +245,10 @@ export default function MePage() {
         </nav>
 
         <div className="min-w-0 space-y-6">
+          {/* Said once, at the top. Everything below is phrased as "my" — that is right for the
+              owner and wrong for a visitor, and one line naming whose page this is fixes the
+              reading of all of it without translating every heading twice. */}
+          {guest && <Notice>{t("me.viewingPublic", { who: shortAddress(address) })}</Notice>}
           {/* The banner. The sheet fills its right half with artwork; this uses the scene the rest
               of the product already uses, faded far enough back that the words stay first. */}
           <section className="relative overflow-hidden rounded-2xl border border-line bg-panel p-6 md:p-8">
@@ -299,13 +329,18 @@ export default function MePage() {
               {/* "Edit profile", top right of the banner, which is where the sheet puts it. It was
                   only reachable by finding the Settings tab and scrolling — on the one screen
                   whose whole subject is what this account says about itself. */}
-              <button
-                type="button"
-                onClick={() => setTab("settings")}
-                className="ml-auto inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
-              >
-                {t("profile.edit")}
-              </button>
+              <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+                {!guest && (
+                  <button
+                    type="button"
+                    onClick={() => setTab("settings")}
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-line-2 px-4 text-[15px] text-dim transition-colors hover:border-accent hover:text-fg"
+                  >
+                    {t("profile.edit")}
+                  </button>
+                )}
+                <ShareProfile address={address} />
+              </div>
             </div>
           </section>
 
@@ -324,12 +359,41 @@ export default function MePage() {
 
           {failed && <Notice tone="bad">{t("me.unreachable")}</Notice>}
 
+          {/* The sheet's first row under the tiles: roles on the left, the calendar on the right.
+              Its third card is "earned rewards", which this product has no concept of — so the two
+              that are real take the width rather than leaving a gap where a number would be made
+              up. The calendar is the narrow one: a month grid is square-ish by nature, and given
+              half the page its cells grow to 170px and the block reads as the subject of the page
+              instead of a footnote to it. */}
+          {tab === "overview" && (
+            <div className="grid min-w-0 gap-5 lg:grid-cols-3">
+              <div className="min-w-0 lg:col-span-2">
+                <ProfileRoles
+                  joined={rows?.length ?? 0}
+                  turnout={rate}
+                  hosted={hosted?.length ?? 0}
+                  reach={reach}
+                  loading={!rows || !hosted}
+                />
+              </div>
+              <div className="min-w-0">
+                <ActivityCalendar
+                  joined={(rows ?? []).map(({ event, confirmed }) => ({ event, confirmed }))}
+                  hosted={hosted ?? []}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Side by side on a wide screen, the way the sheet lays them out — and stacked below
+              `lg`, because two lists of event rows at half width start wrapping their titles. */}
+          <div className="grid min-w-0 gap-5 lg:grid-cols-2 lg:items-start">
           {(tab === "overview" || tab === "joined") && (
             <EventList
               title={t("me.recentJoined")}
-              empty={t("me.noneYet")}
-              emptyHref="/events"
-              emptyCta={t("me.findOne")}
+              empty={guest ? t("me.noneYetPublic") : t("me.noneYet")}
+              emptyHref={guest ? undefined : "/events"}
+              emptyCta={guest ? undefined : t("me.findOne")}
               loading={!rows}
               t={t}
               items={(rows ?? []).map(({ event, confirmed }) => ({
@@ -344,9 +408,9 @@ export default function MePage() {
           {(tab === "overview" || tab === "hosted") && (
             <EventList
               title={t("me.myHosted")}
-              empty={t("me.noneHosted")}
-              emptyHref="/organizer"
-              emptyCta={t("events.createFirst")}
+              empty={guest ? t("me.noneHostedPublic") : t("me.noneHosted")}
+              emptyHref={guest ? undefined : "/organizer"}
+              emptyCta={guest ? undefined : t("events.createFirst")}
               loading={!hosted}
               t={t}
               items={(hosted ?? []).map((event) => ({
@@ -355,6 +419,7 @@ export default function MePage() {
               }))}
             />
           )}
+          </div>
 
           {tab === "overview" && (
             /* The sheet's impact row, minus 活动满意度 — nothing here collects a rating, so that
@@ -462,8 +527,10 @@ function EventList({
   title: string;
   items: { event: EventSummary; right: { text: string; ok: boolean } }[];
   empty: string;
-  emptyHref: string;
-  emptyCta: string;
+  /// Both absent on somebody else's page — "create your first event" under a stranger's empty
+  /// list is an invitation addressed to the wrong person.
+  emptyHref?: string;
+  emptyCta?: string;
   loading: boolean;
   t: (k: string, v?: Record<string, string | number>) => string;
 }) {
@@ -479,12 +546,14 @@ function EventList({
       ) : items.length === 0 ? (
         <div className="mt-3 rounded-2xl border border-line bg-panel p-6">
           <p className="text-[16px] text-dim">{empty}</p>
-          <Link
-            href={emptyHref}
-            className="mt-3 inline-flex min-h-[44px] items-center text-[15px] text-accent-2 hover:text-fg"
-          >
-            {emptyCta} →
-          </Link>
+          {emptyHref && emptyCta && (
+            <Link
+              href={emptyHref}
+              className="mt-3 inline-flex min-h-[44px] items-center text-[15px] text-accent-2 hover:text-fg"
+            >
+              {emptyCta} →
+            </Link>
+          )}
         </div>
       ) : (
         <ul className="mt-3 space-y-3">
