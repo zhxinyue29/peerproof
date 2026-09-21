@@ -14,8 +14,12 @@ import { hasEnvio, readHistoryFromEnvio } from "@/lib/envio";
 /// Both readers stay because Envio's free tier removes inactive deployments after 30 days and the
 /// judging window outlasts that. A verification page that goes blank is worse than a slower one.
 const CHUNK = LOGS_CHUNK;
+// One sixteen-call HTTP batch per progress window. Larger concurrent batches are faster in Node,
+// but the browser endpoint rejects them intermittently, leaving the public page stuck again.
+const WINDOW = CHUNK * 16n;
 
-/// The endpoint allows fifteen requests a second. This starts at most twelve.
+/// Single reads leave room for the event-state poll that shares the public node. Log windows use
+/// the client's JSON-RPC batch transport below, so this primarily governs block lookup.
 ///
 /// A rate, not a concurrency cap — the distinction cost a round. `Promise.all` over every chunk was
 /// fine when the deployment block was minutes old and there were two of them; nine hours later the
@@ -25,7 +29,7 @@ const CHUNK = LOGS_CHUNK;
 ///
 /// Capping in-flight requests at eight does not fix that: eight that each return in 100ms is eighty
 /// a second. What has to be bounded is how often a request *starts*.
-const MIN_GAP_MS = 80;
+const MIN_GAP_MS = 200;
 
 let nextSlot = 0;
 async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
@@ -36,6 +40,27 @@ async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
   return fn();
 }
 
+async function retryRpc<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        attempt >= 3 ||
+        !/(?:429|rate.?limit|too many requests|request failed|timed? ?out|network|fetch)/i.test(message)
+      ) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 600 * 2 ** attempt));
+    }
+  }
+}
+
+function rpcRead<T>(fn: () => Promise<T>): Promise<T> {
+  return retryRpc(() => rateLimited(fn));
+}
+
 function ranges(fromBlock: bigint, toBlock: bigint): Array<[bigint, bigint]> {
   const out: Array<[bigint, bigint]> = [];
   for (let start = fromBlock; start <= toBlock; start += CHUNK) {
@@ -44,23 +69,26 @@ function ranges(fromBlock: bigint, toBlock: bigint): Array<[bigint, bigint]> {
   return out;
 }
 
-async function logsIn<T>(
-  event: ReturnType<typeof parseAbiItem>,
+async function logsIn(
+  eventId: bigint,
   rs: Array<[bigint, bigint]>,
-): Promise<T[]> {
-  const batches = await Promise.all(
-    rs.map(([start, end]) =>
-      rateLimited(() =>
+): Promise<HistoryLog[]> {
+  const batches = await retryRpc(() =>
+    Promise.all(
+      rs.map(([start, end]) =>
         logsClient.getLogs({
           address: ESCROW_ADDRESS,
-          event: event as never,
+          // All four events share the indexed event id, so one RPC call can fetch the complete
+          // history for this event. The old reader made four passes over the same block range.
+          events: historyEvents as never,
+          args: { eventId } as never,
           fromBlock: start,
           toBlock: end,
         }),
       ),
     ),
   );
-  return batches.flat() as unknown as T[];
+  return batches.flat() as unknown as HistoryLog[];
 }
 
 const registeredEvent = parseAbiItem(
@@ -75,6 +103,38 @@ const confirmedEvent = parseAbiItem(
 const settledEvent = parseAbiItem(
   "event Settled(uint256 indexed eventId, uint32 confirmed, uint32 noShows, uint256 sharePerAttendee)",
 );
+
+const historyEvents = [registeredEvent, attestedEvent, confirmedEvent, settledEvent] as const;
+
+type RegLog = {
+  eventName: "Registered";
+  args: { eventId: bigint; attendee: Address };
+  transactionHash: Hex;
+  blockNumber: bigint;
+  logIndex: number;
+};
+type AttLog = {
+  eventName: "Attested";
+  args: { eventId: bigint; attester: Address; subject: Address };
+  transactionHash: Hex;
+  blockNumber: bigint;
+  logIndex: number;
+};
+type ConfLog = {
+  eventName: "Confirmed";
+  args: { eventId: bigint; attendee: Address; viaOrganizer: boolean };
+  transactionHash: Hex;
+  blockNumber: bigint;
+  logIndex: number;
+};
+type SetLog = {
+  eventName: "Settled";
+  args: { eventId: bigint; confirmed: number; noShows: number; sharePerAttendee: bigint };
+  transactionHash: Hex;
+  blockNumber: bigint;
+  logIndex: number;
+};
+type HistoryLog = RegLog | AttLog | ConfLog | SetLog;
 
 export type Vouch = { from: Address; to: Address; hash: Hex; block: bigint };
 export type Participant = {
@@ -98,93 +158,53 @@ export type EventHistory = {
   source: "envio" | "rpc";
 };
 
-/// Reads the whole attestation graph for one event, starting at the block the contract was
-/// deployed in. `maxBlocks` is a safety valve: if a deployment block was never configured, scan a
-/// recent window rather than the whole chain.
-export async function readHistoryFromRpc(
+type RpcCache = {
+  logs: HistoryLog[];
+  history: EventHistory;
+};
+
+const rpcCache = new Map<string, RpcCache>();
+
+function mergeLogs(current: HistoryLog[], incoming: HistoryLog[]): HistoryLog[] {
+  const byId = new Map<string, HistoryLog>();
+  for (const log of [...current, ...incoming]) {
+    byId.set(`${log.transactionHash}:${log.logIndex}`, log);
+  }
+  return [...byId.values()].sort((a, b) => {
+    if (a.blockNumber !== b.blockNumber) return a.blockNumber < b.blockNumber ? -1 : 1;
+    return a.logIndex - b.logIndex;
+  });
+}
+
+function makeHistory(
   eventId: bigint,
-  maxBlocks = 20_000n,
-): Promise<EventHistory> {
-  const tip = await logsClient.getBlockNumber();
-  const floor = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : tip > maxBlocks ? tip - maxBlocks : 0n;
-
-  type RegLog = { args: { eventId: bigint; attendee: Address }; blockNumber: bigint };
-  type AttLog = { args: { eventId: bigint; attester: Address; subject: Address }; transactionHash: Hex; blockNumber: bigint };
-  type ConfLog = { args: { eventId: bigint; attendee: Address; viaOrganizer: boolean } };
-  type SetLog = { args: { eventId: bigint; confirmed: number; noShows: number; sharePerAttendee: bigint }; transactionHash: Hex };
-
-  // Backwards from the tip, a window at a time, stopping as soon as every registration this event
-  // has is accounted for.
-  //
-  // An event's logs all sit in the stretch of chain it was alive for, and that stretch is near the
-  // tip while it matters. Scanning from the deployment block instead meant the work grew with the
-  // age of the contract rather than with the size of the event: the same ten-minute meetup costs
-  // four requests on its opening day and twenty thousand a month later, for identical output. The
-  // escrow already knows how many people registered, so there is a cheap, exact place to stop.
-  //
-  // An event whose window has long passed still falls through to the full span — correctly, since
-  // its logs really are back there. That case is what the indexer is for; this is the fallback,
-  // and a slow correct answer beats a fast wrong one.
-  const registeredCount = await publicClient
-    .readContract({ address: ESCROW_ADDRESS, abi, functionName: "getEvent", args: [eventId] })
-    .then((e) => Number((e as { registered: number }).registered))
-    .catch(() => -1);
-
-  // Nobody registered, so there is nothing to find — and `getEvent` answers for an event that does
-  // not exist with a zero struct rather than a revert, so this covers a fresh contract and a stale
-  // link as well. Reading the whole chain to establish that there is nothing is how this page came
-  // to spend 4,320 requests on an empty answer.
-  if (registeredCount <= 0) {
-    return { participants: [], vouches: [], settlement: null, fromBlock: tip, toBlock: tip, source: "rpc" };
-  }
-
-  // Sixteen chunks a pass, not sixty-four. The window is how much work a read costs when it
-  // succeeds immediately, and at a hundred blocks a chunk this is roughly eight minutes of chain —
-  // wide enough that a live event's registrations are usually all inside the first pass, narrow
-  // enough that a pass is a few seconds rather than twenty. It walks further back when it has to.
-  const WINDOW = CHUNK * 16n;
-  let fromBlock = tip;
-  let regs: RegLog[] = [];
-  let scanned: Array<[bigint, bigint]> = [];
-  for (let end = tip; end >= floor; ) {
-    const start = end - WINDOW + 1n > floor ? end - WINDOW + 1n : floor;
-    const rs = ranges(start, end);
-    scanned = rs.concat(scanned);
-    regs = (await logsIn<RegLog>(registeredEvent, rs)).concat(regs);
-    fromBlock = start;
-    const found = regs.filter((r) => r.args.eventId === eventId).length;
-    if (registeredCount >= 0 && found >= registeredCount) break;
-    if (start === floor) break;
-    end = start - 1n;
-  }
-
-  const [atts, confs, settles] = await Promise.all([
-    logsIn<AttLog>(attestedEvent, scanned),
-    logsIn<ConfLog>(confirmedEvent, scanned),
-    logsIn<SetLog>(settledEvent, scanned),
-  ]);
-
-  const mine = <T extends { args: { eventId: bigint } }>(xs: T[]) =>
-    xs.filter((x) => x.args.eventId === eventId);
+  logs: HistoryLog[],
+  fromBlock: bigint,
+  toBlock: bigint,
+): EventHistory {
+  const mine = logs.filter((log) => log.args.eventId === eventId);
+  const regs = mine.filter((log): log is RegLog => log.eventName === "Registered");
+  const atts = mine.filter((log): log is AttLog => log.eventName === "Attested");
+  const confs = mine.filter((log): log is ConfLog => log.eventName === "Confirmed");
+  const settles = mine.filter((log): log is SetLog => log.eventName === "Settled");
 
   const confirmedBy = new Map<string, boolean>();
-  for (const c of mine(confs)) confirmedBy.set(c.args.attendee.toLowerCase(), c.args.viaOrganizer);
+  for (const c of confs) confirmedBy.set(c.args.attendee.toLowerCase(), c.args.viaOrganizer);
 
-  const participants: Participant[] = mine(regs).map((r) => ({
+  const participants: Participant[] = regs.map((r) => ({
     address: r.args.attendee,
     confirmed: confirmedBy.has(r.args.attendee.toLowerCase()),
     viaOrganizer: confirmedBy.get(r.args.attendee.toLowerCase()) ?? false,
     block: r.blockNumber,
   }));
-
-  const vouches: Vouch[] = mine(atts).map((a) => ({
+  const vouches: Vouch[] = atts.map((a) => ({
     from: a.args.attester,
     to: a.args.subject,
     hash: a.transactionHash,
     block: a.blockNumber,
   }));
+  const last = settles.at(-1);
 
-  const last = mine(settles).at(-1);
   return {
     participants,
     vouches,
@@ -197,9 +217,126 @@ export async function readHistoryFromRpc(
         }
       : null,
     fromBlock,
-    toBlock: tip,
+    toBlock,
     source: "rpc",
   };
+}
+
+async function blockAtOrBefore(timestamp: bigint, floor: bigint, tip: bigint): Promise<bigint> {
+  const readBlock = (blockNumber: bigint) => rpcRead(() => logsClient.getBlock({ blockNumber }));
+  const tipBlock = await readBlock(tip);
+  if (timestamp > tipBlock.timestamp) return tip + 1n;
+
+  const floorBlock = await readBlock(floor);
+  if (timestamp <= floorBlock.timestamp) return floor;
+
+  // Block production is regular enough that interpolation lands close to the target in one read.
+  // Correct only in the backwards direction: an early anchor costs a few empty queries, while a
+  // late one could omit valid attestations.
+  const timeSpan = tipBlock.timestamp - floorBlock.timestamp;
+  let candidate =
+    floor + ((timestamp - floorBlock.timestamp) * (tip - floor)) / (timeSpan > 0n ? timeSpan : 1n);
+  while (candidate > floor) {
+    const block = await readBlock(candidate);
+    if (block.timestamp <= timestamp) return candidate;
+    const secondsLate = block.timestamp - timestamp;
+    const step = secondsLate * 4n + 64n;
+    candidate = candidate > floor + step ? candidate - step : floor;
+  }
+  return floor;
+}
+
+/// Reads the whole attestation graph for one event, starting at the block the contract was
+/// deployed in. `maxBlocks` is a safety valve: if a deployment block was never configured, scan a
+/// recent window rather than the whole chain.
+export async function readHistoryFromRpc(
+  eventId: bigint,
+  maxBlocks = 20_000n,
+  onProgress?: (history: EventHistory) => void,
+): Promise<EventHistory> {
+  const tip = await logsClient.getBlockNumber();
+  const floor = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : tip > maxBlocks ? tip - maxBlocks : 0n;
+
+  const event = await publicClient.readContract({
+    address: ESCROW_ADDRESS,
+    abi,
+    functionName: "getEvent",
+    args: [eventId],
+  });
+  const registeredCount = Number(event.registered);
+  const confirmedCount = Number(event.peerConfirmed) + Number(event.orgConfirmed);
+  const settled = Number(event.status) === 2;
+
+  // Nobody registered, so there is nothing to find — and `getEvent` answers for an event that does
+  // not exist with a zero struct rather than a revert, so this covers a fresh contract and a stale
+  // link as well. Reading the whole chain to establish that there is nothing is how this page came
+  // to spend 4,320 requests on an empty answer.
+  if (registeredCount <= 0) {
+    return { participants: [], vouches: [], settlement: null, fromBlock: tip, toBlock: tip, source: "rpc" };
+  }
+
+  const cacheKey = eventId.toString();
+  const cached = rpcCache.get(cacheKey);
+  if (cached) {
+    onProgress?.(cached.history);
+    if (tip <= cached.history.toBlock) return cached.history;
+    let logs = cached.logs;
+    let history = cached.history;
+    for (let start = cached.history.toBlock + 1n; start <= tip; start += WINDOW) {
+      const end = start + WINDOW - 1n > tip ? tip : start + WINDOW - 1n;
+      logs = mergeLogs(logs, await logsIn(eventId, ranges(start, end)));
+      history = makeHistory(eventId, logs, cached.history.fromBlock, end);
+      rpcCache.set(cacheKey, { logs, history });
+      onProgress?.(history);
+    }
+    return history;
+  }
+
+  // Contract rules put every attestation at or after `attestOpen`. Start there and walk forwards,
+  // publishing each small window as it arrives. A live event therefore paints its graph in a few
+  // seconds even when the public RPC still needs another minute to verify a long quiet tail.
+  const anchor = await blockAtOrBefore(event.attestOpen, floor, tip);
+  let logs: HistoryLog[] = [];
+  let fromBlock = anchor <= tip ? anchor : tip;
+  let toBlock = anchor <= tip ? anchor - 1n : tip;
+  const publish = () => {
+    const registrations = logs.filter((log) => log.eventName === "Registered").length;
+    const confirmations = logs.filter((log) => log.eventName === "Confirmed").length;
+    const hasSettlement = logs.some((log) => log.eventName === "Settled");
+    if (
+      registrations >= registeredCount &&
+      confirmations >= confirmedCount &&
+      (!settled || hasSettlement)
+    ) {
+      onProgress?.(makeHistory(eventId, logs, fromBlock, toBlock));
+    }
+  };
+
+  for (let start = anchor; start <= tip; start += WINDOW) {
+    const end = start + WINDOW - 1n > tip ? tip : start + WINDOW - 1n;
+    logs = mergeLogs(logs, await logsIn(eventId, ranges(start, end)));
+    toBlock = end;
+    publish();
+  }
+
+  // Registrations may happen before the doors open. Only walk backwards if the forward pass did
+  // not already account for the contract's exact registration count, and stop the moment it does.
+  for (let end = anchor > tip ? tip : anchor - 1n; end >= floor; ) {
+    const found = logs.filter((log) => log.eventName === "Registered").length;
+    if (found >= registeredCount) break;
+    const start = end - WINDOW + 1n > floor ? end - WINDOW + 1n : floor;
+    logs = mergeLogs(logs, await logsIn(eventId, ranges(start, end)));
+    fromBlock = start;
+    toBlock = tip;
+    publish();
+    if (start === floor) break;
+    end = start - 1n;
+  }
+
+  const history = makeHistory(eventId, logs, fromBlock, tip);
+  rpcCache.set(cacheKey, { logs, history });
+  onProgress?.(history);
+  return history;
 }
 
 /// Envio first, logs second. The fallback is not a hedge against Envio being unreliable — it is
@@ -208,7 +345,10 @@ export async function readHistoryFromRpc(
 ///
 /// Failures are swallowed on purpose, but never silently: the reason is logged, and /verify names
 /// the reader it ended up using.
-export async function readHistory(eventId: bigint): Promise<EventHistory> {
+export async function readHistory(
+  eventId: bigint,
+  onProgress?: (history: EventHistory) => void,
+): Promise<EventHistory> {
   if (hasEnvio) {
     try {
       return await readHistoryFromEnvio(eventId);
@@ -216,5 +356,5 @@ export async function readHistory(eventId: bigint): Promise<EventHistory> {
       console.warn("[peerproof] index unavailable, reading logs directly:", err);
     }
   }
-  return readHistoryFromRpc(eventId);
+  return readHistoryFromRpc(eventId, 20_000n, onProgress);
 }

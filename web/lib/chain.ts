@@ -157,7 +157,10 @@ export const DEPLOY_BLOCK = BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? "0");
 
 export const logsClient = createPublicClient({
   chain,
-  transport: http(LOGS_RPC_URL, { retryCount: 2 }),
+  // The testnet endpoint only permits 100 blocks per eth_getLogs call, but accepts JSON-RPC
+  // batches. Coalescing a verification window prevents sixteen browser requests from tripping the
+  // HTTP rate limiter while preserving the node's per-call block cap.
+  transport: http(LOGS_RPC_URL, { batch: { batchSize: 16, wait: 0 }, retryCount: 2 }),
   pollingInterval: POLLING_INTERVAL,
 });
 

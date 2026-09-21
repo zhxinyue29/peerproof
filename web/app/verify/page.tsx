@@ -6,7 +6,14 @@ import TopNav from "@/components/TopNav";
 import { useBack } from "@/lib/back";
 import ProofNetwork, { NetworkSkeleton, edgeKey, type EdgeKey } from "@/components/ProofNetwork";
 import { Notice } from "@/components/ui";
-import { ESCROW_ADDRESS, eventId, explorerTxUrl, hasDeployment, isLocalChain } from "@/lib/chain";
+import {
+  ESCROW_ADDRESS,
+  eventId,
+  explorerTxUrl,
+  hasDeployment,
+  isLocalChain,
+  resolveEventId,
+} from "@/lib/chain";
 import { useVisiblePoll } from "@/lib/poll";
 import { both, fiat, mon, sentenceGap, shortAddress, shortenError } from "@/lib/format";
 import { readHistory, type EventHistory, type Vouch } from "@/lib/logs";
@@ -33,6 +40,8 @@ export default function VerifyPage() {
   const [history, setHistory] = useState<EventHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const meta = useEventMeta(eventId());
+  const reading = useRef(false);
+  const loadedEvent = useRef<bigint | null>(null);
 
   // Two sources for one highlight. Clicking pins an edge (a phone has no hover, and reading a hash
   // off a line you have to keep your finger on is not reading); moving the pointer previews one
@@ -43,18 +52,31 @@ export default function VerifyPage() {
   const active = hovered ?? pinned;
 
   const load = useCallback(async () => {
+    if (!hasDeployment || reading.current) return;
+    reading.current = true;
     try {
-      setHistory(await readHistory(eventId()));
+      const id = await resolveEventId();
+      if (loadedEvent.current !== id) {
+        loadedEvent.current = id;
+        setHistory(null);
+      }
+      const update = (next: EventHistory) => {
+        if (eventId() === id) setHistory(next);
+      };
+      update(await readHistory(id, update));
       setError(null);
     } catch (e) {
       setError(shortenError(e, t));
+    } finally {
+      reading.current = false;
     }
   }, [t]);
 
   useEffect(() => {
     if (!hasDeployment) return;
-    void load();
-  }, []);
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   // 15s, and only while somebody is looking. The public record is an archive, not a ticker.
   //
@@ -62,16 +84,8 @@ export default function VerifyPage() {
   // can outlast the interval, and without this the ticks queue up behind each other: each one
   // starts another full read, the reads overlap, and the page never stops loading — which is what
   // it did, for exactly as long as anyone left it open.
-  const reading = useRef(false);
   useVisiblePoll(() => {
-    if (!hasDeployment || reading.current) return;
-    reading.current = true;
-    void readHistory(eventId())
-      .then(setHistory)
-      .catch(() => {})
-      .finally(() => {
-        reading.current = false;
-      });
+    void load();
   }, 15000);
 
   if (!hasDeployment) {
@@ -111,7 +125,9 @@ export default function VerifyPage() {
         </h1>
         <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[15px] text-faint">
           <span className="truncate">
-            {meta.title} · {t("common.eventNumber", { id: eventId().toString() })}
+            {ev
+              ? `${meta.title} · ${t("common.eventNumber", { id: eventId().toString() })}`
+              : t("common.loading")}
             {history &&
               ` · ${t("verify.blocks", { from: `${history.fromBlock}`, to: `${history.toBlock}` })}`}
           </span>
@@ -255,7 +271,8 @@ export default function VerifyPage() {
 
       <div className="mx-auto mt-14 w-full max-w-[1000px] space-y-2 text-[14px] leading-relaxed text-faint">
         <p className="break-all font-mono">
-          {ESCROW_ADDRESS} · {t("common.eventNumber", { id: eventId().toString() })}
+          {ESCROW_ADDRESS}
+          {ev && ` · ${t("common.eventNumber", { id: eventId().toString() })}`}
         </p>
         {/* Named, not hidden. A page arguing "do not take our word for it" has to say which reader
             produced the numbers on it — and if the index is gone, that it fell back rather than
