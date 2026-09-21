@@ -75,18 +75,36 @@ PART_2 = os.path.basename(glob.glob(os.path.join(REF, "03_participant_ref2_a6*")
 
 # (tag, seed, 参考图列表, 提示词)
 SHOTS = [
-    ("H3_R01_proofline_transition", 8101, [PART_1, PART_2], STYLE +
-     "<Picture 1> and <Picture 2> show the young woman who appears at the end of this shot: short "
-     "brown hair, pale grey hoodie, same face and same stylized 3D proportions. Keep her identical. "
-     "The shot opens in a dark modern room shortly after an event has been published, lit only by a "
-     "large screen showing a soft abstract gradient. A very thin, elegant violet proof-line — a "
-     "single fine filament of light with only a subtle glow — leaves the screen and travels out "
-     "into the night. It reads as data and connection travelling through space, never as a laser. "
-     "The camera follows the thin line through a dark modern city at night; the buildings are deep "
-     "navy and almost black, with only a few small warm window lights. No giant billboards, no "
-     "green signs. The violet line stays the visual protagonist throughout. It arrives at the young "
-     "woman from the reference images, sitting in a dim room, and settles softly onto her phone, "
-     "which glows faintly violet in her hands. " + NEG + NO_TEXT),
+    # R01 栽了两次,两次都是城市那一段。
+    #
+    # v1 写 "No giant billboards, no green signs" —— 广告牌确实没有,楼却被勾满霓虹边。
+    # v2 改成正面描述("楼是实心暗块、唯一的光是窗户里的暖白"),同时保留了一串
+    #    "no glowing outlines / no green light / no pink light" —— **更糟**,霓虹更密了。
+    #
+    # 根因看清了:**扩散模型里,否定句中的名词本身就是强信号**。我一遍遍写 "no neon"、
+    # "not cyberpunk",等于一遍遍提醒它这里该有霓虹。而且 "city / towers / skyline"
+    # 这几个词在训练数据里本来就和赛博朋克天际线绑死。
+    #
+    # 所以 v3 **把城市整个删掉**。这一镜真正需要的只是"光从一处传到另一处",
+    # 不需要天际线:从 organizer 的窗口飞出,穿过夜色,飞进 participant 的窗口。
+    # 画面里不出现 city / skyline / towers / buildings 这些词,也就没有东西可以被勾边。
+    ("H3_R01_proofline_transition", 8121, [PART_1, PART_2], STYLE +
+     "<Picture 1> and <Picture 2> show the young woman at the end of this shot: short brown hair, "
+     "pale grey hoodie, same face and same stylized 3D proportions. Keep her identical. "
+     "Beat one: a dark quiet room at night. A large screen on the desk shows a soft abstract violet "
+     "gradient and is the only light. A single violet thread of light, as fine as a strand of "
+     "spider silk with a faint soft glow, lifts off the screen and slips out through the open "
+     "window into the dark. "
+     "Beat two: the camera flies with the thread through open night air. The frame is almost "
+     "entirely empty darkness and soft deep-navy atmosphere — drifting haze, a few faint stars, and "
+     "far below, small scattered points of warm yellow window light, tiny and out of focus, like "
+     "distant candles. Nothing else is in frame. No architecture is visible in silhouette or detail. "
+     "The violet thread is the only thing the eye can follow, and it stays exactly as fine as it "
+     "started. "
+     "Beat three: the thread slips through another window into a second dim room and settles gently "
+     "onto the phone in the young woman's hands. She is sitting on a sofa, holding the phone upright "
+     "in portrait orientation; it glows faintly violet and lights her face from below. " +
+     NEG + NO_TEXT),
 
     ("H3_R02_builder_arrival", 8202, [PART_1, PART_2], STYLE +
      "<Picture 1> and <Picture 2> are the same young woman who walks into this room. Keep her face, "

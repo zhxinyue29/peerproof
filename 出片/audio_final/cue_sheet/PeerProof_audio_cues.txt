@@ -1,0 +1,167 @@
+PeerProof Demo — 音频 Cue Sheet
+生成于 2026-09-21。所有视频原始音轨忽略，声音系统全部重做。
+
+声音身份：
+  Organizer  = en-US-AndrewNeural  rate -8%   美音男声，年轻务实
+  Participant= en-US-AvaNeural     rate -11%  美音女声，松弛自言自语
+  Narrator   = en-GB-RyanNeural    rate -2%   英音男声（用口音和 Organizer 拉开距离）
+所有语音 48kHz / 24-bit / mono，峰值归一到 -3 dBFS，无混响。
+
+「|」表示句间停顿，已烧进文件，剪辑时不需要再切。
+
+==============================================================================
+
+ID            VO_01
+File          voices/VO_01_organizer.wav
+Speaker       Organizer
+Exact line    We need more people who'll actually show up. Any ideas?
+Mood          认真、轻微着急但克制；对旁边的人说，不是对观众
+Duration      3.65s
+Visual        a1 办公室，老板撑着下巴看报名数字
+Music phase   P0 人物问题
+Notes         句间 0.85s 停顿对应画面里「转头」。建议镜头 0.5s 后入声，尾部留 0.5s 表情
+------------------------------------------------------------------------------
+ID            VO_02
+File          voices/VO_02_participant.wav
+Speaker       Participant
+Exact line    Where can I find something fun... and maybe earn something for showing up?
+Mood          自言自语、有点无聊、在挑；不是投机语气
+Duration      4.61s
+Visual        a2 沙发刷手机；落点对齐第 80 帧闭眼呼气 → 第 104 帧转头
+Music phase   P0 人物问题
+Notes         「something fun…」后 0.90s 迟疑是这句的戏眼。重音在 fun 和 showing up，不在 earn
+------------------------------------------------------------------------------
+ID            VO_03
+File          voices/VO_03_meet_peerproof.wav
+Speaker       Narrator
+Exact line    Meet PeerProof.
+Mood          平静、不夸张
+Duration      1.01s
+Visual        片头 Logo（SVG，后期）
+Music phase   P1 光束启动
+Notes         极短，让 Logo 自己说话
+------------------------------------------------------------------------------
+ID            VO_04
+File          voices/VO_04_organizer_create.wav
+Speaker       Narrator
+Exact line    For organizers, PeerProof turns interest into real attendance. | Create the event, set the rules, and let the contract hold participant deposits.
+Mood          笃定、不推销
+Duration      8.99s
+Visual        M01 录屏：创建活动
+Music phase   P1 光束启动 → P2 发现
+Notes         第二句不要赶。**不说** organizer funds rewards，**不说** organizer holds deposits——是合约保管
+------------------------------------------------------------------------------
+ID            VO_05
+File          voices/VO_05_discover.wav
+Speaker       Narrator
+Exact line    Participants can discover events around their interests, and see the commitment before they join.
+Mood          比上一段轻，有「发现」的感觉
+Duration      5.02s
+Visual        M02 录屏：活动列表 / 搜索
+Music phase   P2 发现
+Notes         commitment 指押金，不是奖励
+------------------------------------------------------------------------------
+ID            VO_06
+File          voices/VO_06_mechanism.wav
+Speaker       Narrator
+Exact line    Show up, and you get your deposit back. | If others no-show, their forfeited deposits are shared with the people who were verified present.
+Mood          解释机制，客观
+Duration      7.45s
+Visual        活动详情：押金卡 / 验证方式
+Music phase   P2 发现 → P3 报名
+Notes         **不要**说「这位参与者已经赚到了」。这里只解释规则
+------------------------------------------------------------------------------
+ID            VO_07
+File          voices/VO_07_commitment.wav
+Speaker       Narrator
+Exact line    A small deposit turns a click into a real commitment.
+Mood          短、稳
+Duration      2.85s
+Visual        M03 录屏：报名 + 钱包签名
+Music phase   P3 报名/押金
+Notes         说完让画面自己走：钱包授权、上链交易不要旁白压着
+------------------------------------------------------------------------------
+ID            VO_08
+File          voices/VO_08_arrival.wav
+Speaker       Narrator
+Exact line    Then they actually show up.
+Mood          轻，actually 微微加重
+Duration      1.28s
+Visual        H3 R02 走进 builder 聚会
+Music phase   P4 到场
+Notes         actually 呼应 VO_01 里 Organizer 的那个 actually
+------------------------------------------------------------------------------
+ID            VO_09
+File          voices/VO_09_venue.wav
+Speaker       Narrator
+Exact line    At the door, a rotating venue code proves arrival.
+Mood          清楚、具体
+Duration      3.33s
+Visual        H3 R03 走向签到屏 + C03 真实会场码
+Music phase   P5 会场码
+Notes         说清 rotating venue code；不要过度强调 blockchain
+------------------------------------------------------------------------------
+ID            VO_10
+File          voices/VO_10_verified.wav
+Speaker       Narrator
+Exact line    Accepted on Monad. | Now they count as present.
+Mood          第一句有确认感，第二句更平静确定
+Duration      3.01s
+Visual        P01 真实手机验证成功之后
+Music phase   P6b 验证成功
+Notes         **前面的扫码和交易过程不要旁白**，等 Verified 出现再说
+------------------------------------------------------------------------------
+ID            VO_11
+File          voices/VO_11_public_record.wav
+Speaker       Narrator
+Exact line    No organizer decides who was there. | Peer proofs are written on-chain, and the record is publicly checkable.
+Mood          克制、笃定
+Duration      6.1s
+Visual        C04 录屏：Verify / 公开记录
+Music phase   P7 公开记录
+Notes         **不要**说 our database。重点是 public / on-chain / 可复算
+------------------------------------------------------------------------------
+ID            VO_12
+File          voices/VO_12_settlement.wav
+Speaker       Narrator
+Exact line    When the window closes, the contract follows the final proof graph. | Verified attendees get their deposits back. | And if there are no-shows, their forfeited deposits are shared automatically.
+Mood          精确、客观、不谈发财
+Duration      11.22s
+Visual        公开记录里的结算 / 预计结算区
+Music phase   P8 结算
+Notes         **画面若是 projected 就只能讲机制**，不能说已经 settled
+------------------------------------------------------------------------------
+ID            VO_13
+File          voices/VO_13_organizer_result.wav
+Speaker       Narrator
+Exact line    The organizer doesn't just see registrations. | They see real attendance.
+Mood          安静的收束，real attendance 微微抬
+Duration      4.26s
+Visual        C05 录屏：主办方结果
+Music phase   P9 主办方结果
+Notes         故事闭环：开头问 who'll actually show up，这里给出答案
+------------------------------------------------------------------------------
+ID            VO_14
+File          voices/VO_14_ending.wav
+Speaker       Narrator
+Exact line    PeerProof. | Real participation. Real rewards. | Built on Monad.
+Mood          讲完故事后的落点，最后一句稍轻
+Duration      6.26s
+Visual        片尾字卡（SVG，后期）
+Music phase   P10 片尾
+Notes         **这三句不改写**。最后一个音留 1–1.5s 自然衰减，不要硬切
+------------------------------------------------------------------------------
+
+音效：
+  sfx/proof_line_whoosh.wav     1.10s  R01 紫线飞出时。信号在走，不是激光枪
+  sfx/transaction_confirm.wav   0.38s  每笔上链交易完成。很轻，不要每次点击都响
+  sfx/verified_mint.wav         0.85s  最终 Verified。玻璃质地小抬升，不是游戏奖励音
+  sfx/logo_resolve.wav          1.40s  片尾品牌落点
+
+音乐：见 music/ 目录与 _ace_meta.json（ACE-Step 1.5 生成的 concept A/B/C）
+
+禁止项（旁白与字幕都不得出现）：
+  organizer funds / holds / controls / releases 任何资金
+  organizer approves attendance
+  把 projected settlement 说成 already settled
+  把 earn something 讲成产品主卖点

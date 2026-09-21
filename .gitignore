@@ -33,3 +33,8 @@ cre/.env
 cre/**/node_modules/
 cre/**/bun.lock
 cre/**/.cre/
+
+# 出片：音视频成品体积大，不进仓库。脚本和 cue sheet 进。
+出片/**/*.wav
+出片/**/*.mp4
+出片/**/*.png

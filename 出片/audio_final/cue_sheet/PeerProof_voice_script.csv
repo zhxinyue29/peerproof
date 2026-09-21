@@ -1,0 +1,15 @@
+﻿id,speaker,english,suggested_duration,tone,visual_reference
+VO_01,Organizer,We need more people who'll actually show up. Any ideas?,3.65s,认真、轻微着急但克制；对旁边的人说，不是对观众,a1 办公室，老板撑着下巴看报名数字
+VO_02,Participant,Where can I find something fun... and maybe earn something for showing up?,4.61s,自言自语、有点无聊、在挑；不是投机语气,a2 沙发刷手机；落点对齐第 80 帧闭眼呼气 → 第 104 帧转头
+VO_03,Narrator,Meet PeerProof.,1.01s,平静、不夸张,片头 Logo（SVG，后期）
+VO_04,Narrator,"For organizers, PeerProof turns interest into real attendance. Create the event, set the rules, and let the contract hold participant deposits.",8.99s,笃定、不推销,M01 录屏：创建活动
+VO_05,Narrator,"Participants can discover events around their interests, and see the commitment before they join.",5.02s,比上一段轻，有「发现」的感觉,M02 录屏：活动列表 / 搜索
+VO_06,Narrator,"Show up, and you get your deposit back. If others no-show, their forfeited deposits are shared with the people who were verified present.",7.45s,解释机制，客观,活动详情：押金卡 / 验证方式
+VO_07,Narrator,A small deposit turns a click into a real commitment.,2.85s,短、稳,M03 录屏：报名 + 钱包签名
+VO_08,Narrator,Then they actually show up.,1.28s,轻，actually 微微加重,H3 R02 走进 builder 聚会
+VO_09,Narrator,"At the door, a rotating venue code proves arrival.",3.33s,清楚、具体,H3 R03 走向签到屏 + C03 真实会场码
+VO_10,Narrator,Accepted on Monad. Now they count as present.,3.01s,第一句有确认感，第二句更平静确定,P01 真实手机验证成功之后
+VO_11,Narrator,"No organizer decides who was there. Peer proofs are written on-chain, and the record is publicly checkable.",6.1s,克制、笃定,C04 录屏：Verify / 公开记录
+VO_12,Narrator,"When the window closes, the contract follows the final proof graph. Verified attendees get their deposits back. And if there are no-shows, their forfeited deposits are shared automatically.",11.22s,精确、客观、不谈发财,公开记录里的结算 / 预计结算区
+VO_13,Narrator,The organizer doesn't just see registrations. They see real attendance.,4.26s,安静的收束，real attendance 微微抬,C05 录屏：主办方结果
+VO_14,Narrator,PeerProof. Real participation. Real rewards. Built on Monad.,6.26s,讲完故事后的落点，最后一句稍轻,片尾字卡（SVG，后期）
