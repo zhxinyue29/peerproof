@@ -92,6 +92,25 @@ jobs:
           # deployed ~274,000 blocks ago, so the graph would come back empty and look like nothing
           # ever happened.
           NEXT_PUBLIC_DEPLOY_BLOCK: '63497445'
+          # The two read endpoints, and the only settings here that are deliberately not written
+          # into this file.
+          #
+          # The rule above — a build's facts belong in the diff — exists because an invisible
+          # `vars.EVENT_ID` pinned the public site to a finished event and nothing said so. These
+          # two are the opposite shape: the Alchemy URL carries a key, so writing it here would put
+          # it in the git history forever, and if either is missing the reader falls through to the
+          # next endpoint instead of serving something false. Unset degrades; it does not lie.
+          #
+          # Configure at Settings → Secrets and variables → Actions:
+          #   Variables → ENVIO_URL          https://indexer.dev.hyperindex.xyz/<deployment-id>/v1/graphql
+          #   Secrets   → ALCHEMY_RPC_URL    https://monad-testnet.g.alchemy.com/v2/<key>
+          #
+          # `secrets` buys exactly one thing: the key stays out of the repository and out of the
+          # Actions log. It does not make the key private at runtime — this is a static export, so
+          # the value is compiled into public JavaScript either way. What restricts it is the
+          # domain allowlist in Alchemy's dashboard, the same as the Privy App ID above.
+          NEXT_PUBLIC_ENVIO_URL: ${{ vars.ENVIO_URL }}
+          NEXT_PUBLIC_ALCHEMY_RPC_URL: ${{ secrets.ALCHEMY_RPC_URL }}
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
