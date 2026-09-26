@@ -42,7 +42,7 @@ chains:
   # Monad testnet. Set the address and start_block after deploying; leaving start_block at 0 makes
   # the indexer scan 60M+ empty blocks.
   - id: 10143
-    start_block: 61225037
+    start_block: 63497445
     # Sync over RPC, deliberately, with the block interval pinned.
     #
     # HyperSync would be faster, but since V3 it needs an API token supplied as ENVIO_API_TOKEN —
@@ -67,8 +67,10 @@ chains:
     # to allow 10,000 and no longer serves the method — worth re-measuring rather than trusting any
     # of this, including a larger ceiling here, which would make every request fail and back off.
     #
-    # ~274,000 blocks at 100 each is ~2,700 requests. Unattractive, but it is a one-time historical
-    # sync and it is the reason to run an indexer rather than have every page load do this.
+    # From this start_block to the tip is ~1.8M blocks, so ~18,000 requests per event type.
+    # Unattractive, but it is a one-time historical sync and it is the reason to run an indexer
+    # rather than have every page load do this. Measured on the previous deployment, this endpoint
+    # sustains ~333 blocks/s, which puts a full catch-up around 1.5 hours.
     rpc:
       url: https://testnet-rpc.monad.xyz
       for: sync
@@ -76,5 +78,16 @@ chains:
       interval_ceiling: 100
     contracts:
       - name: AttendanceEscrow
+        # The escrow the site actually reads — `NEXT_PUBLIC_ESCROW_ADDRESS` in
+        # .github/workflows/pages.yml and web/.env.example. These two have to name the same
+        # contract or the index answers about a different one.
+        #
+        # They did not. This pointed at 0x289a7ce1…d9c1, an earlier deployment with different
+        # bytecode (9,973 bytes against 10,665) and its own event numbering, while the site has
+        # been on 0xEa05…e679 since block 63,497,445. The failure mode was the bad one: the
+        # indexer ran perfectly, answered HTTP 200 in 2.2s, and returned an empty graph for
+        # event #2 — a successful response, so `readHistory` never fell through to RPC and
+        # /verify would have shown "nobody vouched" for an event with two registrations and a
+        # real Attested log at block 64,250,959.
         address:
-          - "0x289a7ce11a3c3e754f346d5f34495fd2d76ad9c1"
+          - "0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679"
