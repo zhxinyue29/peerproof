@@ -10,6 +10,21 @@
 name: peerproof
 disable_default_cross_chain: true
 
+# The handler writes a transaction hash on four entities — Participant.registeredTxHash and
+# Vouch.txHash are `String!` in schema.graphql — but `event.transaction` carries nothing that was
+# not asked for, and nothing here asked. Without this the first `Registered` event sets a non-null
+# column to undefined and the indexer stops on the first block it has work in.
+#
+# It surfaced as four `FieldNotSelected` type errors the moment this project got a tsconfig; it had
+# been invisible before only because nothing ever type-checked the handler.
+#
+# Global rather than per-event. Envio's docs warn that selecting fields costs extra data calls, and
+# four of the eight events here do not need a hash — but this contract emits a handful of events
+# per meetup, so the saving is theoretical and four separate blocks in this file are not.
+field_selection:
+  transaction_fields:
+    - hash
+
 contracts:
   - name: AttendanceEscrow
     handler: src/handlers/AttendanceEscrow.ts

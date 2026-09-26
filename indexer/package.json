@@ -1,13 +1,22 @@
 {
   "name": "peerproof-indexer",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start",
-    "stop": "envio stop"
+    "stop": "envio stop",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "envio": "3.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "typescript": "6.0.3"
   }
 }
