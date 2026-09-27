@@ -155,10 +155,25 @@ vouch tx 0x2c4352624a…83b288   → block 64250959  decoded Attested(eventId=2,
 On the production site, `/verify?event=2`: DOMContentLoaded 1.40 s, proof graph rendered at
 **5.15 s**, one request to the indexer host, **zero `eth_getLogs`**, no console errors.
 
-**Why it matters more than it looks.** Event #2's attestation sits ~1.65M blocks behind the tip. The
-log reader handles that by anchoring at the event's own `attestOpen` rather than walking back from
-the tip, but it is still tens of requests against a 100-block cap; one indexed query replaces all
-of them.
+**Why it matters more than it looks — measured, not asserted.** Event #2's attestation sits ~1.8M
+blocks behind the tip. Reading it from the chain directly, with the index switched off:
+
+```
+envio                              1.41 s   1 request      complete
+RPC, 100-block cap, cold cache    40.37 s   complete graph published (2 participants,
+                                            1 confirmed, 1 vouch, blocks 64239022-64251821)
+                                 180 s      still scanning forward to the tip
+                              10637 s       746 requests, 717 publishes, then failed
+```
+
+Two things in that table matter more than the headline. The reader does find the answer quickly —
+anchoring at the event's own `attestOpen` puts it within ~13,000 blocks of everything it needs, and
+`onProgress` hands the finished graph to the page at 40 s. But for an event that closed long ago it
+then keeps walking forward to the tip looking for nothing, and never gets there: the whole promise
+eventually rejects even though the correct answer was published minutes earlier.
+
+So the index is not a speed-up bolted onto a working path. For a finished event it is the only path
+that terminates, and 1.4 s against 40 s is the smaller half of the difference.
 
 **How to test:** set `NEXT_PUBLIC_ENVIO_URL`, load `/verify?event=2`, and confirm the console shows
 no "index unavailable" warning and that the network panel contains one request to the indexer host
@@ -275,6 +290,12 @@ requests move to the next host. Verified: an invalid key fails on the first requ
 configured, measured endpoint that the reader will use when the ones ahead of it are unavailable —
 and it is ten times narrower than the endpoint ahead of it. Saying otherwise would be the easiest
 thing in this document to check and catch.
+
+What the whole RPC tier buys, stated plainly: for a **live or recent** event it is a complete
+answer, because the anchor sits near the tip and the scan is short. For an event that closed weeks
+ago it publishes the right graph in well under a minute and then fails to finish — see the Envio
+section's table. A second endpoint makes that path survive one provider going down; it does not
+make a finished event cheap to read. Only the index does that.
 
 ---
 
