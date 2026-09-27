@@ -219,11 +219,52 @@ forge verify-contract <address> AttendanceEscrow --chain 10143 \
 |---|---|
 | Chain | Monad mainnet, chain ID 143 |
 | Contracts | Solidity 0.8.28, Foundry |
-| Accounts | [Mera](https://mera.category.xyz/) — passkey → WebAuthn PRF → secp256k1, no seed phrase, no extension, no custody backend. Browser wallet as fallback. |
-| Indexing | Chunked `eth_getLogs` today; [Envio HyperIndex](https://envio.dev/chains/monad) next — Monad's default RPC caps `getLogs` at 100 blocks and a ten-minute window spans ~2,000 of them |
+| Accounts | [Mera](https://mera.category.xyz/) — passkey → WebAuthn PRF → secp256k1, no seed phrase, no extension, no custody backend. [Privy](https://privy.io) embedded wallet and a browser wallet are the other two paths. |
+| Indexing | [Envio HyperIndex](https://envio.dev/chains/monad) first, chunked `eth_getLogs` behind it — Monad's default RPC caps `getLogs` at 100 blocks and a ten-minute window spans ~2,000 of them |
 | Frontend | Next.js, viem (`monad` is a built-in chain) |
 
 No bundler, no EntryPoint, no paymaster. Mera yields a plain EOA, target users already hold MON, and "never see a gas prompt" comes from signing locally rather than from sponsorship. Every mainnet paymaster charges for mainnet sponsorship, and none of that spend would have bought anything the local signature does not already give.
+
+## Infrastructure
+
+PeerProof is the contract, the rotating venue code and the attestation graph. These are the pieces
+it stands on, and the job each one does here:
+
+| | Job | Status |
+|---|---|---|
+| **Monad** | Every commitment, attestation and settlement is a transaction on it. | live |
+| **Privy** | Email or wallet sign-in, embedded wallet, Monad network switch, and the provider the attest key is derived from. | live |
+| **Mera** | Passkey PRF derives the key that signs rotating attendance codes. One of three account paths, not the only one. | live |
+| **Envio** | HyperIndex answers the attendance history in one query instead of thousands of log requests. | live — `/verify` on the public site is served from it |
+| **Chainlink CRE** | Scheduled settlement workflow into a receiver contract, so `settle` does not wait for a volunteer. | simulated locally, **not deployed** |
+| **Alchemy** | A second endpoint for reading logs. Read path only. | configured and measured; the free tier's 10-block `getLogs` cap puts it behind Monad's own node |
+
+Reads fall through in that order — the index first, then RPC endpoints sorted by how many blocks
+each one allows per `eth_getLogs`, widest first — with a timeout per provider, so one of them being
+down cannot leave `/verify` waiting forever. Writes are untouched by any of it: `register`,
+`checkIn`, `attest`, `claim` and `settle` go through the signer's own transport.
+
+Per-integration detail — what was measured, what broke on the way, how to test each one and what is
+*not* claimed — is in [`docs/sponsor-integrations.md`](docs/sponsor-integrations.md).
+
+### Environment variables
+
+Copy [`web/.env.example`](web/.env.example) to `web/.env.local`. Every value is public by design:
+this is a static export, so there is no server to keep a secret on and anything the browser reads
+is in the bundle.
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_CHAIN`, `NEXT_PUBLIC_RPC_URL`, `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_DEPLOY_BLOCK` | Which chain and contract to read |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy App **ID** — public; the dashboard's domain allowlist is the control |
+| `NEXT_PUBLIC_ENVIO_URL` | HyperIndex endpoint. Unset means log reading only |
+| `NEXT_PUBLIC_ALCHEMY_RPC_URL` | `https://monad-testnet.g.alchemy.com/v2/<key>` — restrict the key to your domain in Alchemy's dashboard |
+| `NEXT_PUBLIC_ALCHEMY_LOGS_CHUNK` | Blocks per `eth_getLogs` against Alchemy. Default 10, which is what the free tier allows. Raising it on a paid plan also moves Alchemy up the fallback order |
+| `NEXT_PUBLIC_LOGS_RPC_URL`, `NEXT_PUBLIC_LOGS_CHUNK` | The configured logs endpoint, and its cap |
+
+In production the last two of those come from repository settings rather than the repo — `ENVIO_URL`
+as an Actions **variable**, `ALCHEMY_RPC_URL` as an Actions **secret** — so no key of any kind is
+committed here.
 
 ## License
 

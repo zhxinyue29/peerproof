@@ -137,7 +137,11 @@ export function walletClientFor(account: Account) {
 /// withdrawn the method entirely, which would have made /verify fail on every request.
 ///
 /// Re-measure before raising the chunk size. A chunk above the cap is not slower, it is rejected.
-const LOGS_RPC_URL =
+///
+/// Exported so `lib/rpcProviders.ts` can place it in the fallback order. It is still the endpoint
+/// the deployment configures and still the one tried before the network's public node; it is
+/// simply no longer the only one that can answer.
+export const LOGS_RPC_URL =
   process.env.NEXT_PUBLIC_LOGS_RPC_URL ||
   (isLocal
     ? RPC_URL

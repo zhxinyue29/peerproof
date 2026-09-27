@@ -826,6 +826,13 @@ export const en = {
   "verify.newestFirst": "newest first",
   "verify.blockAt": "block {n}",
   "verify.projectedLabel": "not settled · projected below",
+  "infra.title": "Built with",
+  "infra.monad": "Event commitments, peer attestations and settlement are transactions on Monad testnet.",
+  "infra.privy": "Email or wallet sign-in, an embedded wallet, the Monad network switch, and the provider the signing key is derived from.",
+  "infra.mera": "Passkey PRF derives the key that signs rotating attendance codes. A browser wallet or Privy covers devices without it.",
+  "infra.envio": "HyperIndex serves the attendance history the public record is rebuilt from.",
+  "infra.cre": "A scheduled settlement workflow, run in simulation against the receiver contract. Not deployed.",
+  "infra.alchemy": "A second endpoint for reading on-chain logs when the index is unavailable.",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

@@ -11,6 +11,7 @@ import HeroArt from "@/components/HeroArt";
 import LiveStats from "@/components/LiveStats";
 import IdentityChoiceCard from "@/components/IdentityChoiceCard";
 import FeaturedEvents from "@/components/FeaturedEvents";
+import Infrastructure from "@/components/Infrastructure";
 import ValueStrip from "@/components/ValueStrip";
 import { LinkButton } from "@/components/ui";
 import { ESCROW_ADDRESS, explorerAddressUrl } from "@/lib/chain";
@@ -240,6 +241,11 @@ export default function HomePage() {
           I trust this", and these four are the answer. Above, they interrupt the one thing the
           page exists to show. */}
       <ValueStrip />
+
+      {/* After the four claims, before the address. Somebody who has read what the product
+          promises can then see what it is made of; putting it any higher would interrupt the
+          argument with a list of vendors. */}
+      <Infrastructure />
 
       <SiteFooter />
 
