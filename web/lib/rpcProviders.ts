@@ -82,11 +82,11 @@ export function clientFor(provider: LogProvider): PublicClient {
   if (existing) return existing;
   const client = createPublicClient({
     chain,
-    // Same shape as the configured client: batched, because a verification window is sixteen
-    // getLogs calls and sixteen separate HTTP requests is what trips rate limiters. Plus a
-    // timeout, which the configured client does not need and a fallback does: a hung endpoint is
-    // the failure this whole list exists for, and without a bound the request never settles, the
-    // provider is never marked bad, and the page waits for ever — the exact symptom being fixed.
+    // Same shape as the configured client in chain.ts: batched, because a verification window is
+    // sixteen getLogs calls and sixteen separate HTTP requests is what trips rate limiters; and
+    // bounded by the same 15s timeout, because a hung endpoint is the failure this whole list
+    // exists for. Without a bound the request never settles, the provider is never marked bad,
+    // and the page waits for ever — the exact symptom this list was added to fix.
     transport: http(provider.url, {
       batch: { batchSize: 16, wait: 0 },
       timeout: 15_000,
