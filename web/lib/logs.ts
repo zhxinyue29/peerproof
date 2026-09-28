@@ -324,24 +324,39 @@ export async function readHistoryFromRpc(
   let logs: HistoryLog[] = [];
   let fromBlock = anchor <= tip ? anchor : tip;
   let toBlock = anchor <= tip ? anchor - 1n : tip;
+  /// Publishes when the graph is provably whole, and says so.
+  ///
+  /// "Whole" is not a guess: the escrow counts its own registrations and confirmations, and both
+  /// counters were read at `tip` above. Holding that many of each — plus the `Settled` log when the
+  /// contract says the event is settled — means nothing else exists to be found in this window.
   const publish = () => {
     const registrations = logs.filter((log) => log.eventName === "Registered").length;
     const confirmations = logs.filter((log) => log.eventName === "Confirmed").length;
     const hasSettlement = logs.some((log) => log.eventName === "Settled");
-    if (
+    const complete =
       registrations >= registeredCount &&
       confirmations >= confirmedCount &&
-      (!settled || hasSettlement)
-    ) {
-      onProgress?.(makeHistory(eventId, logs, fromBlock, toBlock, provider.name));
-    }
+      (!settled || hasSettlement);
+    if (complete) onProgress?.(makeHistory(eventId, logs, fromBlock, toBlock, provider.name));
+    return complete;
   };
 
   for (let start = anchor; start <= tip; start += WINDOW) {
     const end = start + WINDOW - 1n > tip ? tip : start + WINDOW - 1n;
     logs = mergeLogs(logs, await logsIn(provider, eventId, ranges(start, end, provider.chunk)));
     toBlock = end;
-    publish();
+    // Stop the moment the answer is complete, rather than walking on to the tip.
+    //
+    // For a live event these are the same thing — the anchor is near the tip, so there is barely
+    // anything left to walk. For an event that closed weeks ago they are not: measured on event #2,
+    // the graph was complete and published at 40s, and the scan then spent another 2h57m and 746
+    // requests crossing 1.8M empty blocks before the endpoint gave out. The page had the right
+    // answer the whole time and the promise still rejected.
+    //
+    // Correctness comes from the counters, not from reaching the tip: the contract says how many
+    // registrations and confirmations exist as of `tip`, and once this has them all, the remaining
+    // blocks cannot contain another one.
+    if (publish()) break;
   }
 
   // Registrations may happen before the doors open. Only walk backwards if the forward pass did

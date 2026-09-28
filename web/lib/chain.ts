@@ -164,7 +164,17 @@ export const logsClient = createPublicClient({
   // The testnet endpoint only permits 100 blocks per eth_getLogs call, but accepts JSON-RPC
   // batches. Coalescing a verification window prevents sixteen browser requests from tripping the
   // HTTP rate limiter while preserving the node's per-call block cap.
-  transport: http(LOGS_RPC_URL, { batch: { batchSize: 16, wait: 0 }, retryCount: 2 }),
+  //
+  // The timeout is what makes this endpoint *fallible*, and that is the point. `readHistory` walks
+  // a list of providers and moves on when one fails — but a request that hangs never fails, so
+  // without a bound this client could hold the whole list hostage and leave /verify waiting
+  // exactly as it did when there was only one endpoint. Matches the fallback clients in
+  // lib/rpcProviders.ts, so "a timeout per provider" is true of every provider rather than most.
+  transport: http(LOGS_RPC_URL, {
+    batch: { batchSize: 16, wait: 0 },
+    timeout: 15_000,
+    retryCount: 2,
+  }),
   pollingInterval: POLLING_INTERVAL,
 });
 
