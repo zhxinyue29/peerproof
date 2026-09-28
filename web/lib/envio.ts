@@ -173,5 +173,6 @@ export async function readHistoryFromEnvio(eventId: bigint): Promise<EventHistor
     fromBlock: DEPLOY_BLOCK,
     toBlock: highest,
     source: "envio",
+    provider: "envio",
   };
 }
