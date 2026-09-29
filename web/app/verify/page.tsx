@@ -496,7 +496,8 @@ function DemoProof() {
       <div className="mx-auto mt-14 w-full max-w-[1000px] space-y-5">
         <p className="text-[14px] leading-relaxed text-faint">{t("verify.demoNoRecords")}</p>
         <div className="flex flex-wrap gap-3">
-          <LinkButton href="/demo">{t("verify.demoBackToDemo")}</LinkButton>
+          {/* Back to where the proof was opened from: the settlement step, not the start. */}
+          <LinkButton href="/demo?step=4">{t("verify.demoBackToDemo")}</LinkButton>
           <Link
             href="/events"
             className="flex min-h-[46px] items-center justify-center rounded-lg border border-line-2 px-4 text-[16px] font-medium text-dim transition-colors hover:border-accent/60 hover:text-fg"

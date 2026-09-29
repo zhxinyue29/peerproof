@@ -879,7 +879,7 @@ export const zh: Dict = {
   "verify.demoTotal": "总资金",
   "verify.demoEach": "到场者所得",
   "verify.demoEachValue": "每人 {amount}",
-  "verify.demoNoRecords": "示例数据不包含链上交易记录。真实活动的公开记录会列出这些数字背后的每一笔交易，每一笔都能点出本站自行查看。",
+  "verify.demoNoRecords": "示例数据不包含链上交易记录。真实活动的公开记录会列出这些数字背后的每一笔交易，每一笔都可以跳转到区块浏览器独立核验。",
   "verify.demoBackToDemo": "返回完整演示",
   "verify.demoBrowseLive": "浏览真实活动",
 };

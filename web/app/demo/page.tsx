@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { AnimatePresence, motion } from "motion/react";
 import TopNav from "@/components/TopNav";
@@ -40,8 +40,28 @@ export default function DemoPage() {
   const names = useStepNames();
   const m = useMotionPrefs();
   const [step, setStep] = useState<Step>(1);
+  // Bumped when the opening step comes from the URL. It keys the steps' AnimatePresence below, so
+  // that jump is a cut — without it the panel would cross-fade out of a step 1 nobody asked for.
+  const [opened, setOpened] = useState(0);
   const panel = useRef<HTMLDivElement>(null);
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // `?step=2`, `3` or `4` chooses where the walkthrough opens: the illustrative proof's "Back to the
+  // full demo" returns to the settlement step. Read once, after mount, and never written back.
+  // The static export has no query string, so the first render is step 1 on the server and the
+  // client alike and hydration agrees; clicking through the steps leaves the URL as it was.
+  // "1", nothing, or anything else is the default. A layout effect, so that arriving through a
+  // link switches before the browser has painted step 1 at all.
+  useLayoutEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("step");
+    if (raw === "2" || raw === "3" || raw === "4") {
+      // As on the home page: the query string does not exist during the static export, so it cannot
+      // be a lazy state initialiser, and this one extra render after mount is the point, not a cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStep(Number(raw) as Step);
+      setOpened(1);
+    }
+  }, []);
 
   // From the buttons under the step, somebody has usually scrolled down to reach them; the next
   // step starts at its top, so take them back up to it — but only if they are below it.
@@ -148,7 +168,7 @@ export default function DemoPage() {
             aria-labelledby={`demo-tab-${step}`}
             className="mt-8 scroll-mt-28"
           >
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence key={opened} mode="wait" initial={false}>
               <motion.div
                 key={step}
                 initial={m.reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
