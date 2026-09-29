@@ -6,18 +6,24 @@ Attendees stake a deposit to register for an event. At the venue they attest to 
 
 Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropolis) · Track: Consumer Products & Payments
 
-**Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679`](https://testnet.monadscan.com/address/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679) on Monad testnet (10143), source verified
+**Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Contract:** [`0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679`](https://testnet.monadscan.com/address/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679) on Monad testnet (chain ID 10143)
 
 ### Trying it
 
-Sign in with an email — no wallet, no extension, nothing to install. You will need a little testnet
-MON to put down a deposit; the app does not offer to fetch it for you, because claiming test tokens
-is not part of the product. Get some from the [Monad faucet](https://faucet.monad.xyz) or the
-`#faucet` channel in [Monad's Discord](https://discord.gg/monad), send it to the address the app
-shows you, and register.
+**No wallet required.** The [four-step demo](https://zhxinyue29.github.io/peerproof/demo/) walks
+the whole loop — join, meet, vouch, settle — in about 90 seconds, on illustrative data that says so
+on every screen. It connects no wallet and sends no transaction. The same example as a public
+proof: [`/verify/?demo=1`](https://zhxinyue29.github.io/peerproof/verify/?demo=1).
 
-Two accounts are needed to see the mechanism work: the contract refuses self-attestation, so one
-person scanning their own code proves nothing. Two phones, or a phone and a browser wallet.
+**The real thing, on Monad testnet.** Sign in with an email (nothing to install) or a wallet. You
+will need a little testnet MON to put down a deposit; the app does not offer to fetch it for you,
+because claiming test tokens is not part of the product. Get some from the
+[Monad faucet](https://faucet.monad.xyz) or the `#faucet` channel in
+[Monad's Discord](https://discord.gg/monad), send it to the address the app shows you, and register.
+
+The full vouching flow needs at least two different accounts: the contract refuses
+self-attestation, so one person scanning their own code proves nothing. Two phones, or a phone and a
+browser wallet.
 
 ---
 
@@ -125,13 +131,16 @@ Stated plainly, because they are real:
 
 | Route | What it is |
 |---|---|
-| `/` | The link an attendee arrives on. Deposit, projected payout, one button to stake it. |
-| `/floor` | **The ten minutes that matter.** Your rotating code, a scanner, your vouch count, the on-chain latency of every attestation, and the settlement panel once the window shuts. |
+| `/` | The front door: participants find an event, organizers open one, and judges can start the no-wallet demo. |
+| `/demo` | The 90-second, four-step walkthrough on labelled illustrative data. No wallet, no transaction. |
+| `/events` | Browse public events. |
+| `/event` | One event: its details, deposit and rules, and registration. |
+| `/floor` | **The ten minutes that matter.** Check in against the venue screen, then your rotating code, a scanner, your vouch count and the on-chain latency of every attestation — and settlement and claiming once the window shuts. |
 | `/venue` | Goes on a laptop or spare phone at the door. Displays the rotating beacon that attendees check in against on arrival. |
 | `/organizer` | Create an event, watch registrations — and find no button that pays anybody. |
-| `/verify` | Public, no key needed. The attestation graph and the settlement arithmetic, rebuilt from chain events. |
+| `/verify` | Public, no key needed. With no parameter it offers the illustrative proof or a live event; `?demo=1` shows the illustrative proof, labelled as such; `?event=N` rebuilds event N's attestation graph and settlement arithmetic from chain events — the only one of the three that reads the chain. |
 
-`/verify` exists because a claim that nobody has to be trusted is worth nothing if the only way to check it is to believe our own interface. Every line in the graph is one transaction; every figure in the arithmetic is derived rather than reported.
+`/verify` exists because a claim that nobody has to be trusted is worth nothing if the only way to check it is to believe our own interface. For a live event, every line in the graph is one transaction; every figure in the arithmetic is derived rather than reported.
 
 ## Two ways in
 
@@ -143,7 +152,7 @@ The contract separates the registered address from the key that signs codes, and
 
 ## Contracts
 
-`src/AttendanceEscrow.sol` — the whole thing. No proxies, no external dependencies beyond `forge-std` for tests. 66 tests, including a parity test that pins both message digests against the values `viem` computes in the frontend — if those encodings ever drift, every attestation at the venue reverts and the failure is unreproducible on a laptop.
+`src/AttendanceEscrow.sol` — the whole thing. No proxies, no external dependencies beyond `forge-std` for tests. The suite includes a parity test that pins both message digests against the values `viem` computes in the frontend — if those encodings ever drift, every attestation at the venue reverts and the failure is unreproducible on a laptop.
 
 Measured under Monad execution rules (`network = "monad"`, which applies Monad's opcode repricing) at the 102 gwei both networks were quoting. The right-hand column prices the **limit** the app actually sends, not the average, because Monad bills the limit:
 
@@ -160,17 +169,18 @@ At a 30 MON deposit — the intended production figure, about five dollars at th
 participant's whole evening (register, check in, three attestations, claim) is roughly **0.36% of
 their stake**.
 
-The deployed demo runs on **testnet with a 1 MON deposit and k = 2**, for two reasons worth stating
-plainly rather than hiding: testnet MON comes from a faucet in single digits, so a 30 MON stake
-across six accounts is not obtainable; and k = 2 is the highest threshold three devices can satisfy
-(N people vouching for each other give everyone N−1 vouches, so k = 3 needs four). Testnet MON also
-has no market price, so the app shows MON only there — quoting a dollar figure would be inventing
-one.
+The deployed demo runs on **testnet with a 0.01 MON deposit**, and k is set per event — the two
+events on the current contract use k = 3 and k = 1. Both are configuration rather than mechanism,
+and worth stating plainly rather than hiding: testnet MON comes from a faucet in single digits, so a
+30 MON stake across several accounts is not obtainable; and k has to stay below the number of people
+who will actually be in the room, because each pair can vouch only once and N people vouching for
+each other give everyone N−1 vouches — k = 3 needs four. Testnet MON also has no market price, so
+the app shows MON only there — quoting a dollar figure would be inventing one.
 
 ## Build
 
 ```bash
-cd contracts && forge test          # 38 tests
+cd contracts && forge test
 forge test --gas-report
 ```
 
@@ -217,7 +227,7 @@ forge verify-contract <address> AttendanceEscrow --chain 10143 \
 
 | Layer | Choice |
 |---|---|
-| Chain | Monad mainnet, chain ID 143 |
+| Chain | Monad testnet for the live demo (chain ID 10143); mainnet-ready configuration (143) |
 | Contracts | Solidity 0.8.28, Foundry |
 | Accounts | [Mera](https://mera.category.xyz/) — passkey → WebAuthn PRF → secp256k1, no seed phrase, no extension, no custody backend. [Privy](https://privy.io) embedded wallet and a browser wallet are the other two paths. |
 | Indexing | [Envio HyperIndex](https://envio.dev/chains/monad) first, chunked `eth_getLogs` behind it — Monad's default RPC caps `getLogs` at 100 blocks and a ten-minute window spans ~2,000 of them |
@@ -236,7 +246,7 @@ it stands on, and the job each one does here:
 | **Privy** | Email or wallet sign-in, embedded wallet, Monad network switch, and the provider the attest key is derived from. | live |
 | **Mera** | Passkey PRF derives the key that signs rotating attendance codes. One of three account paths, not the only one. | live |
 | **Envio** | HyperIndex answers the attendance history in one query instead of thousands of log requests. | live — `/verify` on the public site is served from it |
-| **Chainlink CRE** | Scheduled settlement workflow into a receiver contract, so `settle` does not wait for a volunteer. | simulated locally, **not deployed** |
+| **Chainlink CRE** | Scheduled settlement workflow into a receiver contract, so `settle` does not wait for a volunteer. | Implemented and compiled; simulation and receiver deployment are not yet verified. |
 | **Alchemy** | A second endpoint for reading logs. Read path only. | configured and measured; the free tier's 10-block `getLogs` cap puts it behind Monad's own node |
 
 Reads fall through in that order — the index first, then RPC endpoints sorted by how many blocks
@@ -268,18 +278,4 @@ committed here.
 
 ## License
 
-MIT
-
-## 推不上去的时候
-
-2026-09-20:`git push` 卡在 SSH banner exchange —— TCP 握手成功,然后超时。本机的
-代理(127.0.0.1:7897)在路径上,不放 22 端口的 SSH。
-
-GitHub 官方的备用口是 `ssh.github.com:443`,而那个口能走代理的 CONNECT:
-
-```bash
-GIT_SSH_COMMAND='ssh -o ProxyCommand=scripts/gh-ssh-tunnel.py' git push
-```
-
-`scripts/gh-ssh-tunnel.py` 忽略 ssh 要连的主机,固定连 ssh.github.com:443。
-注意 `-o ProxyCommand=...` 不要加引号,加了 ssh 会把引号当成路径的一部分。
+[MIT](LICENSE)

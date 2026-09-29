@@ -38,3 +38,7 @@ cre/**/.cre/
 出片/**/*.wav
 出片/**/*.mp4
 出片/**/*.png
+
+# Cloudflare Wrangler's local cache (account and project ids). Nothing here deploys with Wrangler —
+# the site is built and published by .github/workflows/pages.yml — so it never belongs in the repo.
+.wrangler/

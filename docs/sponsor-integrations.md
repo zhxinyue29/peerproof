@@ -4,7 +4,9 @@ Written against the code in this repository, not against what would be convenien
 row names the files you can read and the thing you can run. Where an integration is partial, the
 partial part is stated in the same sentence as the working part.
 
-Audited 2026-09-27 against `feat/sponsor-integrations`, branched from `700a1fd`.
+Audited 2026-09-27 against `feat/sponsor-integrations`, branched from `700a1fd`. The Chainlink CRE
+row was corrected on 2026-09-29: the repository holds no record of a successful simulation or of a
+receiver deployment.
 
 | | Status | One-line role |
 |---|---|---|
@@ -12,7 +14,7 @@ Audited 2026-09-27 against `feat/sponsor-integrations`, branched from `700a1fd`.
 | Privy | **live** | Sign-in, embedded wallet, network switch, and the provider the attest key is derived from. |
 | Mera | **live** | Passkey PRF → the key that signs rotating attendance codes. Not the only account path. |
 | Envio | **live, verified end to end** | HyperIndex serves the attestation graph `/verify` renders. Cross-checked against chain receipts. |
-| Chainlink CRE | **simulate** | Scheduled settlement workflow. Simulated locally, not deployed. |
+| Chainlink CRE | **Implemented and compiled; simulation and receiver deployment are not yet verified.** | Scheduled settlement workflow into a receiver contract. |
 | Alchemy | **configured, measured, last in the order** | Second endpoint for `eth_getLogs`. Works; the free tier's 10-block cap makes it slower than Monad's own node. |
 | Crouton | **not enabled** | No verified Monad RPC endpoint exists to integrate against. See the section below. |
 
@@ -184,7 +186,7 @@ and no `eth_getLogs`.
 
 ---
 
-## Chainlink CRE — settlement workflow, simulated
+## Chainlink CRE — settlement workflow
 
 **Files:** `cre/project.yaml`, `cre/settle-workflow/{workflow.yaml,main.ts,config.testnet.json}`,
 `contracts/src/SettleReceiver.sol`, `cre/README.md`.
@@ -195,10 +197,12 @@ and no `eth_getLogs`.
   → escrow.settle`. `SettleReceiver` has no owner and no setters.
 - Reports that are early, repeated, or for an unknown event are declined and logged, not reverted.
 
-**Status: simulate.** `cre/README.md` states that deploy approval gates `cre workflow deploy`, and
-that this project relies on `cre workflow simulate`, which compiles the workflow to WASM and runs
-it locally. The receiver is deployed to Monad testnet at the **simulation** forwarder address
-recorded in that README. **This is not a deployed CRE workflow and is not described as one.**
+**Status: Implemented and compiled; simulation and receiver deployment are not yet verified.** `cre/README.md` explains that deploy approval gates `cre workflow deploy`, and
+that `cre workflow simulate` compiles the workflow to WASM and runs it locally. The repository holds
+no record of a successful simulation — no `simulate.log`, no broadcast transaction —
+`settleReceiverAddress` in `cre/settle-workflow/config.testnet.json` is still the zero address, and
+`contracts/broadcast/` has no `SettleReceiver` deployment. **This is not a deployed CRE workflow and
+is not described as one.**
 
 **How to test:** `cre workflow simulate settle-workflow --target testnet-settings
 --non-interactive --trigger-index 0 --broadcast`, with `cre/.env` holding a key (the simulator
