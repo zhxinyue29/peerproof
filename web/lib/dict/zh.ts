@@ -792,11 +792,4 @@ export const zh: Dict = {
   "verify.newestFirst": "最新在上",
   "verify.blockAt": "区块 {n}",
   "verify.projectedLabel": "尚未结算 · 以下为推算",
-  "infra.title": "技术构成",
-  "infra.monad": "活动承诺、同伴作证和结算，都是 Monad 测试网上的交易。",
-  "infra.privy": "邮箱或钱包登录、内置钱包、切到 Monad 网络，以及派生签名密钥所用的 provider。",
-  "infra.mera": "用 passkey 的 PRF 派生出签发轮换到场码的密钥。设备不支持时由浏览器钱包或 Privy 兜底。",
-  "infra.envio": "HyperIndex 提供公开记录赖以重建的出席历史。",
-  "infra.cre": "一条定时结算工作流，对着接收合约跑的是模拟，尚未部署。",
-  "infra.alchemy": "索引不可用时，读取链上日志的第二个端点。",
 };
