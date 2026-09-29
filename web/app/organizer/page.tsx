@@ -727,7 +727,7 @@ function SelectedEvent({
           </Link>{" "}
           {t("organizer.venueNote")}{" "}
           <Link
-            href="/verify"
+            href={`/verify?event=${selectedId}`}
             className="-my-3 inline-block py-3 underline decoration-line-2 underline-offset-4"
           >
             {t("organizer.publicRecord")}

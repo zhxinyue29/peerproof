@@ -547,7 +547,7 @@ export default function EventPage() {
                 <p>{t("event.depositP2")}</p>
                 <p>{t("event.depositP3")}</p>
                 <Link
-                  href="/verify"
+                  href={`/verify?event=${eventId()}`}
                   className="inline-flex min-h-[44px] items-center gap-1.5 text-accent-2 underline decoration-line-2 underline-offset-4"
                 >
                   {t("event.publicProof")} ↗
@@ -667,7 +667,7 @@ export default function EventPage() {
                     <span className="shrink-0 text-[14px] text-dim">{t("event.verifiedLabel")}</span>
                     <AttendeeRow eventId={eventId()} total={ev.confirmed} confirmedOnly small />
                     <Link
-                      href="/verify"
+                      href={`/verify?event=${eventId()}`}
                       aria-label={t("nav.verify")}
                       className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-2 text-dim transition-colors hover:border-accent hover:text-fg"
                     >

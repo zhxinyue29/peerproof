@@ -174,20 +174,43 @@ export default function HomePage() {
                   wants at that point in the column, and as a button rather than a grey line it can
                   be found: the version tucked under the stats panel was a link nobody saw, which is
                   the only way a link can fail. */}
-              <motion.button
-                variants={m.item}
-                type="button"
-                onClick={() => setHowOpen(true)}
-                // `flex w-fit`, not `inline-flex`. The line above it is an inline-block — it has to be, so the
-                // underline SVG can size to the text — and an inline-flex button next to an inline-block
-                // paragraph is simply the next word on the same line, which is where this landed.
-                className="group flex w-fit min-h-[48px] items-center gap-2.5 rounded-xl border border-line-2 bg-panel/60 px-5 text-[16px] text-fg transition-colors hover:border-accent/70"
-              >
-                {t("home.howLink")}
-                <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
-                  →
-                </span>
-              </motion.button>
+              {/* The walkthrough goes first in this row: it is the one way through the product for
+                  somebody with no wallet and no room — a judge, usually — and its terms (no wallet,
+                  about ninety seconds) are on the button itself rather than in a caption that can
+                  wrap away from it. It sits above the two doors without taking their weight: tinted,
+                  not filled, the same height as the explainer beside it. */}
+              <motion.div variants={m.item} className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/demo"
+                  className="group flex min-h-[56px] items-center gap-3 rounded-xl border border-accent/55 bg-accent/15 py-2 pl-3 pr-5 transition-colors hover:border-accent hover:bg-accent/25"
+                >
+                  <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l11.2-7.2a1 1 0 0 0 0-1.72L8.5 3.94A1 1 0 0 0 7 4.8Z" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-semibold leading-tight text-fg">{t("home.demoCta")}</span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-dim">{t("home.demoNote")}</span>
+                  </span>
+                  <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+                    →
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setHowOpen(true)}
+                  // `flex w-fit`, not `inline-flex`. The line above it is an inline-block — it has to be, so the
+                  // underline SVG can size to the text — and an inline-flex button next to an inline-block
+                  // paragraph is simply the next word on the same line, which is where this landed.
+                  className="group flex w-fit min-h-[56px] items-center gap-2.5 rounded-xl border border-line-2 bg-panel/60 px-5 text-[16px] text-fg transition-colors hover:border-accent/70"
+                >
+                  {t("home.howLink")}
+                  <span aria-hidden className="text-accent-2 transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+                    →
+                  </span>
+                </button>
+              </motion.div>
 
               <motion.div variants={m.item} className="grid gap-4 pt-2 sm:grid-cols-2">
                 <IdentityChoiceCard href="/events" title={t("home.joinTitle")} body={t("home.joinSub")} tone="join" />

@@ -5,7 +5,9 @@ import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import { useBack } from "@/lib/back";
 import ProofNetwork, { NetworkSkeleton, edgeKey, type EdgeKey } from "@/components/ProofNetwork";
-import { Notice } from "@/components/ui";
+import DemoGraph from "@/components/demo/DemoGraph";
+import DemoSettlement from "@/components/demo/DemoSettlement";
+import { LinkButton, Notice } from "@/components/ui";
 import {
   ESCROW_ADDRESS,
   eventId,
@@ -16,10 +18,36 @@ import {
 } from "@/lib/chain";
 import { useVisiblePoll } from "@/lib/poll";
 import { both, fiat, mon, sentenceGap, shortAddress, shortenError } from "@/lib/format";
+import { DEMO_CONFIRMED, DEMO_DEPOSIT, DEMO_PEOPLE, demoSettlement } from "@/lib/demo";
+import { useUrlQuery } from "@/lib/urlQuery";
 import { readHistory, type EventHistory, type Vouch } from "@/lib/logs";
 import { useEvent } from "@/lib/useEvent";
 import { useEventMeta } from "@/lib/eventMeta";
 import { useT } from "@/lib/i18n";
+
+/// Three pages at one address, chosen by the query string.
+///
+///   ?event=N  the live public record — unchanged, and the only one of the three that reads a chain
+///   ?demo=1   the walkthrough's illustrative proof, the same figures as `/demo`'s last step
+///   neither   a door to the other two
+///
+/// With no event named this used to read the default event anyway and show whatever it found —
+/// usually a stale one, or nothing — which to somebody arriving cold looks like the page is broken.
+/// It now asks which they want. Links that mean a particular event carry `?event=` (the event and
+/// organizer pages were updated to), so nothing that used to open a record stops doing so.
+///
+/// The first render has no query string at all (static export; see `useUrlQuery`), so it is a
+/// neutral frame, and the live reader is mounted only once an event has actually been named.
+export default function VerifyPage() {
+  const q = useUrlQuery();
+  if (q === null) return <VerifyPending />;
+  const event = q.get("event");
+  // The same test `resolveEventId` applies, so a malformed id lands on the door rather than
+  // silently falling back to the default event.
+  if (event && /^-?\d+$/.test(event) && BigInt(event) !== 0n) return <LiveVerify key={event} />;
+  if (q.get("demo") === "1") return <DemoProof />;
+  return <VerifyEntry />;
+}
 
 /// Public, no key required. The whole product claims nobody has to be trusted, and a claim like
 /// that is worth nothing if the only way to check it is to believe our own UI. Everything here is
@@ -33,7 +61,7 @@ import { useT } from "@/lib/i18n";
 /// done the inspecting for you.
 ///
 /// Every figure below is computed from the contract's own logs and from nothing else.
-export default function VerifyPage() {
+function LiveVerify() {
   const t = useT();
   const back = useBack("/event");
   const { ev } = useEvent(null, 4000);
@@ -292,6 +320,215 @@ export default function VerifyPage() {
           read stays on screen underneath: the page is not wrong, it is behind. */}
       <RetryToast message={error} onRetry={() => void load()} onDismiss={() => setError(null)} />
     </Frame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*                        The door, and the demo                      */
+/* ------------------------------------------------------------------ */
+
+function VerifyPending() {
+  const t = useT();
+  return (
+    <Frame>
+      <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-accent-2">{t("verify.title")}</p>
+      <p className="py-16 text-center text-[15px] text-faint">{t("common.loading")}</p>
+    </Frame>
+  );
+}
+
+/// No event named: say what this page is, and offer the two things somebody can do with it.
+function VerifyEntry() {
+  const t = useT();
+  return (
+    <Frame>
+      <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-accent-2">{t("verify.title")}</p>
+      <div className="mt-3 border-b border-line pb-5">
+        <h1
+          className="text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-fg md:text-[34px]"
+          style={{ fontFamily: '"Montserrat", var(--font-sans)' }}
+        >
+          {t("verify.entryTitle")}
+        </h1>
+        <p className="mt-3 max-w-[64ch] text-[16px] leading-relaxed text-dim">{t("verify.entryBody")}</p>
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <EntryOption
+          href="/verify?demo=1"
+          title={t("verify.entryDemoTitle")}
+          body={t("verify.entryDemoBody")}
+          tag={t("demo.illustrativeTag")}
+          tone="accent"
+        />
+        <EntryOption href="/events" title={t("verify.entryLiveTitle")} body={t("verify.entryLiveBody")} tone="ok" />
+      </div>
+    </Frame>
+  );
+}
+
+/// One of the door's two ways through. The home page's doors, without their figures: a border in
+/// the way's own colour, what it is, one line of what you will find, and the arrow.
+function EntryOption({
+  href,
+  title,
+  body,
+  tag,
+  tone,
+}: {
+  href: string;
+  title: string;
+  body: string;
+  tag?: string;
+  tone: "accent" | "ok";
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group flex min-h-[112px] items-center gap-4 rounded-2xl border bg-panel/60 px-5 py-4 transition-colors duration-200 ${
+        tone === "accent" ? "border-accent/30 hover:border-accent/70" : "border-ok/30 hover:border-ok/60"
+      }`}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span
+            className={`text-[19px] font-semibold leading-tight tracking-[-0.015em] ${
+              tone === "accent" ? "text-accent-2" : "text-fg"
+            }`}
+          >
+            {title}
+          </span>
+          {tag && (
+            <span className="rounded-full border border-warn/30 bg-warn/10 px-2 py-0.5 text-[13px] font-medium text-warn">
+              {tag}
+            </span>
+          )}
+        </span>
+        <span className="mt-1.5 block text-[15px] leading-relaxed text-dim">{body}</span>
+      </span>
+      <span
+        aria-hidden
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[17px] transition-transform duration-200 motion-safe:group-hover:translate-x-1 ${
+          tone === "accent" ? "bg-accent text-white" : "bg-ok text-[#08261a]"
+        }`}
+      >
+        →
+      </span>
+    </Link>
+  );
+}
+
+/// `?demo=1`: the walkthrough's event as its public record would read once settled.
+///
+/// Laid out like the live record — label, graph, settlement as type, the roster — so it teaches the
+/// real page. What it leaves out is everything that would have to be invented: no hashes, no blocks,
+/// no addresses, no explorer link. It says so at the top and again at the foot, because a
+/// screenshot can be cropped to either half.
+function DemoProof() {
+  const t = useT();
+  const s = demoSettlement();
+  return (
+    <Frame>
+      <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-accent-2">
+        {t("verify.title")} · {t("demo.illustrativeTag")}
+      </p>
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-line pb-5">
+        <h1
+          className="text-[28px] font-extrabold leading-[1.1] tracking-[-0.03em] text-fg md:text-[34px]"
+          style={{ fontFamily: '"Montserrat", var(--font-sans)' }}
+        >
+          {t("verify.roomDecided")}
+        </h1>
+        <span className="text-[15px] text-faint">
+          {t("demo.eventName")} · {t("verify.demoSettled")}
+        </span>
+      </div>
+
+      <div className="pt-5">
+        <Notice tone="warn">{t("verify.demoNotice")}</Notice>
+      </div>
+
+      <section className="mt-8">
+        <DemoGraph />
+      </section>
+
+      <dl className="mx-auto mt-10 grid w-full max-w-[1000px] grid-cols-2 gap-x-6 gap-y-6 border-t border-line pt-6 sm:grid-cols-4">
+        <DemoFact label={t("verify.demoStatus")} value={t("verify.demoSettled")} tone="ok" />
+        <DemoFact label={t("verify.demoRegistered")} value={`${s.registered}`} />
+        <DemoFact label={t("verify.demoConfirmed")} value={`${s.confirmed}`} tone="ok" />
+        <DemoFact label={t("verify.demoUnconfirmed")} value={`${s.unconfirmed}`} />
+        <DemoFact label={t("verify.demoDeposit")} value={mon(DEMO_DEPOSIT)} />
+        <DemoFact label={t("verify.demoTotal")} value={mon(s.total)} />
+        <DemoFact
+          label={t("verify.demoEach")}
+          value={t("verify.demoEachValue", { amount: mon(s.share) })}
+          tone="ok"
+        />
+      </dl>
+
+      <section className="mx-auto mt-16 w-full max-w-[1000px]">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-line pb-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.18em] text-faint">{t("verify.settlement")}</h2>
+          <span className="text-[14px] text-faint">{t("verify.demoSettled")}</span>
+        </div>
+        <div className="pt-7">
+          <DemoSettlement />
+        </div>
+      </section>
+
+      <section className="mx-auto mt-16 w-full max-w-[1000px]">
+        <h2 className="border-b border-line pb-3 text-[13px] font-bold uppercase tracking-[0.18em] text-faint">
+          {t("verify.whoWasThere")}
+        </h2>
+        <ul className="grid gap-x-16 text-[15px] sm:grid-cols-2">
+          {DEMO_PEOPLE.map((p) => {
+            const ok = DEMO_CONFIRMED.has(p.id);
+            return (
+              <li key={p.id} className="flex items-center justify-between gap-4 border-b border-line/70 py-2.5">
+                <span className={ok ? "text-dim" : "text-faint"}>{t("demo.participant", { id: p.id })}</span>
+                <span className={ok ? "text-ok" : "text-faint"}>{ok ? t("graph.present") : t("graph.forfeited")}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <div className="mx-auto mt-14 w-full max-w-[1000px] space-y-5">
+        <p className="text-[14px] leading-relaxed text-faint">{t("verify.demoNoRecords")}</p>
+        <div className="flex flex-wrap gap-3">
+          <LinkButton href="/demo">{t("verify.demoBackToDemo")}</LinkButton>
+          <Link
+            href="/events"
+            className="flex min-h-[46px] items-center justify-center rounded-lg border border-line-2 px-4 text-[16px] font-medium text-dim transition-colors hover:border-accent/60 hover:text-fg"
+          >
+            {t("verify.demoBrowseLive")}
+          </Link>
+        </div>
+      </div>
+    </Frame>
+  );
+}
+
+function DemoFact({
+  label,
+  value,
+  tone = "fg",
+}: {
+  label: string;
+  value: string;
+  tone?: "fg" | "ok";
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[14px] text-faint">{label}</dt>
+      <dd
+        className={`mt-1.5 text-[22px] font-semibold leading-tight tracking-[-0.02em] tabular-nums ${
+          tone === "ok" ? "text-ok" : "text-fg"
+        }`}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }
 
