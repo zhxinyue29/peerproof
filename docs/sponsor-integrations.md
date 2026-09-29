@@ -141,7 +141,7 @@ happened.
 ### Verification
 
 Not "it returned something" — every value the index reported was taken back to a chain receipt and
-decoded:
+decoded. Measured on 2026-09-27, while event #2 was still open:
 
 ```
 readHistory(2n)  →  source=envio  provider=envio   2.67 s   1 HTTP request, 0 eth_getLogs
@@ -153,6 +153,10 @@ chain getEvent(2).registered = 2                            matches the particip
 vouch tx 0x2c4352624a…83b288   → block 64250959  decoded Attested(eventId=2,
                                                    attester=0xdb29…, subject=0x7497…)
 ```
+
+Event #2 has since been settled and claimed on chain (settle [`0x8e151c79…`](https://testnet.monadscan.com/tx/0x8e151c79daf64e140b481f3d1f5639e43f2f01da5895c81f1882959bb65760bf),
+claim [`0xcd58dbb4…`](https://testnet.monadscan.com/tx/0xcd58dbb46884debdc87d6c60091aa5ff6176d6731fea85233908dce759e3e3c9), both 2026-09-29). Checked again on 2026-09-30, the index reports
+`status = 2`, the same settlement hash, and the claim.
 
 On the production site, `/verify?event=2`: DOMContentLoaded 1.40 s, proof graph rendered at
 **5.15 s**, one request to the indexer host, **zero `eth_getLogs`**, no console errors.

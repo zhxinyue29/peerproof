@@ -2,13 +2,15 @@
 
 **Attendance you don't have to trust the organizer for.**
 
-Attendees stake a deposit to register for an event. At the venue they attest to each other — the room proves itself — and the contract settles automatically: everyone confirmed present reclaims their deposit and splits the deposits forfeited by no-shows. The organizer has no function that releases, withholds, or receives a single wei.
+Attendees stake a deposit to register for an event. At the venue they attest to each other — the room proves itself — and settlement is permissionless and deterministic: once the window closes anyone can trigger it, and the contract alone works out who is paid and how much. Everyone confirmed present reclaims their deposit and splits the deposits forfeited by no-shows. The organizer has no function that releases, withholds, or receives a single wei.
 
 Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropolis) · Track: Consumer Products & Payments
 
 **Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Video:** [2:14 demo](https://youtu.be/J4bsS2C3-bY)
 
 **Contract:** [`0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679`](https://testnet.monadscan.com/address/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679) on Monad testnet (chain ID 10143). [Source verified with Sourcify (`exact_match`).](https://repo.sourcify.dev/10143/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679)
+
+**Settled on chain:** event #2 — [public record](https://zhxinyue29.github.io/peerproof/verify/?event=2) · [settle tx](https://testnet.monadscan.com/tx/0x8e151c79daf64e140b481f3d1f5639e43f2f01da5895c81f1882959bb65760bf) · [claim tx](https://testnet.monadscan.com/tx/0xcd58dbb46884debdc87d6c60091aa5ff6176d6731fea85233908dce759e3e3c9)
 
 ### Trying it
 
