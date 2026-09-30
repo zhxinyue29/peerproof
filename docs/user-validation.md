@@ -477,6 +477,25 @@ After the pilot, the interviews and the survey, the interface was changed in res
 These are product changes, not new validation: nobody from the pilot, the interviews or the survey
 has used the updated interface, so whether the changes resolve the reported problems is untested.
 
+### From evidence to product changes
+
+The demo video was recorded on 2026-09-21, before any of the changes below, so a few screens in it
+differ from the live build. Each row pairs a problem recorded above with the change it motivated and
+the commit that made it.
+
+| Observed problem | Evidence source | Product change | Relevant commit |
+|---|---|---|---|
+| Being scanned by others did not mean an attendee had done their part: confirmation also needs an attestation they initiate themselves, and that rule was counterintuitive. | Event #2: the second participant checked in and was scanned but initiated no attestation, and was not confirmed. Participant B; interview findings 2 and 4. | `/floor` replaces the single vouch count with four status rows — venue check-in, attestation initiated, peer confirmations received against `k`, deposit outcome — and states the attendance rule beneath them. Copy that implied one scan completes both people was reworded, including the "already vouched" error and the sign-in steps. | `bd8e92f` |
+| The venue check-in code and the participant attestation code were easy to confuse. | Participant B; interview finding 3. | The scanner, the attendee's own code on `/floor` and the venue display name the code and its rotation — "Venue check-in code", every 30 seconds; "Participant attestation code", every 15 seconds — each with its own glyph and colour. After check-in the scanner shows the peer-code hint. | `bd8e92f` |
+| How the deposit is returned, and what final eligibility requires, was not intuitive. | Participant A; interview finding 1; survey Q4 (3 of 6 chose deposit refund and settlement as hardest to understand). | `/event` lists, before registration, the three attendance conditions, settlement by anyone once the window closes, the payout, and both full-refund branches. `/floor`'s deposit-outcome row follows the event's actual state. | `bd8e92f` |
+| The public proof graph was the hardest part to understand. | Survey Q4 (4 of 6 chose the public verification graph as hardest to understand). | `/verify` draws an arrowhead on every attestation, pointing at the person scanned, with a visible legend; `/demo` carries the same legend, marked as illustrative data. The live record's header now names its network: "Monad testnet · on-chain record". | `bd8e92f` (arrows, legends); `56cd79e` (network label) |
+| Who holds the deposit, when it is returned, and how collusion is limited were open questions. | Participant A (custody, refund timing, collusion explained honestly); Participant B (collusion remains possible; very small events need the fallback); interview findings 5 and 6; survey Q7 (fund safety 3 of 6, collusion or fake attestations 2 of 6). | `/event` states that the contract holds the deposit and the organizer cannot take it in any branch, explains the small-room organizer fallback and its limits, and no longer says remote collusion cannot happen: it says a live relay makes it costly, not impossible. | `bd8e92f` |
+| Funding a wallet with testnet MON was an onboarding obstacle. | Participant B; interview finding 7. | When a wallet is short, the funding card on `/event` separates the deposit from room for gas and says gas is paid from the attendee's own wallet and is not sponsored; the README says the same. This clarifies the obstacle; it does not remove it. | `56cd79e` |
+
+These changes address issues found during the pilot and research, but the revised interface has not yet been re-tested with participants.
+
+The full list of interface changes made after the research follows.
+
 - **Explicit eligibility checklist on `/floor`:** venue check-in, attestation initiated, peer
   confirmations received (against `k`) and deposit outcome as separate rows, with the attendance
   rule beneath them. The deposit row follows the contract's state — open, settled or cancelled;

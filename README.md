@@ -8,6 +8,8 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 **Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Video:** [2:14 demo](https://youtu.be/J4bsS2C3-bY)
 
+> **Video version note:** The demo video was recorded on September 21, 2026. The live build was subsequently refined using findings from an external two-participant micro-pilot, two qualitative follow-up interviews, and a six-response convenience survey. The updates clarify QR-code roles, active peer-attestation requirements, refund eligibility, and the direction of the public proof graph. The underlying contract logic, deployed address, and Event #2 on-chain evidence are unchanged.
+
 **Contract:** [`0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679`](https://testnet.monadscan.com/address/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679) on Monad testnet (chain ID 10143). [Source verified with Sourcify (`exact_match`).](https://repo.sourcify.dev/10143/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679)
 
 **Settled on chain:** event #2 — [public record](https://zhxinyue29.github.io/peerproof/verify/?event=2) · [settle tx](https://testnet.monadscan.com/tx/0x8e151c79daf64e140b481f3d1f5639e43f2f01da5895c81f1882959bb65760bf) · [claim tx](https://testnet.monadscan.com/tx/0xcd58dbb46884debdc87d6c60091aa5ff6176d6731fea85233908dce759e3e3c9)
