@@ -188,7 +188,10 @@ export default function VenuePage() {
         </div>
 
         <div className="min-w-0 text-center md:text-left">
-          <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-accent-2">
+          {/* Named and coloured like the scanner's venue mode, so the two codes of the evening never
+              share a label: this one is the venue check-in code, in `info`; a participant's phone
+              shows the attestation code, in violet. */}
+          <p className="text-[14px] font-medium uppercase tracking-[0.16em] text-info">
             {t("venue.eyebrow")}
           </p>
           <h1 className="mt-2.5 text-[34px] font-semibold leading-[1.04] tracking-[-0.035em] md:text-[52px]">

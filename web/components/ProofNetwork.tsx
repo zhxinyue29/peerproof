@@ -121,12 +121,27 @@ export default function ProofNetwork({
       const bow = 0.3 + nth * 0.16;
       const mx = (a.x + b.x) / 2;
       const my = (a.y + b.y) / 2;
+      const c = { x: mx + (cx - mx) * bow, y: my + (cy - my) * bow };
+      // Which way a vouch went, drawn rather than implied. It used to live only in the travelling
+      // dots, which reduced motion removes and which a still screenshot never shows — so the one
+      // fact the legend needs, who scanned whom, was invisible to exactly the people reading
+      // carefully. The head lands on the rim of the person scanned, not under their disc; the
+      // curve arrives along (b − c), so stepping back from b toward c stays on the line.
+      const back = Math.hypot(c.x - b.x, c.y - b.y) || 1;
+      const tip = { x: b.x + ((c.x - b.x) / back) * (nodeR + 4), y: b.y + ((c.y - b.y) / back) * (nodeR + 4) };
+      const ux = (tip.x - c.x) / (Math.hypot(tip.x - c.x, tip.y - c.y) || 1);
+      const uy = (tip.y - c.y) / (Math.hypot(tip.x - c.x, tip.y - c.y) || 1);
+      const HL = 11;
+      const HW = 5.5;
       return {
         key: edgeKey(v),
         order: i,
         from: v.from.toLowerCase(),
         to: v.to.toLowerCase(),
-        d: `M ${a.x} ${a.y} Q ${mx + (cx - mx) * bow} ${my + (cy - my) * bow} ${b.x} ${b.y}`,
+        d: `M ${a.x} ${a.y} Q ${c.x} ${c.y} ${b.x} ${b.y}`,
+        // The visible stroke stops where the head begins, so a 1.6px line does not poke through it.
+        shown: `M ${a.x} ${a.y} Q ${c.x} ${c.y} ${tip.x - ux * (HL - 2)} ${tip.y - uy * (HL - 2)}`,
+        head: `M ${tip.x} ${tip.y} L ${tip.x - ux * HL - uy * HW} ${tip.y - uy * HL + ux * HW} L ${tip.x - ux * HL + uy * HW} ${tip.y - uy * HL - ux * HW} Z`,
       };
     })
     .filter((e): e is NonNullable<typeof e> => e !== null);
@@ -230,7 +245,7 @@ export default function ProofNetwork({
               onMouseEnter={() => onHover(e.key)}
             />
             <path
-              d={e.d}
+              d={e.shown}
               fill="none"
               pathLength={1}
               stroke={isActive ? "#9a88ff" : "#6e54ff"}
@@ -243,6 +258,15 @@ export default function ProofNetwork({
               // In the order the chain accepted them, capped so a busy room still finishes
               // drawing before anyone could have read the numbers above it.
               style={{ animationDelay: `${Math.min(e.order * 0.085, 2.2)}s` }}
+            />
+            {/* Fades in once its line has drawn, the way the walkthrough's heads do — a head
+                sitting at the far end before the line reaches it would point at nothing. */}
+            <path
+              d={e.head}
+              fill={isActive ? "#9a88ff" : "#6e54ff"}
+              fillOpacity={isActive ? 1 : selected ? 0.22 : 0.8}
+              className="pp-node pointer-events-none"
+              style={{ animationDelay: `${Math.min(e.order * 0.085, 2.2) + 0.45}s` }}
             />
           </g>
         );

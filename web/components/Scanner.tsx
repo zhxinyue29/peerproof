@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import CodeModeLabel from "@/components/CodeModeLabel";
 import { useT, type TKey } from "@/lib/i18n";
 
 /// Camera scanner. Loaded on demand because qr-scanner touches `navigator` and ships a worker.
@@ -8,11 +9,16 @@ export default function Scanner({
   onResult,
   onClose,
   notice,
+  mode = "peer",
   title,
   hint,
 }: {
   onResult: (text: string) => void;
   onClose: () => void;
+  /// Which of the two codes this scan is for, named at the top of the camera view. Both are
+  /// rotating QR codes, and people in the pilot mixed up the venue display's with another
+  /// participant's, so the header says which one is wanted before anybody lifts the phone.
+  mode?: "venue" | "peer";
   /// The same camera reads two different things at two different moments in the evening, and the
   /// header is the only place that says which one is wanted now.
   ///
@@ -106,11 +112,17 @@ export default function Scanner({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
-      <div className="flex items-center justify-between px-5 py-4 text-fg">
-        <span className="text-[15px]">{t(title ?? "floor.pointAtCode")}</span>
+      <div className="flex items-start justify-between gap-4 px-5 py-4 text-fg">
+        <div className="min-w-0">
+          <CodeModeLabel
+            mode={mode}
+            sub={t(mode === "venue" ? "scan.modeVenueSub" : "scan.modePeerSub")}
+          />
+          <p className="mt-2 text-[15px]">{t(title ?? "floor.pointAtCode")}</p>
+        </div>
         <button
           onClick={onClose}
-          className="min-h-[44px] rounded-lg border border-line-2 px-4 text-[15px] text-dim"
+          className="min-h-[44px] shrink-0 rounded-lg border border-line-2 px-4 text-[15px] text-dim"
         >
           {t("common.close")}
         </button>

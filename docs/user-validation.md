@@ -12,6 +12,10 @@ Whether any survey respondent also took part in the pilot or the interviews has 
 so this document gives no combined participant count. All of it is early, small-sample evidence:
 not production traction or product-market fit, and not statistically representative research.
 
+The interface was changed afterwards in response. Those changes are listed under
+[Post-research product changes](#post-research-product-changes); they are not further validation, and the updated interface has
+not yet been revalidated with users.
+
 ## External micro-pilot
 
 | | |
@@ -121,31 +125,53 @@ Taken together, the two interviews point to seven findings:
 
 ### Product implications
 
-These are proposed improvements drawn from the findings. None of them is claimed as implemented.
-Where today's interface already covers part of one, the note under it says what exists.
+These began as proposals drawn from the findings. Each note records what the interface showed when
+the research was done and, where a change followed, what it was and on which page. The changes are
+not user validation: nobody has used the updated interface yet (see
+[Post-research product changes](#post-research-product-changes)).
 
 - **Separate status rows** for venue check-in, attestation initiated, peer confirmations received,
   and refund eligibility.
-  *Today:* the attendance floor (`/floor`) shows "Checked in" with the time, a "vouched for you"
-  count against `k`, and, until the attendee has vouched for someone, the warning "Scan at least one
-  person — being vouched for isn't enough on its own." Initiating an attestation appears only as
-  that warning, and there is no refund-eligibility row. Two existing lines still blur the two
-  requirements: the pre-sign-in step "Take your deposit back" says you count as present once enough
-  people have vouched for you, and the "already vouched" error tells the person who was scanned
-  "One scan counts for both of you."
+  *At the time of the research:* the attendance floor (`/floor`) showed "Checked in" with the time,
+  a "vouched for you" count against `k`, and, until the attendee had vouched for someone, the
+  warning "Scan at least one person — being vouched for isn't enough on its own." Initiating an
+  attestation appeared only as that warning, and there was no refund-eligibility row. Two lines
+  blurred the two requirements: the pre-sign-in step "Take your deposit back" said you count as
+  present once enough people have vouched for you, and the "already vouched" error told the person
+  who was scanned "One scan counts for both of you."
+  **Implemented after the pilot and survey** (`/floor`): four status rows — venue check-in,
+  attestation initiated, peer confirmations received against `k`, and deposit outcome — above the
+  rule "To count as present, check in at the venue, initiate at least one attestation, and receive
+  the required peer confirmations." Both blurring lines were reworded to say that a scan counts for
+  both people but only the scanner has vouched for someone.
 - **Visibly different labels** for the venue check-in QR code and the peer-vouching QR code.
+  *At the time of the research:* the scanner's header said only "Point at the screen at the door" or
+  "Point at someone's code", and the venue display was headed "Venue beacon"; neither code was named
+  as a check-in or an attestation code.
+  **Implemented after the pilot and survey** (scanner, `/floor`, `/venue`): "Venue check-in code —
+  shown on the venue display, rotates every 30 seconds" and "Participant attestation code — shown on
+  another participant's phone, rotates every 15 seconds", each with its own glyph and colour.
 - **Before registration, explain** who holds the deposit, when settlement happens, the refund
   conditions, and the branch in which every deposit is refunded because nobody could be confirmed.
-  *Today:* the event page shows "Held by the contract. Not by the organizer." under the deposit,
-  and its rules and FAQ tabs explain check-in and vouching, what happens to the deposit, and the
-  full refund when too few people register. The branch that refunds everyone when nobody can be
-  confirmed is explained on the public record page (`/verify`), not before registration.
+  *At the time of the research:* the event page showed "Held by the contract. Not by the
+  organizer." under the deposit, and its rules and FAQ tabs explained check-in and vouching, what
+  happens to the deposit, and the full refund when too few people register. The branch that refunds
+  everyone when nobody can be confirmed was explained only on the public record page (`/verify`).
+  **Implemented after the pilot and survey** (`/event`): an always-visible "Eligibility and
+  refunds" list under "How it's verified" covering custody, the three attendance conditions, how one
+  scan counts for both people, settlement by anyone once the window closes, the payout, and both
+  full-refund branches.
 - **Warn that very small events may require the organizer fallback.**
-  *Today:* the fallback is explained on the organizer's screen when it unlocks; attendees are not
-  warned before they register.
+  *At the time of the research:* the fallback was explained on the organizer's screen when it
+  unlocked; attendees were not warned before registering.
+  **Implemented after the pilot and survey** (`/event`): a note that very small rooms may need the
+  fallback, that in a two-person room peer-only verification may not confirm everyone, when the
+  fallback opens, and that it gives the organizer no way to take a deposit.
 - **Keep the no-wallet judge demo** while clearly separating it from the real Monad testnet flow.
-  *Today:* the walkthrough (`/demo`) is labelled "Illustrative demo data" and "No transaction will
-  be sent", and the illustrative proof on `/verify` states that no on-chain records stand behind it.
+  Already true at the time of the research and unchanged: the walkthrough (`/demo`) is labelled
+  "Illustrative demo data" and "No transaction will be sent", and the illustrative proof on
+  `/verify` states that no on-chain records stand behind it. Its graph legend now also opens with
+  "Illustrative data."
 
 ### Limitations of the interviews
 
@@ -156,6 +182,8 @@ Where today's interface already covers part of one, the note under it says what 
 - The USD amounts above are what a participant said they would accept at a real event; the pilot's
   deposits were testnet MON.
 - No claim of market traction, retention, conversion rate, or broad demand.
+- The interface was changed after the interviews (see [Post-research product changes](#post-research-product-changes));
+  neither participant has used the updated version.
 
 ## Anonymous UX Survey / 匿名用户体验问卷
 
@@ -380,22 +408,49 @@ an absolute barrier within this sample. It does not show that wallet onboarding 
 
 ### Product implications
 
-Priorities and lessons from the survey, not completed improvements:
+Priorities and lessons from the survey. Where one has since been acted on, the note says where;
+none of these changes has been retested with respondents.
 
 1. Make the public verification graph easier to interpret.
+   **Implemented after the pilot and survey** (`/verify`, `/demo`): the live graph now draws an
+   arrowhead on every vouch, pointing at the person scanned — before, direction showed only in
+   moving dots, which reduced-motion settings remove and a still screenshot cannot show — and both
+   graphs carry a visible legend.
 2. Explain how peer attestations lead to confirmed attendance.
+   **Implemented after the pilot and survey** (`/floor`, `/event`, `/verify`, `/demo`): the status
+   rows, the rules list and the graph legends all say that a scan counts for both people but only
+   the scanner initiates an attestation, and that everyone must initiate at least one.
 3. Explain contract custody, settlement conditions and refund timing more clearly.
+   **Implemented after the pilot and survey** (`/event`, `/floor`): custody, settlement by anyone
+   once the window closes and both full-refund branches are listed before registration, and the
+   deposit-outcome row on `/floor` follows the event's state. No settlement date is promised,
+   because settlement happens only when somebody triggers it.
 4. Explain anti-collusion safeguards honestly, without claiming collusion is eliminated.
+   **Partly implemented after the pilot and survey** (`/event`): the rules tab no longer says remote
+   collusion cannot happen; it now says relaying the live venue code from inside the room makes it
+   costly, not impossible. There is still no dedicated explanation of collusion limits.
 5. Preserve a demo path that remains understandable to people without prior wallet experience.
+   Unchanged and still in place: `/demo` needs no wallet and sends no transaction.
 6. Keep the core experience within approximately three minutes.
+   Not acted on and not measured: the additions are explanatory text, and nobody has timed the
+   updated flow.
 
-Suggested explanatory copy, recorded as a future UX recommendation:
+Suggested explanatory copy, recorded as a future UX recommendation at the time of the survey:
 
-| Suggested copy | On the site today |
+| Suggested copy | On the site at the time of the survey |
 |---|---|
 | "Each line represents one participant confirming that another participant was physically present." | Partly. The walkthrough's graph legend labels an arrow "One scan, counts for both", and the public record (`/verify`) lists every line as "0x… vouched for 0x…" with its transaction; neither says that a line means one participant confirming another was physically present. |
 | "Your deposit is held by the contract, not by the organizer." | Already there in substance: the event page shows "Held by the contract. Not by the organizer." under the deposit and, after registration, "You're in. Your deposit is held by the contract, not by the organizer." |
 | "Your refund eligibility depends on completing the attendance requirements shown here." | Not on the site. |
+
+After the survey, the first and third suggestions were implemented in adapted form. The graph
+legend on `/verify` reads "Each arrow is one accepted on-chain attestation: the person at the tail
+scanned the person at the arrowhead. The scan credits both people toward the required count, but
+each person must initiate at least one scan to qualify." (the `/demo` version opens with
+"Illustrative data."). `/floor` shows a deposit-outcome row under the requirement rows, with the rule
+"To count as present, check in at the venue, initiate at least one attestation, and receive the
+required peer confirmations." The second suggestion was already on the site and is now also the
+first item of the `/event` rules list. Neither legend claims that an arrow proves physical presence.
 
 ### Limitations
 
@@ -410,3 +465,33 @@ Suggested explanatory copy, recorded as a future UX recommendation:
 - Whether any respondent also took part in Event #2 or the interviews has not been confirmed, so no
   total unique-participant count is given across the survey, the interviews and Event #2.
 - Respondents are not identified, and their row-level response combinations are not published.
+- The interface was changed after the survey (see [Post-research product changes](#post-research-product-changes)); the
+  updated interface has not yet been revalidated with respondents or anyone else.
+
+## Post-research product changes
+
+After the pilot, the interviews and the survey, the interface was changed in response to them.
+These are product changes, not new validation: nobody from the pilot, the interviews or the survey
+has used the updated interface, so whether the changes resolve the reported problems is untested.
+
+- **Explicit eligibility checklist on `/floor`:** venue check-in, attestation initiated, peer
+  confirmations received (against `k`) and deposit outcome as separate rows, with the attendance
+  rule beneath them. The deposit row follows the contract's state — open, settled or cancelled;
+  confirmed or not; claimed or not — and does not promise a payout the contract would refuse.
+- **Distinct venue and participant QR labels:** "Venue check-in code" (venue display, every 30
+  seconds) and "Participant attestation code" (another participant's phone, every 15 seconds), in
+  the scanner, above the attendee's own code on `/floor`, and on the venue display.
+- **Pre-registration explanation of custody, eligibility and refund branches on `/event`:** the
+  three attendance conditions, how one scan counts for both people, settlement by anyone after the
+  window, the payout, both full-refund branches, and the small-room organizer fallback and its
+  limits.
+- **Clearer graph semantics on `/verify` and `/demo`:** arrowheads on the live graph pointing at the
+  person scanned, and a visible legend on both, the demo's marked as illustrative data.
+- **Copy that implied one scan completes both people** was reworded where it appeared: the `/floor`
+  sign-in steps, the "already vouched" error, the how-it-works dialog, the event page's
+  peer-vouching tile, the demo's third step, and the label on the event listing card.
+- **Two overstatements were removed:** the `/floor` settlement card no longer says a scheduled job
+  settles events in production (it says anyone can trigger settlement once the window closes), and
+  the `/event` rules tab no longer says remote collusion cannot happen.
+
+No contract, transaction, address, amount or on-chain record changed.

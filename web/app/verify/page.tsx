@@ -151,8 +151,11 @@ function LiveVerify() {
         >
           {t("verify.roomDecided")}
         </h1>
-        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[15px] text-faint">
-          <span className="truncate">
+        {/* `min-w-0` and wrapping rather than `truncate`: on a phone this flex item never shrank,
+            so the block range ran past the screen edge and was clipped — and the range is part of
+            the evidence, so it wraps instead of being cut to an ellipsis. */}
+        <div className="flex min-w-0 max-w-full flex-wrap items-baseline gap-x-5 gap-y-1 text-[15px] text-faint">
+          <span className="min-w-0 break-words">
             {ev
               ? `${meta.title} · ${t("common.eventNumber", { id: eventId().toString() })}`
               : t("common.loading")}
@@ -242,6 +245,13 @@ function LiveVerify() {
           selected: if it appeared only on hover, every pass of the mouse would shove the page down
           a row — on the page whose whole point is careful inspection. */}
       <InspectBar history={history} active={active} loading={!history} />
+
+      {/* How to read an arrow, on the page rather than in an aria-label. Survey respondents picked
+          the graph as the hardest part to understand, and the likeliest misreading is the costly
+          one: that a scan completes both people. It counts for both; only the scanner qualifies. */}
+      <p className="mx-auto mt-3 max-w-[70ch] text-center text-[14px] leading-relaxed text-faint">
+        {t("verify.arrowLegend")}
+      </p>
 
       <p className="mx-auto mt-8 max-w-[64ch] text-center text-[16px] leading-relaxed text-dim">
         {t("verify.subtitle")}

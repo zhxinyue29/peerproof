@@ -6,6 +6,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
 import RotatingCode from "@/components/RotatingCode";
 import Scanner from "@/components/Scanner";
+import AttendanceStatus from "@/components/AttendanceStatus";
+import CodeModeLabel from "@/components/CodeModeLabel";
 import PayoutResult from "@/components/PayoutResult";
 import VouchResult from "@/components/VouchResult";
 import IdentityGate from "@/components/IdentityGate";
@@ -22,7 +24,6 @@ import {
   Notice,
   Progress,
   Shell,
-  Skeleton,
 } from "@/components/ui";
 import { useIdentity } from "@/components/IdentityProvider";
 import {
@@ -215,7 +216,7 @@ export default function FloorPage() {
         // one is to spend it immediately in a transaction the chain timestamps itself.
         inFlight.current = true;
         try {
-          setBusy("Checking in…");
+          setBusy(t("floor.busyCheckingIn"));
           const hash = await signer.write({
             functionName: "checkIn",
             args: [eventId(), b.beaconEpoch, b.sig],
@@ -274,7 +275,7 @@ export default function FloorPage() {
   );
 
   const settle = () =>
-    run("Settling…", async () => {
+    run(t("floor.busySettling"), async () => {
       const hash = await signer!.write({
         functionName: "settle",
         args: [eventId()],
@@ -285,7 +286,7 @@ export default function FloorPage() {
     });
 
   const claim = () =>
-    run("Claiming…", async () => {
+    run(t("floor.busyClaiming"), async () => {
       const hash = await signer!.write({
         functionName: "claim",
         args: [eventId()],
@@ -303,7 +304,7 @@ export default function FloorPage() {
   /// Signs a beacon with the fixture's venue key and checks in with it, so a laptop with no second
   /// screen can still get through the door.
   const devCheckIn = () =>
-    run("Checking in…", async () => {
+    run(t("floor.busyCheckingIn"), async () => {
       const venue = privateKeyToAccount(process.env.NEXT_PUBLIC_DEV_BEACON_PK as Hex);
       const bEpoch = currentBeaconEpoch();
       const b = parseBeaconCode(await makeBeaconCode(venue, ESCROW_ADDRESS, eventId(), bEpoch))!;
@@ -376,8 +377,6 @@ export default function FloorPage() {
     );
   }
 
-  const k = ev?.k ?? 3;
-  const received = me?.received ?? 0;
   const settled = ev?.status === 2;
   const cancelled = ev?.status === 1;
   // The contract refuses settle() until the grace period elapses whenever peers alone failed to
@@ -417,6 +416,9 @@ export default function FloorPage() {
           </div>
         ) : (
           <>
+            {/* Named, because this and the venue display are both rotating QR codes and people in
+                the pilot could not tell which one was which. */}
+            <CodeModeLabel mode="peer" sub={t("floor.myCodeSub")} />
             <RotatingCode payload={payload} secondsLeft={secondsLeft} totalSeconds={Number(EPOCH)} />
 
             {/* Scanning before the window opens is not something the contract allows, so the buttons
@@ -471,35 +473,13 @@ export default function FloorPage() {
               </Notice>
             )}
 
-            {/* Two counters, the same shape, because they answer the same question at two scales:
-                how far am I, and how far is the room. The design puts the shortfall on the right of
-                the number rather than in a sentence underneath — at arm's length in a dark room,
-                "1 more" is read and a paragraph is not. */}
-            <Card className="!p-4">
-              <div className="flex items-baseline justify-between gap-3">
-                <Eyebrow>{t("floor.vouchedForYou")}</Eyebrow>
-                {me && !me.confirmed && received < k && (
-                  <span className="text-[15px] text-warn">
-                    {t("floor.needMore", { n: Math.max(0, k - received) })}
-                  </span>
-                )}
-                {me?.confirmed && <span className="text-[15px] text-ok">✓</span>}
-              </div>
-              <p className="mt-1 text-[34px] font-medium leading-none tabular-nums">
-                {me ? received : <Skeleton className="h-8 w-14 align-middle" />}
-                {me && <span className="text-faint">/{k}</span>}
-              </p>
-              <div className="mt-3">
-                <Progress value={received} max={k} />
-              </div>
-              <p className="mt-3 text-[15px] leading-relaxed">
-                {me?.confirmed ? (
-                  <span className="text-ok">{t("floor.countsPresent")}</span>
-                ) : (me?.given ?? 0) === 0 ? (
-                  <span className="text-warn">{t("floor.scanAtLeastOne")}</span>
-                ) : null}
-              </p>
-            </Card>
+            {/* Where I stand, one contract condition per row, above how far the room is. It was a
+                single "vouched for you" counter, which could read 1/1 on somebody the contract would
+                never confirm — scanned, but never scanning anybody — and that is how one of the two
+                people in the pilot lost their deposit. */}
+            {ev && me && (
+              <AttendanceStatus ev={ev} me={me} phase={phase} nowSec={Math.floor(chainNowMs() / 1000)} />
+            )}
 
             {log.length > 0 && (
               <ul className="space-y-2">
@@ -562,21 +542,21 @@ export default function FloorPage() {
             {phase === "closed" && ev && (
               <Card className="space-y-3.5">
                 <h2 className="text-[18px] font-medium">
-                  {settled ? "Settled" : cancelled ? "Refunding" : "Window closed"}
+                  {settled ? t("floor.settledTitle") : cancelled ? t("floor.cancelledTitle") : t("floor.closedTitle")}
                 </h2>
 
                 {!settled && !cancelled && (
                   <>
-                    <p className="text-[15px] leading-relaxed text-dim">
-                      Payouts are fixed by the contract, not by anyone&apos;s decision. Anyone can
-                      trigger it — in production a scheduled job does, so nobody can stall it.
-                    </p>
+                    {/* It used to add that "in production a scheduled job does" this. No such job has
+                        been verified, so the screen says only what is true today: anyone can. */}
+                    <p className="text-[15px] leading-relaxed text-dim">{t("floor.settleBody")}</p>
                     {settleBlocked ? (
                       <Notice tone="warn">
-                        Only {ev.peerConfirmed} people were confirmed by their peers, and {ev.k + 1}{" "}
-                        are needed — so the contract holds settlement open for {countdown(graceLeft)}{" "}
-                        to let the organizer check in whoever did turn up. Without this pause, anyone
-                        could settle the moment the window shut and strand the handful who came.
+                        {t("floor.fallbackPendingNote", {
+                          n: ev.peerConfirmed,
+                          need: ev.k + 1,
+                          time: countdown(graceLeft),
+                        })}
                       </Notice>
                     ) : (
                       <Button onClick={() => void settle()} disabled={!!busy} className="w-full">
@@ -599,34 +579,31 @@ export default function FloorPage() {
                             value={mon(ev.sharePerAttendee - ev.deposit)}
                           />
                           <div className="border-t border-line pt-2.5">
-                            <KeyValue label="Total" value={mon(ev.sharePerAttendee)} strong />
+                            <KeyValue label={t("floor.total")} value={mon(ev.sharePerAttendee)} strong />
                           </div>
                         </div>
                         <Button onClick={() => void claim()} disabled={!!busy} className="w-full">
-                          {busy ?? `Claim ${mon(ev.sharePerAttendee)}`}
+                          {busy ?? t("floor.claimAmount", { amount: mon(ev.sharePerAttendee) })}
                         </Button>
                       </>
                     )
                   ) : (
-                    <p className="text-[15px] leading-relaxed text-dim">
-                      You weren&apos;t confirmed present, so your deposit went to the people who
-                      were. Nothing to claim.
-                    </p>
+                    <p className="text-[15px] leading-relaxed text-dim">{t("floor.notConfirmedBody")}</p>
                   ))}
 
                 {cancelled && (
                   <>
-                    <p className="text-[15px] leading-relaxed text-dim">
-                      Attendance couldn&apos;t be established, so the contract refunded every
-                      deposit rather than issue an unreliable verdict. Nobody was penalised and the
-                      organizer received nothing.
-                    </p>
+                    {/* Both routes to Cancelled, not just one: too few registrations, or nobody the
+                        room could confirm. It used to name only the second. */}
+                    <p className="text-[15px] leading-relaxed text-dim">{t("floor.cancelledBody")}</p>
                     <Button
                       onClick={() => void claim()}
                       disabled={!!busy || me?.claimed}
                       className="w-full"
                     >
-                      {me?.claimed ? "Refunded" : (busy ?? `Claim ${mon(ev.deposit)} refund`)}
+                      {me?.claimed
+                        ? t("floor.refunded")
+                        : (busy ?? t("floor.claimRefund", { amount: mon(ev.deposit) }))}
                     </Button>
                   </>
                 )}
@@ -675,8 +652,9 @@ export default function FloorPage() {
           onResult={(t) => void onScan(t)}
           onClose={() => setScanning(false)}
           notice={busy ?? notice}
+          mode={checkedIn ? "peer" : "venue"}
           title={checkedIn ? "floor.pointAtCode" : "floor.pointAtDoor"}
-          hint={checkedIn ? undefined : "scan.hintVenue"}
+          hint={checkedIn ? "scan.hintPeer" : "scan.hintVenue"}
         />
       )}
     </Shell>

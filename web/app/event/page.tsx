@@ -581,6 +581,37 @@ export default function EventPage() {
             <VerifyTile n="04" icon="coin" title={t("event.vPayTitle")} body={t("event.vPayBody")} lit />
           </div>
 
+          {/* The whole rule and every refund branch, before anybody pays. Pilot participants and
+              survey respondents both got stuck on exactly this — who holds the money, what makes you
+              eligible, what happens when a room is too small — and the only place it was spelled
+              out was /floor, which you reach after registering. Plain list, no panel: it is the
+              small print, and it should read like it. */}
+          {ev && (
+            <div className="mt-9 max-w-[780px]">
+              <h3 className="text-[17px] font-semibold text-fg">{t("event.rulesTitle")}</h3>
+              <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-dim">
+                {[
+                  t("event.rule1"),
+                  t("event.rule2", { k: ev.k }),
+                  t("event.rule3"),
+                  t("event.rule4"),
+                  t("event.rule5"),
+                  t("event.rule6", { min: ev.minQuorum }),
+                  t("event.rule7"),
+                  t("event.rule8"),
+                ].map((line) => (
+                  <li key={line} className="flex gap-3">
+                    <span aria-hidden className="mt-[0.62em] h-1.5 w-1.5 shrink-0 rounded-full bg-accent-2/70" />
+                    <span className="min-w-0">{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-[14px] leading-relaxed text-faint">{t("event.smallRoom")}</p>
+              <p className="mt-1 text-[14px] leading-relaxed text-faint">
+                {t("event.fallbackLimits", { k: ev.k })}
+              </p>
+            </div>
+          )}
         </section>
 
       </div>

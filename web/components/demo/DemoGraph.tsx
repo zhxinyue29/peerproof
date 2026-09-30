@@ -145,18 +145,26 @@ export default function DemoGraph() {
       </svg>
 
       {/* The key, and who each letter is, as type. */}
-      <figcaption className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14px] text-dim">
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden className="h-3 w-3 rounded-full border-2 border-ok" />
-          {t("demo.legendConfirmed")}
+      <figcaption className="mt-3">
+        <span className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14px] text-dim">
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="h-3 w-3 rounded-full border-2 border-ok" />
+            {t("demo.legendConfirmed")}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="h-3 w-3 rounded-full border border-dashed border-faint" />
+            {t("demo.legendNot")}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="text-accent-2">→</span>
+            {t("demo.legendScan")}
+          </span>
         </span>
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden className="h-3 w-3 rounded-full border border-dashed border-faint" />
-          {t("demo.legendNot")}
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden className="text-accent-2">→</span>
-          {t("demo.legendScan")}
+        {/* The live record's legend, said about invented data — it opens by saying so, because
+            this figure also appears on /verify?demo=1 and a crop of it must not pass for a chain
+            record. */}
+        <span className="mx-auto mt-3 block max-w-[60ch] text-center text-[14px] leading-relaxed text-faint">
+          {t("demo.arrowLegend")}
         </span>
       </figcaption>
     </figure>
