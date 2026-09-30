@@ -14,7 +14,7 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 > Event #2 was an external micro-pilot on Monad testnet with two independent participants. One participant completed check-in and peer attestation, while the other did not complete the attendance flow. The event was settled permissionlessly, and the confirmed participant claimed 0.0200 MON: their returned 0.0100 MON deposit plus the other participant's forfeited 0.0100 MON deposit.
 
-**User validation:** [external micro-pilot and participant findings](docs/user-validation.md).
+**User validation:** [external micro-pilot, participant interviews and an anonymous survey](docs/user-validation.md). An anonymous closed-question survey with six respondents provided early directional support for PeerProof: five of six said they would probably or definitely try it at a real small event, including three respondents who had never used a crypto wallet. The clearest remaining UX gaps were the public verification graph and the deposit settlement and refund explanations; fund safety and collusion were the leading concerns. This was a small convenience sample, not production traction.
 
 ### Trying it
 
