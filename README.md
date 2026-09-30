@@ -12,6 +12,8 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 **Settled on chain:** event #2 — [public record](https://zhxinyue29.github.io/peerproof/verify/?event=2) · [settle tx](https://testnet.monadscan.com/tx/0x8e151c79daf64e140b481f3d1f5639e43f2f01da5895c81f1882959bb65760bf) · [claim tx](https://testnet.monadscan.com/tx/0xcd58dbb46884debdc87d6c60091aa5ff6176d6731fea85233908dce759e3e3c9)
 
+> Event #2 was an external micro-pilot on Monad testnet with two independent participants. One participant completed check-in and peer attestation, while the other did not complete the attendance flow. The event was settled permissionlessly, and the confirmed participant claimed 0.0200 MON: their returned 0.0100 MON deposit plus the other participant's forfeited 0.0100 MON deposit.
+
 ### Trying it
 
 **No wallet required.** The [four-step demo](https://zhxinyue29.github.io/peerproof/demo/) walks
