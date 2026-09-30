@@ -88,9 +88,13 @@ export function useEvent(address: Address | null, pollMs = 4000) {
   // Held in a ref, not read directly: `refresh` is an effect dependency, and a `t` that changes
   // identity on every language switch would tear down the poll and re-read the chain for a change
   // that only affects the wording of an error nobody may be looking at.
+  // Refreshed after each commit rather than during render, where writing a ref is a side effect
+  // React may repeat or discard. Declared before the effects that read it, so it runs first.
   const t = useT();
   const tRef = useRef(t);
-  tRef.current = t;
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
   const [ev, setEv] = useState<EventInfo | null>(null);
   const [me, setMe] = useState<MyState | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -18,7 +18,7 @@ import { useIdentity } from "@/components/IdentityProvider";
 import { Notice, Skeleton } from "@/components/ui";
 import { useLang, useT } from "@/lib/i18n";
 import { attendanceEscrowAbi as abi } from "@/lib/abi";
-import { basePath, ESCROW_ADDRESS, explorerAddressUrl, hasDeployment, publicClient } from "@/lib/chain";
+import { basePath, ESCROW_ADDRESS, hasDeployment, publicClient } from "@/lib/chain";
 import { readAllEvents, type EventSummary } from "@/lib/events";
 import { readProfile, type Profile } from "@/lib/directory";
 import { mon, shortAddress } from "@/lib/format";

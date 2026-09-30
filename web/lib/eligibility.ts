@@ -41,6 +41,18 @@ export type Eligibility = {
   final: boolean;
 };
 
+/// Whether `cancelForQuorum` would succeed right now, which is exactly when /floor offers it: the
+/// event is still open, registration has closed, and it closed short of the minimum.
+///
+/// These are the contract's own three checks, in its own terms. Anyone may make the call — the
+/// contract does not ask who is sending it — so nothing here asks either.
+export function canCancelForQuorum(
+  ev: Pick<EventInfo, "status" | "registered" | "minQuorum" | "registerDeadline">,
+  nowSec: number,
+): boolean {
+  return ev.status === 0 && nowSec >= Number(ev.registerDeadline) && ev.registered < ev.minQuorum;
+}
+
 export function eligibility(
   ev: Pick<EventInfo, "k" | "status" | "registered" | "minQuorum" | "registerDeadline">,
   me: Pick<MyState, "checkedInAt" | "given" | "received" | "confirmed" | "claimed">,
@@ -62,12 +74,10 @@ export function eligibility(
   // Registration can no longer grow once its deadline passes, so a room still short of its
   // minimum then can never settle — `settle` reverts with QuorumNotMet — and the only way out is
   // `cancelForQuorum`, which refunds everybody. Before the deadline, walk-ins can still fix it.
-  const belowQuorum = ev.registered < ev.minQuorum && nowSec >= Number(ev.registerDeadline);
-
   let outcome: OutcomeState;
   if (cancelled) outcome = me.claimed ? "cancelledRefunded" : "cancelledRefundable";
   else if (settled) outcome = me.confirmed ? (me.claimed ? "settledClaimed" : "settledReady") : "settledNone";
-  else if (belowQuorum) outcome = "openBelowQuorum";
+  else if (canCancelForQuorum(ev, nowSec)) outcome = "openBelowQuorum";
   else outcome = me.confirmed ? "openConfirmed" : "openNotConfirmed";
 
   return {

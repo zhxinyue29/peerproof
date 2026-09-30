@@ -168,9 +168,9 @@ The contract separates the registered address from the key that signs codes, and
 
 `src/AttendanceEscrow.sol` — the whole thing. No proxies, no external dependencies beyond `forge-std` for tests. The suite includes a parity test that pins both message digests against the values `viem` computes in the frontend — if those encodings ever drift, every attestation at the venue reverts and the failure is unreproducible on a laptop.
 
-Measured under Monad execution rules (`network = "monad"`, which applies Monad's opcode repricing) at the 102 gwei both networks were quoting. The right-hand column prices the **limit** the app actually sends, not the average, because Monad bills the limit:
+Measured under Monad execution rules (`network = "monad"`, which applies Monad's opcode repricing) at the 102 gwei both networks were quoting at the time. The right-hand column prices the **limit** the app actually sends, not the average, because Monad bills the limit. These are historical figures at that gas price, not current prices: the fee is set by the network when each transaction is sent. Event #2's actual receipts and fees are in [docs/monad-evidence.md](docs/monad-evidence.md).
 
-| Function | Gas avg / max | Limit sent | At 102 gwei |
+| Function | Gas avg / max | Limit sent | At 102 gwei (as measured) |
 |---|---|---|---|
 | `attest` | 186,104 / 240,991 | 250,000 | ≈ 0.026 MON |
 | `register` | 92,577 / 92,861 | 110,000 | ≈ 0.011 MON |
@@ -181,7 +181,7 @@ Measured under Monad execution rules (`network = "monad"`, which applies Monad's
 
 At a 30 MON deposit — the intended production figure, about five dollars at the time of writing — a
 participant's whole evening (register, check in, three attestations, claim) is roughly **0.36% of
-their stake**.
+their stake** at that gas price.
 
 The deployed demo runs on **testnet with a 0.01 MON deposit**, and k is set per event — the two
 events on the current contract use k = 3 and k = 1. Both are configuration rather than mechanism,

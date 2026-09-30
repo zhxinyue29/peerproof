@@ -231,20 +231,32 @@ export function secondsLeftInEpoch(): number {
 /// Which network this build reads, for labelling a record as testnet or mainnet on screen.
 export const network: "local" | "testnet" | "mainnet" = isLocal ? "local" : isTestnet ? "testnet" : "mainnet";
 
-/// A testnet build must link a testnet explorer. This used to send every network to
-/// monadvision.com, the mainnet explorer, which answered Event #2's settlement with an error page —
-/// a dead end on the one link offered as proof. testnet.monadscan.com renders the same transaction
-/// (checked 2026-09-30), and it is the explorer the README and docs already cite.
-const EXPLORER = isTestnet ? "https://testnet.monadscan.com" : "https://monadvision.com";
+/// Where transaction and address links go.
+///
+/// Testnet is pinned to testnet.monadscan.com: it renders Event #2's transactions (checked
+/// 2026-09-30) and is the explorer the README and docs cite, while viem's monadTestnet metadata
+/// still names the older testnet.monadexplorer.com. A testnet link must never point at a mainnet
+/// explorer — it used to go to monadvision.com for every network, and a testnet transaction simply
+/// is not on a mainnet explorer.
+///
+/// Mainnet follows viem's own chain metadata (`monad.blockExplorers.default`, Monadscan in viem
+/// 2.56) rather than a URL kept here. MonadVision, which the Monad docs list as a mainnet explorer,
+/// is the fallback should that metadata ever be missing. No mainnet deployment of PeerProof has
+/// been verified; this only decides where a mainnet build would link.
+const EXPLORER = isLocal
+  ? ""
+  : isTestnet
+    ? "https://testnet.monadscan.com"
+    : (monad.blockExplorers?.default?.url ?? "https://monadvision.com");
 
 export function explorerTxUrl(hash: string): string {
-  if (isLocal) return "";
+  if (!EXPLORER) return "";
   return `${EXPLORER}/tx/${hash}`;
 }
 
 /// Empty on a local chain, where no explorer exists to send anybody to — callers render the link
 /// only when there is one, rather than offering a dead end.
 export function explorerAddressUrl(address: string): string {
-  if (isLocal) return "";
+  if (!EXPLORER) return "";
   return `${EXPLORER}/address/${address}`;
 }

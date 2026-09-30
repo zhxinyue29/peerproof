@@ -64,7 +64,7 @@ function ringAngleOf(p: { x: number; y: number }) {
 /// each endpoint's own offset, weighted by (1−s)² and s² — full correction at the ends, a quarter of
 /// it at the midpoint, and no corner anywhere.
 function leg(a: { x: number; y: number }, b: { x: number; y: number }) {
-  let ua = ringAngleOf(a);
+  const ua = ringAngleOf(a);
   let ub = ringAngleOf(b);
   while (ub < ua) ub += Math.PI * 2;
 

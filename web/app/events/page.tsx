@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import EventCard from "@/components/EventCard";
 import GateIntro from "@/components/GateIntro";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useIdentity } from "@/components/IdentityProvider";
 import { Notice, Skeleton } from "@/components/ui";
 import { useT } from "@/lib/i18n";
@@ -61,8 +59,13 @@ export default function EventsPage() {
   // captures whichever language was current when the effect first ran. A ref is neither: the effect
   // stays keyed to nothing, and the message resolves in the language on screen at the moment it
   // fails.
+  //
+  // Refreshed after each commit rather than during render: writing a ref mid-render is a side
+  // effect React may repeat or throw away.
   const tRef = useRef(t);
-  tRef.current = t;
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   // `?q=` from the landing page's search box. Read on mount rather than during render: the query
   // string does not exist during the static export, so a lazy initialiser would make the client's

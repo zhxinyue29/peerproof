@@ -124,13 +124,19 @@ let warned = false;
 /// there so it still gets fixed.
 export function useLang(): Ctx {
   const ctx = useContext(LanguageContext);
-  if (ctx) return ctx;
+  const missing = !ctx;
 
-  if (process.env.NODE_ENV !== "production" && !warned) {
-    warned = true;
-    console.warn("useLang outside LanguageProvider — falling back to English.");
-  }
-  return FALLBACK;
+  // Warned from an effect, not during render: flipping the module flag mid-render is a side effect
+  // React may run twice or discard. The hook itself is unconditional, so the hook order is the
+  // same with or without a provider.
+  useEffect(() => {
+    if (missing && process.env.NODE_ENV !== "production" && !warned) {
+      warned = true;
+      console.warn("useLang outside LanguageProvider — falling back to English.");
+    }
+  }, [missing]);
+
+  return ctx ?? FALLBACK;
 }
 
 /// For the common case, where a component wants the strings and not the switch.

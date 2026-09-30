@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { Participant, Vouch } from "@/lib/logs";
 import { shortAddress } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -80,7 +80,13 @@ export default function ProofNetwork({
   // not news. Only the ones that were not in the previous read get the arrival signal — otherwise
   // every poll would replay the whole room and the one thing the motion is supposed to mean
   // ("somebody just vouched, seconds ago") would mean nothing.
-  const everSeen = useRef<Set<string> | null>(null);
+  //
+  // State, adjusted during render when the edge set changes (below), rather than a ref: a ref read
+  // during render is invisible to React, and a ref updated in an effect meant the very next render
+  // — a hover, or a poll with nothing new — already saw an arriving edge as old and switched its
+  // animation class half-way through the arrival.
+  const [seenKeys, setSeenKeys] = useState<string | null>(null);
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
 
   const cx = VB_W / 2;
   const cy = VB_H / 2;
@@ -155,20 +161,18 @@ export default function ProofNetwork({
   // First read is not an arrival: everything in it happened before you opened the page, and
   // flashing forty transactions at once would be a fireworks display, not evidence.
   //
-  // Derived during render but *recorded* in an effect below. Marking them as seen here instead —
-  // which is what this did first — silently produced nothing at all: React renders a component
-  // twice in development, so by the second pass every "new" edge had already been written into the
-  // set by the first, and the arrival never fired. A render that mutates state it also reads is a
-  // render that behaves differently depending on how many times it runs.
-  const fresh =
-    everSeen.current === null
-      ? new Set<string>()
-      : new Set(edges.filter((e) => !everSeen.current!.has(e.key)).map((e) => e.key));
-
+  // Recomputed only when the set of edges changes, through state rather than by mutating anything
+  // the render reads. Mutating a set here — which is what this did first — silently produced
+  // nothing: React renders a component twice in development, so by the second pass every "new"
+  // edge had already been written into the set by the first, and the arrival never fired. Setting
+  // state during render is React's own pattern for this: it re-renders at once with the new value,
+  // and the comparison below is false on that second pass, so it settles.
   const edgeKeys = edges.map((e) => e.key).join("|");
-  useEffect(() => {
-    everSeen.current = new Set(edgeKeys ? edgeKeys.split("|") : []);
-  }, [edgeKeys]);
+  if (seenKeys !== edgeKeys) {
+    const before = seenKeys === null ? null : new Set(seenKeys ? seenKeys.split("|") : []);
+    setSeenKeys(edgeKeys);
+    setFresh(before === null ? new Set() : new Set(edges.filter((e) => !before.has(e.key)).map((e) => e.key)));
+  }
 
   const activeNodes = new Set<string>();
   const active = edges.find((e) => e.key === selected);

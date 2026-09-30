@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "motion/react";
+import { useInView } from "motion/react";
 import { hasDeployment } from "@/lib/chain";
 import { readAllEvents } from "@/lib/events";
 import { useMotionPrefs } from "@/lib/motion";
@@ -36,13 +36,14 @@ function CountUp({ to, format }: { to: number; format: (n: number) => string }) 
   const { reduced } = useMotionPrefs();
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
-  const [shown, setShown] = useState(reduced ? to : 0);
+  // The in-flight value of a count-up, or null when nothing is counting. Whenever it is null the
+  // figure is simply the total — derived here rather than copied into state from an effect, which
+  // cost an extra render every time and showed a 0 for one frame on the way to the real number.
+  const [counting, setCounting] = useState<number | null>(null);
+  const shown = reduced || !inView || counting === null ? to : counting;
 
   useEffect(() => {
-    if (reduced || !inView) {
-      setShown(to);
-      return;
-    }
+    if (reduced || !inView) return;
     let raf = 0;
     const start = performance.now();
     const DURATION = 900;
@@ -50,7 +51,7 @@ function CountUp({ to, format }: { to: number; format: (n: number) => string }) 
       const p = Math.min(1, (now - start) / DURATION);
       // Ease out — the last third of a count-up is the part people read, so it should settle rather
       // than arrive at speed.
-      setShown(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      setCounting(Math.round(to * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -66,7 +67,6 @@ function CountUp({ to, format }: { to: number; format: (n: number) => string }) 
 
 export default function LiveStats() {
   const t = useT();
-  const { reduced } = useMotionPrefs();
   const [stats, setStats] = useState<Stats | null>(null);
   const loading = useRef(false);
 

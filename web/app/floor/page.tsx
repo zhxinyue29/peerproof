@@ -8,6 +8,7 @@ import RotatingCode from "@/components/RotatingCode";
 import Scanner from "@/components/Scanner";
 import AttendanceStatus from "@/components/AttendanceStatus";
 import CodeModeLabel from "@/components/CodeModeLabel";
+import QuorumCancel from "@/components/QuorumCancel";
 import PayoutResult from "@/components/PayoutResult";
 import VouchResult from "@/components/VouchResult";
 import IdentityGate from "@/components/IdentityGate";
@@ -16,7 +17,6 @@ import {
   AppHeader,
   Button,
   Card,
-  Dots,
   Eyebrow,
   Flash,
   KeyValue,
@@ -54,6 +54,8 @@ import {
 import { attendanceEscrowAbi } from "@/lib/abi";
 import { countdown, mon, shortAddress, shortenError } from "@/lib/format";
 import { phaseOf, useEvent } from "@/lib/useEvent";
+import { canCancelForQuorum } from "@/lib/eligibility";
+import { estimatedGas } from "@/lib/directory";
 import { useT } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
@@ -69,6 +71,7 @@ export default function FloorPage() {
 
   const [scanning, setScanning] = useState(false);
   const [claimHash, setClaimHash] = useState<string | null>(null);
+  const [cancelHash, setCancelHash] = useState<Hex | null>(null);
   const [payload, setPayload] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(Number(EPOCH));
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -299,6 +302,34 @@ export default function FloorPage() {
       await refresh();
     });
 
+  /// `cancelForQuorum`, for a room that registration left short of its minimum. Permissionless in
+  /// the contract, so any registered attendee can send it — not only the organizer — and it is a
+  /// transaction of its own: cancelling makes deposits refundable, and each person then claims
+  /// theirs through the ordinary claim below. Folding the two together would make one person's
+  /// click move everybody's money, which the contract deliberately does not do.
+  ///
+  /// Gas is estimated and padded rather than pinned: this call has no measured limit in GAS_LIMITS.
+  /// The fallback, used only if estimation itself fails, is settle's limit — cancelling does
+  /// strictly less work (one status write and an event).
+  const cancelForQuorum = () =>
+    run(t("floor.busyCancelling"), async () => {
+      const gas = await estimatedGas(
+        {
+          to: ESCROW_ADDRESS,
+          abi: attendanceEscrowAbi,
+          functionName: "cancelForQuorum",
+          args: [eventId()],
+          account: signer!.address,
+        },
+        GAS_LIMITS.settle,
+      );
+      const hash = await signer!.write({ functionName: "cancelForQuorum", args: [eventId()], gas });
+      setCancelHash(hash);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error(t("floor.cancelReverted"));
+      await refresh();
+    });
+
   /* ---------------- dev helpers ---------------- */
 
   /// Signs a beacon with the fixture's venue key and checks in with it, so a laptop with no second
@@ -384,6 +415,13 @@ export default function FloorPage() {
   const graceEnds = ev ? Number(ev.attestClose) + FALLBACK_WINDOW_SECONDS : 0;
   const graceLeft = Math.max(0, graceEnds - Math.floor(chainNowMs() / 1000));
   const settleBlocked = !!ev && ev.peerConfirmed <= ev.k && graceLeft > 0;
+  // A room registration left short of its minimum can never settle, so it gets the cancellation
+  // instead — as soon as the contract would accept it, which can be before the window closes.
+  const quorumCancellable = !!ev && canCancelForQuorum(ev, Math.floor(chainNowMs() / 1000));
+  // The result card: once the window has shut, once the event is final, or as soon as the only
+  // way forward is cancelling. A room cancelled early used to have to wait for the window to close
+  // before its refund button appeared, although the contract would pay out at once.
+  const showResult = !!ev && (phase === "closed" || settled || cancelled || quorumCancellable);
 
   return (
     <Shell handheld>
@@ -544,13 +582,31 @@ export default function FloorPage() {
               <p className="mt-2.5 text-[15px] leading-relaxed text-dim">{t("floor.howProveBody")}</p>
             </details>
 
-            {phase === "closed" && ev && (
+            {showResult && ev && (
               <Card className="space-y-3.5">
                 <h2 className="text-[18px] font-medium">
-                  {settled ? t("floor.settledTitle") : cancelled ? t("floor.cancelledTitle") : t("floor.closedTitle")}
+                  {settled
+                    ? t("floor.settledTitle")
+                    : cancelled
+                      ? t("floor.cancelledTitle")
+                      : quorumCancellable
+                        ? t("floor.quorumTitle")
+                        : t("floor.closedTitle")}
                 </h2>
 
-                {!settled && !cancelled && (
+                {/* Too few registered: settling would only revert with QuorumNotMet, so the button
+                    offered is the one that can succeed. */}
+                {!settled && !cancelled && quorumCancellable && (
+                  <QuorumCancel
+                    registered={ev.registered}
+                    minQuorum={ev.minQuorum}
+                    busy={busy}
+                    hash={cancelHash}
+                    onCancel={() => void cancelForQuorum()}
+                  />
+                )}
+
+                {!settled && !cancelled && !quorumCancellable && (
                   <>
                     {/* It used to add that "in production a scheduled job does" this. No such job has
                         been verified, so the screen says only what is true today: anyone can. */}
@@ -610,6 +666,17 @@ export default function FloorPage() {
                         ? t("floor.refunded")
                         : (busy ?? t("floor.claimRefund", { amount: mon(ev.deposit) }))}
                     </Button>
+                    {/* The cancellation this screen just sent, if it was this one. */}
+                    {cancelHash && explorerTxUrl(cancelHash) && (
+                      <a
+                        href={explorerTxUrl(cancelHash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block text-[15px] text-accent-2"
+                      >
+                        {t("common.viewTx")}
+                      </a>
+                    )}
                   </>
                 )}
               </Card>
