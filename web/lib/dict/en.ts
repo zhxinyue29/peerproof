@@ -183,7 +183,7 @@ export const en = {
   "organizer.seriesRegistered": "registrations",
   "organizer.pulseNoPick": "Pick an event on the left and its vouching rhythm is drawn here.",
   "organizer.pulseCaption": "Vouches are arriving live from the room.",
-  "organizer.payoutsAutomatic": "Payouts are automatic.",
+  "organizer.payoutsAutomatic": "No one approves the payouts.",
   "organizer.payoutsBody":
     "You cannot release money or withhold it. Anyone can trigger the settlement; the contract works it out from the final proof graph.",
   "organizer.status": "Status",
@@ -756,7 +756,7 @@ export const en = {
   "gate.org1Body": "Deposit, capacity, how many vouches count as present, and when the doors open. After registration starts, none of it can change — not by you, not by anyone.",
   "gate.org2Title": "People arrive and prove it",
   "gate.org2Body": "They check in against the screen at your door, then vouch for each other. You put the screen up; you do not mark anybody present.",
-  "gate.org3Title": "The contract settles",
+  "gate.org3Title": "Anyone can settle",
   "gate.org3Body": "Whoever was confirmed present takes their deposit back and splits what the no-shows left. You receive nothing, because there is no function that could pay you.",
   "gate.floorTitle": "What you'll do at the venue",
   "gate.floorBody": "Two scans and a wait. After that nobody has to approve anything: once the window closes anyone can trigger the settlement, and you withdraw your share.",

@@ -355,8 +355,11 @@ export default function ProofNetwork({
                 >
                   {shortAddress(p.address)}
                 </text>
-                {/* The count, demoted to a caption under the name. It is still every vouch this
-                    person received; it is just no longer the biggest thing about them. */}
+                {/* The caption under the name: the contract's verdict first, then the count.
+                    Confirmation is not the same as having been vouched for — whoever does the
+                    scanning is confirmed without receiving a vouch — so a count-only caption put
+                    "not yet" under a person the contract had already confirmed and, on a settled
+                    record, paid. Everyone else keeps every vouch they received. */}
                 <text
                   x={cx + (r + nodeR + 20) * Math.cos(pt.a)}
                   y={cy + (r + nodeR + 20) * Math.sin(pt.a) + 24}
@@ -365,7 +368,13 @@ export default function ProofNetwork({
                   fill={p.confirmed ? "#8fa0bb" : "#6f7c9c"}
                   className="tabular-nums"
                 >
-                  {n > 0 ? t("graph.vouchCount", { n }) : t("graph.notYet")}
+                  {p.confirmed
+                    ? p.viaOrganizer
+                      ? t("graph.presentFallback")
+                      : t("graph.present")
+                    : n > 0
+                      ? t("graph.vouchCount", { n })
+                      : t("graph.notYet")}
                 </text>
               </>
             )}

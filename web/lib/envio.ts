@@ -162,16 +162,20 @@ export async function readHistoryFromEnvio(eventId: bigint): Promise<EventHistor
         }
       : null;
 
-  // The index does not track a scan range — it has no gaps to disclose. Report the span the data
-  // actually covers rather than inventing a window that was never scanned.
+  // The span these figures were read out of: from the deployment to the block the index has
+  // processed. The index has no gaps to disclose, so its own progress is the honest end — the
+  // same end the RPC reader reports as its tip. This used to stop at the last vouch, which on a
+  // settled event falls short of the settlement and every claim: a range presented as covering
+  // the record that leaves out the part where the money moved.
   const highest = vouches.reduce((m, v) => (v.block > m ? v.block : m), DEPLOY_BLOCK);
+  const processed = BigInt(meta[0].latest_processed_block);
 
   return {
     participants,
     vouches,
     settlement: settled,
     fromBlock: DEPLOY_BLOCK,
-    toBlock: highest,
+    toBlock: processed > highest ? processed : highest,
     source: "envio",
     provider: "envio",
   };
