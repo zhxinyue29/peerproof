@@ -14,6 +14,8 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 > Event #2 was an external micro-pilot on Monad testnet with two independent participants. One participant completed check-in and peer attestation, while the other did not complete the attendance flow. The event was settled permissionlessly, and the confirmed participant claimed 0.0200 MON: their returned 0.0100 MON deposit plus the other participant's forfeited 0.0100 MON deposit.
 
+**User validation:** [external micro-pilot and participant findings](docs/user-validation.md).
+
 ### Trying it
 
 **No wallet required.** The [four-step demo](https://zhxinyue29.github.io/peerproof/demo/) walks
