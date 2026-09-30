@@ -402,8 +402,8 @@ export const zh: Dict = {
   "home.joinSub": "找找附近的活动",
   "home.hostSub": "创建一个活动",
   "stats.title": "Monad 让它实时发生。",
-  "stats.finality": "0.6s",
-  "stats.finalityLabel": "Monad 的最终性",
+  "stats.finality": "亚秒级",
+  "stats.finalityLabel": "Monad 最终性",
   "stats.cost": "0.026 MON",
   "stats.costLabel": "一次作证，按当前 gas 价",
   "stats.onchain": "链上",
@@ -461,6 +461,7 @@ export const zh: Dict = {
   "funding.whatRegister": "报名",
   "funding.short":
     "你现在有 {have}，大约需要 {need}，还差 {short}。押金是你自己的钱，交给合约保管，没法由别人替你出——正因为如此，不到场才有代价。",
+  "funding.shortSplit": "你现在有 {have}，大约需要 {need}：{deposit} 押金，外加交易所需的 gas，还差 {short}。押金是你自己的钱，交给合约保管，没法由别人替你出——正因为如此，不到场才有代价。gas 同样用这个钱包里的 MON 支付，本应用不代付 gas。",
   "funding.sendTitle": "往你的地址转 MON",
   "funding.sendBody":
     "用别的钱包扫这个码，或者直接复制地址。任何能在 {chain} 上转账的方式都行——交易所提现、朋友转你、你自己的另一个钱包。",
@@ -506,6 +507,7 @@ export const zh: Dict = {
   "error.fallbackPending": "结算在等兜底窗口过去。",
 
   "vouch.landedIn": "上链耗时",
+  "vouch.measuredNote": "从提交扫码到收到 Monad 成功回执，由当前设备实测。",
   "vouch.you": "你",
 
   "registered.inContract": "{amount} 已经进了合约",
@@ -916,6 +918,8 @@ export const zh: Dict = {
   "demo.calcTotal": "{n} 人 × {deposit}",
   "demo.formula": "{deposit} + {forfeited} ÷ {n} = {share}",
   "demo.proofCta": "查看示例凭证",
+  "demo.verifiedCta": "查看已验证的活动 #2",
+  "demo.verifiedCtaSub": "真实链上记录 · Monad 测试网",
   "verify.entryTitle": "自己核对出席记录",
   "verify.entryBody": "这个页面公开、只读。对真实活动，它直接从合约的链上记录重建谁到了场，不用登录，也不用钱包。",
   "verify.entryDemoTitle": "查看示例凭证",
@@ -935,4 +939,8 @@ export const zh: Dict = {
   "verify.demoNoRecords": "示例数据不包含链上交易记录。真实活动的公开记录会列出这些数字背后的每一笔交易，每一笔都可以跳转到区块浏览器独立核验。",
   "verify.demoBackToDemo": "返回完整演示",
   "verify.demoBrowseLive": "浏览真实活动",
+  "verify.demoSeeReal": "查看真实活动 #2",
+  "verify.demoSeeRealTop": "查看真实记录：已在 Monad 测试网结算的活动 #2",
+  "verify.networkTestnet": "Monad 测试网 · 链上记录",
+  "verify.networkMainnet": "Monad · 链上记录",
 };

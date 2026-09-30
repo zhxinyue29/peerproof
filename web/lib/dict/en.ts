@@ -404,8 +404,8 @@ export const en = {
   "home.joinSub": "Find events near you",
   "home.hostSub": "Create an event",
   "stats.title": "Monad makes it real-time.",
-  "stats.finality": "0.6s",
-  "stats.finalityLabel": "finality on Monad",
+  "stats.finality": "Sub-second",
+  "stats.finalityLabel": "Monad finality",
   "stats.cost": "0.026 MON",
   "stats.costLabel": "per vouch, at today's gas price",
   "stats.onchain": "On-chain",
@@ -467,6 +467,7 @@ export const en = {
   "funding.whatRegister": "register",
   "funding.short":
     "You have {have} and need about {need} — {short} short. The deposit is your own money going into the contract, so it cannot be covered for you; that is the part that makes a no-show cost something.",
+  "funding.shortSplit": "You have {have} and need about {need}: the {deposit} deposit plus room for gas — {short} short. The deposit is your own money going into the contract, so it cannot be covered for you; that is the part that makes a no-show cost something. Gas is paid in MON from this same wallet; this app does not sponsor it.",
   "funding.sendTitle": "Send MON to your address",
   "funding.sendBody":
     "Scan this from another wallet, or copy the address. Anything that can send on {chain} will do — an exchange withdrawal, a friend, your own other wallet.",
@@ -520,6 +521,7 @@ export const en = {
   "error.fallbackPending": "Settlement is waiting out the fallback window.",
 
   "vouch.landedIn": "Landed in",
+  "vouch.measuredNote": "Scan submitted → successful Monad receipt, measured on this device.",
   "vouch.you": "You",
 
   "registered.inContract": "{amount} is now in the contract",
@@ -949,7 +951,9 @@ export const en = {
   "demo.s4Point3": "In the live app the result is public: anyone can check it on the Verify page.",
   "demo.calcTotal": "{n} × {deposit}",
   "demo.formula": "{deposit} + {forfeited} ÷ {n} = {share}",
-  "demo.proofCta": "View the illustrative proof",
+  "demo.proofCta": "View illustrative proof",
+  "demo.verifiedCta": "View verified Event #2",
+  "demo.verifiedCtaSub": "Real on-chain record · Monad testnet",
   "verify.entryTitle": "Check attendance for yourself",
   "verify.entryBody": "This page is public and read-only. For a live event it rebuilds who was there straight from the contract's on-chain records, with no sign-in and no wallet.",
   "verify.entryDemoTitle": "View an illustrative proof",
@@ -969,6 +973,10 @@ export const en = {
   "verify.demoNoRecords": "The demo data contains no on-chain transaction records. A live event's record lists every transaction behind its numbers, each one a link out of this site.",
   "verify.demoBackToDemo": "Back to the full demo",
   "verify.demoBrowseLive": "Browse live events",
+  "verify.demoSeeReal": "View real Event #2",
+  "verify.demoSeeRealTop": "See the real record instead: Event #2, settled on Monad testnet",
+  "verify.networkTestnet": "Monad testnet · on-chain record",
+  "verify.networkMainnet": "Monad · on-chain record",
 };
 
 /// Every dictionary has exactly these keys. Widening the values to `string` is deliberate: the

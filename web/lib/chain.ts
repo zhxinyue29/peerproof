@@ -95,8 +95,13 @@ export async function resolveEventId(): Promise<bigint> {
 }
 
 /// viem defaults to a 4000ms polling interval, which would report ~4s for an attestation that
-/// actually settled in 300ms — and the on-screen latency is the entire point of this product.
-/// Monad finalises in two 300ms slots, so poll well inside that.
+/// landed in the next block — and the on-screen latency is the entire point of this product.
+///
+/// The Monad docs (https://docs.monad.xyz/, checked 2026-09-30) give a 300 ms block frequency,
+/// speculative finality at 300 ms and full finality at 600 ms; testnet block timestamps agreed that
+/// day, at about 302 ms per block over the last 100,000 blocks. Those figures belong here, next to
+/// the choice they justify, and not in the interface: the UI says "sub-second", which survives the
+/// next network upgrade. Poll well inside one block.
 const POLLING_INTERVAL = 100;
 
 /// Where the app is mounted. GitHub Pages serves a project repo from /<repo>/, so a bare "/event/"
@@ -223,14 +228,23 @@ export function secondsLeftInEpoch(): number {
   return Number(EPOCH) - (s % Number(EPOCH));
 }
 
+/// Which network this build reads, for labelling a record as testnet or mainnet on screen.
+export const network: "local" | "testnet" | "mainnet" = isLocal ? "local" : isTestnet ? "testnet" : "mainnet";
+
+/// A testnet build must link a testnet explorer. This used to send every network to
+/// monadvision.com, the mainnet explorer, which answered Event #2's settlement with an error page —
+/// a dead end on the one link offered as proof. testnet.monadscan.com renders the same transaction
+/// (checked 2026-09-30), and it is the explorer the README and docs already cite.
+const EXPLORER = isTestnet ? "https://testnet.monadscan.com" : "https://monadvision.com";
+
 export function explorerTxUrl(hash: string): string {
   if (isLocal) return "";
-  return `https://monadvision.com/tx/${hash}`;
+  return `${EXPLORER}/tx/${hash}`;
 }
 
 /// Empty on a local chain, where no explorer exists to send anybody to — callers render the link
 /// only when there is one, rather than offering a dead end.
 export function explorerAddressUrl(address: string): string {
   if (isLocal) return "";
-  return `https://monadvision.com/address/${address}`;
+  return `${EXPLORER}/address/${address}`;
 }

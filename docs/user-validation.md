@@ -172,6 +172,9 @@ not user validation: nobody has used the updated interface yet (see
   "Illustrative demo data" and "No transaction will be sent", and the illustrative proof on
   `/verify` states that no on-chain records stand behind it. Its graph legend now also opens with
   "Illustrative data."
+  **Implemented after the pilot and survey** (`/demo`, `/verify`): the demo's last step now leads
+  first to the verified Event #2 record, labelled as a real on-chain record on Monad testnet, and
+  second to the illustrative proof, which links back to Event #2 at its top and foot.
 
 ### Limitations of the interviews
 
@@ -493,5 +496,12 @@ has used the updated interface, so whether the changes resolve the reported prob
 - **Two overstatements were removed:** the `/floor` settlement card no longer says a scheduled job
   settles events in production (it says anyone can trigger settlement once the window closes), and
   the `/event` rules tab no longer says remote collusion cannot happen.
+- **Judge path from the demo to the real record:** `/demo`'s last step leads first to the verified
+  Event #2 record and second to the illustrative proof; the illustrative proof links back to
+  Event #2, and the live record names its network ("Monad testnet · on-chain record").
+- **Deposit and gas named separately:** when a wallet is short, the funding card on `/event` splits
+  what registering needs into the deposit and room for gas, and says gas is paid from the
+  attendee's own wallet and is not sponsored. This makes the testnet-funding obstacle (Participant
+  B; interview finding 7) clearer; it does not remove it.
 
 No contract, transaction, address, amount or on-chain record changed.

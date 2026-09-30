@@ -62,8 +62,9 @@ async function readPulse(id: bigint): Promise<Pulse> {
 
   // Blocks are not a unit anybody in the room thinks in, so the window is labelled with a real
   // duration. Measured from the boundary block's own timestamp rather than multiplied out from a
-  // nominal block time — a number derived from an assumed 400ms block would be a guess presented
-  // in the same typeface as the counts, which is the one thing this panel must not do.
+  // nominal block time — a number derived from an assumed block interval would be a guess presented
+  // in the same typeface as the counts, which is the one thing this panel must not do. (The
+  // interval has already changed once; any figure hardcoded here would be the first thing to rot.)
   let spanSeconds: number | null = null;
   try {
     const block = await publicClient.getBlock({ blockNumber: first });

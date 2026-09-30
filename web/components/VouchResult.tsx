@@ -66,9 +66,13 @@ export default function VouchResult({
           with their own eyes — and mint here is earned: the chain accepted this vouch, which is
           the one thing on this screen that is not an opinion. Then the card goes away, because a
           number that stays is a number nobody reads. */}
-      <p className="mb-2.5 mt-0.5 text-[72px] font-black leading-none tracking-[-0.05em] tabular-nums text-ok">
+      <p className="mt-0.5 text-[72px] font-black leading-none tracking-[-0.05em] tabular-nums text-ok">
         {(latencyMs / 1000).toFixed(2)}s
       </p>
+      {/* What the figure is, said next to it: one measurement, from this device, from submitting
+          the scan to a successful receipt. Not Monad's finality and not an average — a big number
+          with no unit of meaning beside it is how a single sample gets quoted as a benchmark. */}
+      <p className="mb-2.5 mt-1.5 text-[13px] leading-snug text-faint">{t("vouch.measuredNote")}</p>
 
       <Row label={t("vouch.you")} from={mine} to={nowMine} />
       <Row label={shortAddress(who)} from={theirs} to={theirs + 1} mono />

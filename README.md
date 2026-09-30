@@ -20,13 +20,17 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 **No wallet required.** The [four-step demo](https://zhxinyue29.github.io/peerproof/demo/) walks
 the whole loop — join, meet, vouch, settle — in about 90 seconds, on illustrative data that says so
-on every screen. It connects no wallet and sends no transaction. The same example as a public
-proof: [`/verify/?demo=1`](https://zhxinyue29.github.io/peerproof/verify/?demo=1).
+on every screen. It connects no wallet, needs no MON and sends no transaction. The same example as
+a public proof: [`/verify/?demo=1`](https://zhxinyue29.github.io/peerproof/verify/?demo=1). The demo's
+last step leads to the real record, Event #2 settled on Monad testnet.
 
-**The real thing, on Monad testnet.** Sign in with an email (nothing to install) or a wallet. You
-will need a little testnet MON to put down a deposit; the app does not offer to fetch it for you,
-because claiming test tokens is not part of the product. Get some from the
-[Monad faucet](https://faucet.monad.xyz) or the `#faucet` channel in
+**The real thing, on Monad testnet.** Sign in with an email — Privy creates or reconnects a wallet
+for that email, nothing to install — or connect your own wallet. Registering needs testnet MON for
+two different things: the event's deposit (0.0100 MON on Event #2), which the contract holds and
+then returns or redistributes, and gas for each transaction you send (registering, checking in,
+each scan, claiming), which is spent. Gas comes from your own wallet; the app does not sponsor it.
+The app does not offer to fetch test MON for you, because claiming test tokens is not part of the
+product. Get some from the [Monad faucet](https://faucet.monad.xyz) or the `#faucet` channel in
 [Monad's Discord](https://discord.gg/monad), send it to the address the app shows you, and register.
 
 The full vouching flow needs at least two different accounts: the contract refuses
@@ -95,15 +99,17 @@ Arrival and vouching are deliberately on separate clocks. An earlier version put
 
 ## Why Monad
 
-This is not "Monad is faster, so it's nicer." The mechanism does not work on a slow chain.
+PeerProof produces a burst of individual transactions during a short physical event window. Every
+check-in and attestation needs to feel immediate while participants are standing face to face.
+Monad's sub-second finality and low transaction cost make transaction-per-interaction attendance
+practical without batching the proof offchain. On a chain with twelve-second blocks the same design
+would push attestations into an offchain batch — and back to a server everybody has to trust.
 
-| Requirement | Monad | On a 12-second chain |
-|---|---|---|
-| 50 people × 3–5 scans ≈ **150–250 concurrent transactions in two minutes**, each touching independent storage | Parallel execution, no contention. At ~200k gas per attestation and a 150M block limit, one block absorbs ~750 attestations | Congestion and fee auctions during the burst |
-| Scanning must confirm in **under a second** or users re-scan and think it broke | 300ms blocks (MIP-12) | 12s of standing still, so you batch offchain — which reintroduces a server you have to trust, and the mechanism collapses |
-| Codes expire in 15s, so confirmation must beat expiry with margin | 300ms finality | Confirmation slower than the code's lifetime |
-
-The rotating code is what makes this proof-of-presence rather than proof-of-knowing-a-secret, and short expiry only works if confirmation is faster than expiry. **Latency is not a UX detail here; it is load-bearing.**
+The Monad docs give a 300 ms block frequency and 600 ms finality (checked 2026-09-30); the app itself
+just says "sub-second". Event #2's six transactions — receipts, blocks, gas, fees and decoded events
+— are in [docs/monad-evidence.md](docs/monad-evidence.md), and `npm run evidence:monad` (in `web/`)
+re-reads them from the chain without sending anything. Nothing has been load-tested, so no
+throughput figure is claimed.
 
 ## Design decisions worth defending
 

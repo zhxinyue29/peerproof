@@ -482,36 +482,41 @@ export default function FloorPage() {
             )}
 
             {log.length > 0 && (
-              <ul className="space-y-2">
-                {log.map((e) => (
-                  <li
-                    key={e.hash}
-                    className="flex items-center gap-3 rounded-xl border border-line bg-panel px-3.5 py-3"
-                  >
-                    <span className="text-ok" aria-hidden="true">
-                      ✓
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-mono text-xs text-dim">
-                        {shortAddress(e.who)}
+              <div className="space-y-2">
+                {/* The same label the result card carries: each figure is this device's own
+                    submit-to-receipt time for that scan, not a network number. */}
+                <p className="text-[13px] leading-snug text-faint">{t("vouch.measuredNote")}</p>
+                <ul className="space-y-2">
+                  {log.map((e) => (
+                    <li
+                      key={e.hash}
+                      className="flex items-center gap-3 rounded-xl border border-line bg-panel px-3.5 py-3"
+                    >
+                      <span className="text-ok" aria-hidden="true">
+                        ✓
                       </span>
-                      <span className="block text-[14px] text-faint">{t("floor.vouchedByYou")}</span>
-                    </span>
-                    {explorerTxUrl(e.hash) ? (
-                      <a
-                        href={explorerTxUrl(e.hash)}
-                        className="font-mono text-xl tabular-nums text-ok underline decoration-line-2"
-                      >
-                        {(e.latencyMs / 1000).toFixed(2)}s
-                      </a>
-                    ) : (
-                      <span className="font-mono text-xl tabular-nums text-ok">
-                        {(e.latencyMs / 1000).toFixed(2)}s
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-mono text-xs text-dim">
+                          {shortAddress(e.who)}
+                        </span>
+                        <span className="block text-[14px] text-faint">{t("floor.vouchedByYou")}</span>
                       </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      {explorerTxUrl(e.hash) ? (
+                        <a
+                          href={explorerTxUrl(e.hash)}
+                          className="font-mono text-xl tabular-nums text-ok underline decoration-line-2"
+                        >
+                          {(e.latencyMs / 1000).toFixed(2)}s
+                        </a>
+                      ) : (
+                        <span className="font-mono text-xl tabular-nums text-ok">
+                          {(e.latencyMs / 1000).toFixed(2)}s
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {ev && (

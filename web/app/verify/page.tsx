@@ -14,6 +14,7 @@ import {
   explorerTxUrl,
   hasDeployment,
   isLocalChain,
+  network,
   resolveEventId,
 } from "@/lib/chain";
 import { useVisiblePoll } from "@/lib/poll";
@@ -143,6 +144,14 @@ function LiveVerify() {
           the stretch of chain these numbers were read out of. */}
       <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-accent-2">
         {t("verify.title")}
+        {/* Which chain this record lives on, on the record itself — the illustrative proof says
+            it is invented, so the real one says where it is real. */}
+        {network !== "local" && (
+          <span className="text-faint">
+            {" · "}
+            {t(network === "testnet" ? "verify.networkTestnet" : "verify.networkMainnet")}
+          </span>
+        )}
       </p>
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-line pb-5">
         <h1
@@ -458,6 +467,15 @@ function DemoProof() {
         <Notice tone="warn">{t("verify.demoNotice")}</Notice>
       </div>
 
+      {/* The way to the real thing, at the top as well as the foot: somebody who landed here from a
+          shared link should not have to scroll past invented figures to find the settled record. */}
+      <Link
+        href="/verify/?event=2"
+        className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-medium text-accent-2 underline decoration-line-2 underline-offset-4 hover:text-fg"
+      >
+        {t("verify.demoSeeRealTop")} →
+      </Link>
+
       <section className="mt-8">
         <DemoGraph />
       </section>
@@ -506,8 +524,15 @@ function DemoProof() {
       <div className="mx-auto mt-14 w-full max-w-[1000px] space-y-5">
         <p className="text-[14px] leading-relaxed text-faint">{t("verify.demoNoRecords")}</p>
         <div className="flex flex-wrap gap-3">
-          {/* Back to where the proof was opened from: the settlement step, not the start. */}
-          <LinkButton href="/demo?step=4">{t("verify.demoBackToDemo")}</LinkButton>
+          {/* The real record is the primary way on; back to the walkthrough (its settlement step,
+              not the start) and the listing stay beside it. */}
+          <LinkButton href="/verify/?event=2">{t("verify.demoSeeReal")} →</LinkButton>
+          <Link
+            href="/demo?step=4"
+            className="flex min-h-[46px] items-center justify-center rounded-lg border border-line-2 px-4 text-[16px] font-medium text-dim transition-colors hover:border-accent/60 hover:text-fg"
+          >
+            {t("verify.demoBackToDemo")}
+          </Link>
           <Link
             href="/events"
             className="flex min-h-[46px] items-center justify-center rounded-lg border border-line-2 px-4 text-[16px] font-medium text-dim transition-colors hover:border-accent/60 hover:text-fg"

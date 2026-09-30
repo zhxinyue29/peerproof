@@ -79,10 +79,15 @@ export default function Funding({
   have,
   what,
   address,
+  deposit,
 }: {
   /// Total required, deposit plus room for gas.
   need: bigint;
   have: bigint;
+  /// The deposit inside `need`, when there is one. With it the message names the two parts
+  /// separately — the deposit goes into the contract, gas is spent getting it there — because
+  /// "you need 0.0265 MON" for a 0.01 MON deposit reads like a hidden fee.
+  deposit?: bigint;
   /// What the money is for, e.g. "register".
   what: string;
   /// Where to send it. Shown in full, copyable, and as a QR — an address you cannot copy is an
@@ -103,7 +108,9 @@ export default function Funding({
       <div className="space-y-1.5">
         <p className="text-[16px] font-medium text-warn">{t("funding.addMon", { what })}</p>
         <p className="text-[15px] leading-relaxed text-warn/90">
-          {t("funding.short", { have: mon(have), need: mon(need), short: mon(short) })}
+          {deposit !== undefined
+            ? t("funding.shortSplit", { have: mon(have), need: mon(need), deposit: mon(deposit), short: mon(short) })
+            : t("funding.short", { have: mon(have), need: mon(need), short: mon(short) })}
         </p>
       </div>
 

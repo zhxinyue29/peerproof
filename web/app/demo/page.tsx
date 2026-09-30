@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
 import QRCode from "qrcode";
 import { AnimatePresence, motion } from "motion/react";
 import TopNav from "@/components/TopNav";
 import DemoGraph from "@/components/demo/DemoGraph";
 import DemoSettlement from "@/components/demo/DemoSettlement";
-import { Button, LinkButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { DEMO_DEPOSIT, DEMO_PEOPLE, DEMO_SCANS, demoSettlement } from "@/lib/demo";
 import { mon } from "@/lib/format";
 import { useMotionPrefs } from "@/lib/motion";
@@ -200,8 +201,24 @@ export default function DemoPage() {
                 {t("demo.next")} →
               </Button>
             ) : (
-              <div className="w-full whitespace-nowrap sm:w-auto">
-                <LinkButton href="/verify?demo=1">{t("demo.proofCta")} →</LinkButton>
+              /* Two ways out, and the real one first. A judge who has just watched invented data
+                 settle should be one press from the event that actually settled on chain; the
+                 illustrative proof stays, second, for anybody who wants the same figures as a
+                 record. Each says which kind it is, so the two can never be taken for each other. */
+              <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center">
+                <Link
+                  href="/verify/?event=2"
+                  className="flex min-h-[46px] flex-col items-center justify-center rounded-lg bg-accent px-4 py-1.5 text-center text-white outline-none transition-transform duration-100 focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink active:scale-[0.985]"
+                >
+                  <span className="text-[16px] font-medium">{t("demo.verifiedCta")} →</span>
+                  <span className="text-[12.5px] text-white/80">{t("demo.verifiedCtaSub")}</span>
+                </Link>
+                <Link
+                  href="/verify/?demo=1"
+                  className="flex min-h-[46px] items-center justify-center rounded-lg border border-line-2 px-4 text-center text-[16px] font-medium text-dim transition-colors hover:border-accent/60 hover:text-fg"
+                >
+                  {t("demo.proofCta")}
+                </Link>
               </div>
             )}
           </div>

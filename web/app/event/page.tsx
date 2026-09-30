@@ -264,6 +264,7 @@ export default function EventPage() {
                   have={me.balance}
                   what={t("funding.whatRegister")}
                   address={signer.address}
+                  deposit={ev.deposit}
                 />
               )}
               <Button
