@@ -292,6 +292,20 @@ In production the last two of those come from repository settings rather than th
 as an Actions **variable**, `ALCHEMY_RPC_URL` as an Actions **secret** — so no key of any kind is
 committed here.
 
+## AI disclosure and third-party code
+
+**AI coding tools.** This project was built with Claude Code (Anthropic), which wrote and revised
+much of the code, tests and documentation under the author's direction. [`CLAUDE.md`](CLAUDE.md)
+holds the standing instructions it worked from, and many commits carry a `Co-Authored-By: Claude`
+trailer. ChatGPT (OpenAI) was also used during development.
+
+**Third-party code.** [forge-std](https://github.com/foundry-rs/forge-std) is vendored in
+`contracts/lib/forge-std` for the contract tests, under its own license. All other external code is
+a package dependency, listed in [`web/package.json`](web/package.json),
+[`indexer/package.json`](indexer/package.json) and
+[`cre/settle-workflow/package.json`](cre/settle-workflow/package.json); the main ones are named in
+the [Stack](#stack) table above.
+
 ## License
 
 [MIT](LICENSE)
