@@ -129,9 +129,7 @@ throughput figure is claimed.
 
 ## Revenue
 
-A cut of **forfeited** deposits only — never of a stake that returns to someone who showed up. The fee is earned exactly when the mechanism did work, and an attendee's principal is never touched. Precedent: Unlock's DAO voted a 1% protocol fee switch onto the same shape of contract.
-
-Deliberately **not implemented in V1**. A fee recipient is a privileged address, and "no privileged parties" is the entire differentiator; adding one to win a line on a slide would be a bad trade.
+Future revenue would come from a service fee charged to event organizers. Attendee deposits remain entirely within the contract's refund-and-reward flow; PeerProof takes no cut from them. This fee is not implemented in V1.
 
 ## Limitations
 
