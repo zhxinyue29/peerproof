@@ -8,7 +8,7 @@ Built for [Monad Metropolis](https://www.monad.xyz/developers/hackathons/metropo
 
 **Live:** [zhxinyue29.github.io/peerproof](https://zhxinyue29.github.io/peerproof/) · **Video:** [2:14 demo](https://youtu.be/J4bsS2C3-bY)
 
-> **Video version note:** The demo video was recorded on September 21, 2026. The live build was subsequently refined using findings from an external two-participant micro-pilot, two qualitative follow-up interviews, and a six-response convenience survey. The updates clarify QR-code roles, active peer-attestation requirements, refund eligibility, and the direction of the public proof graph. The underlying contract logic, deployed address, and Event #2 on-chain evidence are unchanged.
+> **Video version note:** The demo video was recorded on September 21, 2026. The live build was subsequently refined using findings from an external micro-pilot with two independent participants, follow-up interviews with those participants, and a six-response convenience survey. The updates clarify QR-code roles, active peer-attestation requirements, refund eligibility, and make the public proof graph easier to interpret. The underlying contract logic, deployed address, and Event #2 on-chain evidence are unchanged. The revised interface has not yet been re-tested with participants.
 
 **Contract:** [`0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679`](https://testnet.monadscan.com/address/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679) on Monad testnet (chain ID 10143). [Source verified with Sourcify (`exact_match`).](https://repo.sourcify.dev/10143/0xEa057c5a6F431eFF29F573E4db4bc49cD52Ee679)
 
@@ -181,7 +181,7 @@ Measured under Monad execution rules (`network = "monad"`, which applies Monad's
 | `settle` | 47,071 / 54,071 | 70,000 | ≈ 0.007 MON |
 | `createEvent` | 118,128 / 122,143 | 140,000 | ≈ 0.014 MON |
 
-At a 30 MON deposit — the intended production figure, about five dollars at the time of writing — a
+At a 30 MON deposit — the intended production configuration — a
 participant's whole evening (register, check in, three attestations, claim) is roughly **0.36% of
 their stake** at that gas price.
 

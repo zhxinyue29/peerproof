@@ -53,6 +53,17 @@ jobs:
       - name: Peer code invariant
         run: node scripts/check-peer-code.mjs
 
+      # A lint error or a failing eligibility test stops the deploy rather than shipping. The tests
+      # import lib/eligibility.ts directly through Node's type stripping, which `npm test` turns on
+      # explicitly so it does not depend on which Node 22 minor this job happens to install.
+      - name: Lint
+        working-directory: web
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: web
+        run: npm test
+
       - name: Build static site
         working-directory: web
         env:

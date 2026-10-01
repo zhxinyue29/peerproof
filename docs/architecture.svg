@@ -11,47 +11,53 @@
   <text x="40" y="64" font-size="13" fill="#737373">Every arrow into the contract is one transaction. Nothing between the boxes is trusted.</text>
 
   <!-- attendee device -->
-  <rect x="40" y="92" width="330" height="188" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
-  <text x="60" y="118" font-size="13" fill="#737373">Attendee device</text>
-  <text x="60" y="145" font-size="14" fill="#171717">passkey — one biometric prompt, ever</text>
-  <text x="70" y="169" font-size="13" fill="#737373">↓ WebAuthn PRF output (32 bytes)</text>
-  <text x="60" y="193" font-size="14" fill="#171717">BIP-39/32 → secp256k1 attest key</text>
-  <text x="70" y="217" font-size="13" fill="#737373">↓ signs locally, no further prompt</text>
-  <text x="60" y="241" font-size="14" fill="#171717">rotating code QR — expires in 15s</text>
-  <text x="60" y="265" font-size="12" fill="#a3a3a3">fallback: browser wallet signs once, same derivation</text>
+  <rect x="40" y="92" width="330" height="170" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
+  <text x="60" y="118" font-size="13" fill="#737373">Attendee phone</text>
+  <text x="60" y="144" font-size="14" fill="#171717">passkey — one biometric prompt, ever</text>
+  <text x="70" y="167" font-size="13" fill="#737373">↓ PRF → BIP-39/32 → secp256k1 attest key</text>
+  <text x="60" y="191" font-size="14" fill="#171717">Participant attestation code · every 15 s</text>
+  <text x="60" y="219" font-size="12" fill="#a3a3a3">or a browser wallet / email sign-in:</text>
+  <text x="60" y="236" font-size="12" fill="#a3a3a3">one signature, same derivation, signs locally</text>
 
   <!-- venue display -->
-  <rect x="510" y="92" width="330" height="188" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
+  <rect x="510" y="92" width="330" height="170" rx="12" fill="#ffffff" stroke="#d4d4d4"/>
   <text x="530" y="118" font-size="13" fill="#737373">Venue display — at the door</text>
-  <text x="530" y="145" font-size="14" fill="#171717">ephemeral beacon key</text>
-  <text x="540" y="169" font-size="13" fill="#737373">↓ holds no funds, never needs gas</text>
-  <text x="530" y="193" font-size="14" fill="#171717">beacon QR — rotates every 120s</text>
-  <text x="530" y="223" font-size="12" fill="#a3a3a3">This is what makes an attestation mean</text>
-  <text x="530" y="240" font-size="12" fill="#a3a3a3">&#8220;was in this room&#8221; rather than</text>
-  <text x="530" y="257" font-size="12" fill="#a3a3a3">&#8220;knew a secret&#8221;.</text>
+  <text x="530" y="144" font-size="14" fill="#171717">ephemeral beacon key</text>
+  <text x="540" y="167" font-size="13" fill="#737373">↓ holds no funds, never needs gas</text>
+  <text x="530" y="191" font-size="14" fill="#171717">Venue check-in code · every 30 s</text>
+  <text x="530" y="219" font-size="12" fill="#a3a3a3">Spent once, at check-in: proof the attendee</text>
+  <text x="530" y="236" font-size="12" fill="#a3a3a3">read a live screen in the room, rather than</text>
+  <text x="530" y="253" font-size="12" fill="#a3a3a3">knowing a secret.</text>
 
-  <!-- scan join -->
-  <line x1="205" y1="280" x2="205" y2="318" stroke="#525252" stroke-width="1.6"/>
-  <line x1="675" y1="280" x2="675" y2="318" stroke="#525252" stroke-width="1.6"/>
-  <line x1="205" y1="318" x2="675" y2="318" stroke="#525252" stroke-width="1.6"/>
-  <line x1="440" y1="318" x2="440" y2="352" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
-  <text x="440" y="306" font-size="12" fill="#737373" text-anchor="middle">scan a peer&#8217;s code, and the venue beacon</text>
+  <!-- the two scans, each its own transaction -->
+  <line x1="205" y1="262" x2="205" y2="318" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="217" y="294" font-size="12" fill="#737373">another participant scans this code</text>
+  <line x1="675" y1="262" x2="675" y2="318" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="663" y="294" font-size="12" fill="#737373" text-anchor="end">the attendee scans it once, on arrival</text>
 
-  <!-- transaction -->
-  <rect x="250" y="356" width="380" height="62" rx="12" fill="#111827" stroke="#111827"/>
-  <text x="440" y="381" font-size="14" fill="#ffffff" text-anchor="middle">attest(eventId, subject, epoch, code, beacon)</text>
-  <text x="440" y="403" font-size="12" fill="#9ca3af" text-anchor="middle">~200k gas · one scan credits both parties · confirms in ~0.3s</text>
+  <!-- transactions -->
+  <rect x="40" y="322" width="330" height="72" rx="12" fill="#111827" stroke="#111827"/>
+  <text x="205" y="346" font-size="13" fill="#ffffff" text-anchor="middle">attest(eventId, subject, epoch, code)</text>
+  <text x="205" y="366" font-size="11" fill="#9ca3af" text-anchor="middle">sent by the scanner, who must be checked in</text>
+  <text x="205" y="383" font-size="11" fill="#9ca3af" text-anchor="middle">adds to both counts · only the scanner has vouched</text>
 
-  <line x1="440" y1="418" x2="440" y2="452" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="510" y="322" width="330" height="72" rx="12" fill="#111827" stroke="#111827"/>
+  <text x="675" y="346" font-size="13" fill="#ffffff" text-anchor="middle">checkIn(eventId, beaconEpoch, beaconSig)</text>
+  <text x="675" y="366" font-size="11" fill="#9ca3af" text-anchor="middle">once per attendee, with a live venue code</text>
+  <text x="675" y="383" font-size="11" fill="#9ca3af" text-anchor="middle">the chain, not the sender, timestamps arrival</text>
+
+  <line x1="205" y1="394" x2="205" y2="426" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="675" y1="394" x2="675" y2="426" stroke="#525252" stroke-width="1.6" marker-end="url(#arrow)"/>
 
   <!-- contract -->
-  <rect x="40" y="456" width="800" height="128" rx="12" fill="#ffffff" stroke="#171717" stroke-width="1.6"/>
-  <text x="60" y="482" font-size="13" fill="#737373">AttendanceEscrow — Monad mainnet, chain 143</text>
-  <text x="60" y="509" font-size="14" fill="#171717">deposits held · each pair may vouch once · vouches counted per address</text>
-  <text x="60" y="533" font-size="14" fill="#171717">present = k vouches received AND at least one vouch given</text>
-  <text x="60" y="557" font-size="14" fill="#171717">settle() is permissionless · no function pays the organizer</text>
-  <text x="60" y="576" font-size="12" fill="#a3a3a3">Off chain: the event title. That is all — nothing that decides where money goes.</text>
+  <rect x="40" y="430" width="800" height="138" rx="12" fill="#ffffff" stroke="#171717" stroke-width="1.6"/>
+  <text x="60" y="456" font-size="13" fill="#737373">AttendanceEscrow — deployed on Monad testnet, chain 10143</text>
+  <text x="60" y="483" font-size="14" fill="#171717">deposits held by the contract · each pair attests once · counts kept per address</text>
+  <text x="60" y="507" font-size="14" fill="#171717">present = at least k attestations counted AND at least one initiated</text>
+  <text x="60" y="531" font-size="14" fill="#171717">settle() and cancelForQuorum() are permissionless · no function pays the organizer</text>
+  <text x="60" y="554" font-size="12" fill="#a3a3a3">Titles and descriptions live in a separate EventDirectory contract, which holds no money.</text>
 
-  <!-- why monad, right column note -->
-  <text x="840" y="612" font-size="11" fill="#a3a3a3" text-anchor="end">50 people × 3–5 scans ≈ 150–250 concurrent writes in two minutes, each on independent storage</text>
+  <!-- footnote -->
+  <text x="40" y="596" font-size="11" fill="#a3a3a3">Every check-in and every attestation is its own transaction. Sub-second finality is Monad&#8217;s documented network</text>
+  <text x="40" y="611" font-size="11" fill="#a3a3a3">figure, not a PeerProof measurement.</text>
 </svg>
